@@ -166,6 +166,39 @@ export class VentesComponent implements OnInit {
     this.updateCartTotal();
   }
 
+  decrementCartItem(item: CartItem) {
+    if (item.quantite > 1) {
+      item.quantite--;
+      item.sous_total = item.quantite * item.prix_unitaire;
+      item.stock_restant++;
+      this.cart$.next([...this.cart]);
+      this.updateCartTotal();
+    } else {
+      const index = this.cart.findIndex(c => c.produit_id === item.produit_id);
+      if (index > -1) this.removeFromCart(index);
+    }
+  }
+
+  decrementCartByProductId(productId: string) {
+    const item = this.cart.find(c => c.produit_id === productId);
+    if (item) this.decrementCartItem(item);
+  }
+
+  incrementCartItem(item: CartItem) {
+    const p = this.allProduits.find(pr => pr.id === item.produit_id);
+    if (p) this.addToCart(p);
+  }
+
+  incrementCartByProductId(productId: string) {
+    const p = this.allProduits.find(pr => pr.id === productId);
+    if (p) this.addToCart(p);
+  }
+
+  getCartQty(productId: string): number {
+    const item = this.cart.find(c => c.produit_id === productId);
+    return item ? item.quantite : 0;
+  }
+
   removeFromCart(index: number) {
     this.cart.splice(index, 1);
     this.cart$.next([...this.cart]);
@@ -217,6 +250,9 @@ export class VentesComponent implements OnInit {
   }
 
   formatMAD(a: number): string { return Number(a).toLocaleString('ar-MA') + ' د.م'; }
+  currentDate(): string {
+    return new Intl.DateTimeFormat('ar-MA', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
+  }
   showToast(msg: string, type: string) {
     this.toastMessage$.next({ message: msg, type });
     setTimeout(() => this.toastMessage$.next(null), 3000);
