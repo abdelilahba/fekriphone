@@ -61,6 +61,22 @@ export class VentesComponent implements OnInit {
         this.supabase.getVentes(),
         this.supabase.getCategories()
       ]);
+      // Calculate sales per product for sorting "Best Selling First"
+      const salesCount: { [key: string]: number } = {};
+      ventes.forEach((vente: any) => {
+        if (vente.vente_items) {
+          vente.vente_items.forEach((item: any) => {
+            salesCount[item.produit_id] = (salesCount[item.produit_id] || 0) + item.quantite;
+          });
+        }
+      });
+
+      produits.sort((a, b) => {
+        const salesA = salesCount[a.id] || 0;
+        const salesB = salesCount[b.id] || 0;
+        return salesB - salesA; // Descending
+      });
+
       this.allProduits = produits;
       this.categories = categories;
       this.ventes$.next(ventes);
