@@ -15,7 +15,7 @@ export class AIService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-flash-latest",
       systemInstruction: "You are an expert Moroccan AI assistant for a mobile phone store called 'Fekri Phone'. " +
         "You always answer in Moroccan Darija (Arabic script). " +
         "You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. " +
