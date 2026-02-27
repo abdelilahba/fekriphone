@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 import { AuthService } from './core/services/auth.service';
 import { SupabaseService } from './core/services/supabase.service';
+import { HelpWizard } from './components/help-wizard/help-wizard';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, ConfirmDialogComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, ConfirmDialogComponent, HelpWizard],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

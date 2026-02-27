@@ -1,0 +1,54 @@
+.help-wizard-banner {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.2);
+  position: relative;
+  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.help-icon {
+  font-size: 28px;
+  background: rgba(255, 255, 255, 0.2);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.help-content h5 {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: white;
+}
+.help-content p {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+.help-close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: auto; /* Arabic is RTL but flex might need testing, we'll see */
+  transition: color 0.2s;
+}
+.help-close-btn:hover {
+  color: white;
+}
