@@ -25,9 +25,10 @@ export class AIService {
     });
   }
 
-  async askQuestion(question: string): Promise<string> {
+  async *askQuestionStream(question: string): AsyncGenerator<string, void, unknown> {
     if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
-      return "عفواً، خاصك تحط API Key ديال Gemini فـ الكود باش نقد نجاوبك! (AIService)";
+      yield "عفواً، خاصك تحط API Key ديال Gemini فـ الكود باش نقد نجاوبك! (AIService)";
+      return;
     }
     
     try {
@@ -54,11 +55,13 @@ Total Expense Records: ${depenses.length}
 USER QUESTION: ${question}
 `;
 
-      const result = await this.model.generateContent(systemData);
-      return result.response.text();
+      const result = await this.model.generateContentStream(systemData);
+      for await (const chunk of result.stream) {
+        yield chunk.text();
+      }
     } catch (e: any) {
       console.error(e);
-      return "عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.";
+      yield "عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.";
     }
   }
 }
@@ -100,13 +103,34 @@ export class AiAssistant {
     this.isThinking = true;
     this.scrollToBottom();
 
-    // Call AI
-    const response = await this.aiService.askQuestion(text);
+    try {
+      // Call AI with stream
+      const stream = this.aiService.askQuestionStream(text);
+      
+      let firstChunkReceived = false;
+      let aiMessageIndex = -1;
 
-    this.isThinking = false;
-    this.messages.push({ text: response, sender: 'ai' });
-    this.scrollToBottom();
-    this.cdr.detectChanges();
+      for await (const chunk of stream) {
+        if (!firstChunkReceived) {
+          this.isThinking = false;
+          firstChunkReceived = true;
+          this.messages.push({ text: chunk, sender: 'ai' });
+          aiMessageIndex = this.messages.length - 1;
+        } else {
+          this.messages[aiMessageIndex].text += chunk;
+        }
+        this.scrollToBottom();
+        this.cdr.detectChanges();
+      }
+      
+      if (!firstChunkReceived) {
+        this.isThinking = false;
+      }
+    } catch(err) {
+      this.isThinking = false;
+      this.messages.push({ text: "عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.", sender: 'ai' });
+      this.cdr.detectChanges();
+    }
   }
 
   private scrollToBottom() {
