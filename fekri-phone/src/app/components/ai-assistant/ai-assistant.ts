@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild, ChangeDetectorRef, Injectable } from 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { SupabaseService } from '../../core/services/supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class AIService {
@@ -12,14 +13,15 @@ export class AIService {
   private genAI: GoogleGenerativeAI;
   private model: any;
 
-  constructor() {
+  constructor(private supabase: SupabaseService) {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
     this.model = this.genAI.getGenerativeModel({
       model: "gemini-flash-latest",
       systemInstruction: "You are an expert Moroccan AI assistant for a mobile phone store called 'Fekri Phone'. " +
         "You always answer in Moroccan Darija (Arabic script). " +
         "You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. " +
-        "Respond clearly and keep answers somewhat concise, practical, and business-oriented.",
+        "When the user asks about their data (like products, sales, stock), formulate your answer using the data block provided in their prompt. " +
+        "Respond clearly and keep answers practical, and business-oriented.",
     });
   }
 
@@ -27,8 +29,32 @@ export class AIService {
     if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
       return "عفواً، خاصك تحط API Key ديال Gemini فـ الكود باش نقد نجاوبك! (AIService)";
     }
+    
     try {
-      const result = await this.model.generateContent(question);
+      // Fetch live data as "Tools" / context for the LLM
+      const [produits, ventes, credits, depenses] = await Promise.all([
+        this.supabase.getProduits(),
+        this.supabase.getVentes(),
+        this.supabase.getCredits(),
+        this.supabase.getDepenses()
+      ]);
+
+      const totalSales = ventes.reduce((sum, v) => sum + Number(v.montant_total || 0), 0);
+      const lowStockProducts = produits.filter(p => p.quantite <= 3);
+
+       const systemData = `
+--- LIVE STORE DATA (DO NOT EXPOSE RAW JSON TO USER) ---
+Total Products in System: ${produits.length}
+Total Sales Count: ${ventes.length}
+Total Revenue So Far: ${totalSales} MAD
+Items with Low Stock (<=3): ${lowStockProducts.map(p => p.nom + ' (' + p.quantite + ' left)').join(', ')}
+Total Credits (Unpaid debts count): ${credits.filter(c => c.montant_restant > 0).length}
+Total Expense Records: ${depenses.length}
+------------------------------------------------------
+USER QUESTION: ${question}
+`;
+
+      const result = await this.model.generateContent(systemData);
       return result.response.text();
     } catch (e: any) {
       console.error(e);
