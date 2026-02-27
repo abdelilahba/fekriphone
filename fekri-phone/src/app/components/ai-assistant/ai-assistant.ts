@@ -8,7 +8,7 @@ export class AIService {
   // --- IMPORTANT: IN A REAL APP, DO NOT HARDCODE API KEYS ON THE FRONTEND ---
   // For the sake of this prototype for your friend, we use a key here.
   // We'll leave the string empty, you will need to replace it with a real Gemini API Key.
-  private API_KEY = 'REPLACE_WITH_YOUR_GEMINI_API_KEY';
+  private API_KEY = 'AIzaSyDHFo17kqSSqB-3lMsxRr-_Ki0EPRPUHJ8';
   private genAI: GoogleGenerativeAI;
   private model: any;
 
@@ -24,7 +24,7 @@ export class AIService {
   }
 
   async askQuestion(question: string): Promise<string> {
-    if (this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
+    if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
       return "عفواً، خاصك تحط API Key ديال Gemini فـ الكود باش نقد نجاوبك! (AIService)";
     }
     try {
