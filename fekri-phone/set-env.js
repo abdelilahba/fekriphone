@@ -1,30 +1,33 @@
 const fs = require('fs');
 
-const envPath = './src/environments/environment.ts';
-const envDevPath = './src/environments/environment.development.ts';
+// Supabase keys (public/anon - safe to include)
+const supabaseUrl = 'https://zdvqqzplcuklajlnhgpt.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdnFxenBsY3VrbGFqbG5oZ3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMTM1MDYsImV4cCI6MjA4NzY4OTUwNn0.Rg6n24mjPYVDxyWhL8zXfEzP184RCEGHHbqEBUDV1dc';
 
-// Get the key from process.env, or fallback to the provided one (for local dev before .env is ignored)
-// Since we are running this locally right now, we will inject the key directly for local dev:
-// AIzaSyAnjCBmhL4sB98-SoNwF1f9Bba-qzvXYPs
-const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyAnjCBmhL4sB98-SoNwF1f9Bba-qzvXYPs';
+// Gemini API Key - read from env variable on Vercel, fallback for local dev
+const geminiKey = process.env.GEMINI_API_KEY || 'AIzaSyAnjCBmhL4sB98-SoNwF1f9Bba-qzvXYPs';
 
 const envFileContent = `export const environment = {
   production: true,
-  geminiKey: '${apiKey}'
+  supabaseUrl: '${supabaseUrl}',
+  supabaseKey: '${supabaseKey}',
+  geminiKey: '${geminiKey}'
 };
 `;
 
 const envDevFileContent = `export const environment = {
   production: false,
-  geminiKey: '${apiKey}'
+  supabaseUrl: '${supabaseUrl}',
+  supabaseKey: '${supabaseKey}',
+  geminiKey: '${geminiKey}'
 };
 `;
 
 if (!fs.existsSync('./src/environments')) {
-  fs.mkdirSync('./src/environments');
+  fs.mkdirSync('./src/environments', { recursive: true });
 }
 
-fs.writeFileSync(envPath, envFileContent);
-fs.writeFileSync(envDevPath, envDevFileContent);
+fs.writeFileSync('./src/environments/environment.ts', envFileContent);
+fs.writeFileSync('./src/environments/environment.development.ts', envDevFileContent);
 
-console.log('Environment files generated!');
+console.log('✅ Environment files generated successfully!');
