@@ -23,15 +23,14 @@ export class CategoriesComponent implements OnInit {
 
   iconOptions = [
     { emoji: '📱', label: 'هواتف ذكية (جديد ومستعمل)' },
+    { emoji: '🎧', label: 'أكسسوارات هواتف (Accessoires)' },
     { emoji: '🔌', label: 'شواحن (شارجورات كوامل / روسان)' },
     { emoji: '🧲', label: 'كابلات (Type-C, iPhone, V8)' },
     { emoji: '🔋', label: 'بطاريات وباور بانك (Powerbank)' },
-    { emoji: '🎧', label: 'ليزيات وسماعات (Airpods, سلك، بلوتوث)' },
     { emoji: '🛡️', label: 'بوشيطات وكفرات (Pochettes)' },
     { emoji: '✨', label: 'حماية الشاشة (أنتي كاس، جيلاتين)' },
     { emoji: '⌚', label: 'ماڭانات ذكية (Smartwatch / براسلي)' },
     { emoji: '🚗', label: 'أكسسوارات سيارات (سيبورة، طرونسميتور، الوم سيجار)' },
-    { emoji: '🔌', label: 'أدابتور ومحولات (OTG, Aux, خيوط)' },
     { emoji: '💾', label: 'كارط ميموار وكلي USB' },
     { emoji: '📶', label: 'راوتر / ويفي 4G/5G' },
     { emoji: '💻', label: 'حواسيب وأكسسوارات' },
