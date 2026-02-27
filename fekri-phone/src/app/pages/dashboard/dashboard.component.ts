@@ -64,18 +64,23 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       const totalIn = stats.totalVentes + stats.totalRevenusReparation;
       this.beneficePercent = totalIn > 0 ? Math.round((stats.benefice / totalIn) * 100) : 0;
 
-      // Extract top 5 products
+      // Extract top 5 products from vente_items
       const productSales = new Map<string, { qty: number, nom: string, icone: string }>();
-      ventes.forEach(v => {
-         const pid = v.produit_id;
-         if (pid) {
-           const p = produits.find((pr: any) => pr.id === pid);
-           if (!productSales.has(pid)) {
-             productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
-           }
-           productSales.get(pid)!.qty += v.quantite;
+      ventes.forEach((v: any) => {
+         if (v.vente_items && Array.isArray(v.vente_items)) {
+           v.vente_items.forEach((item: any) => {
+             const pid = item.produit_id;
+             if (pid) {
+               const p = produits.find((pr: any) => pr.id === pid);
+               if (!productSales.has(pid)) {
+                 productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
+               }
+               productSales.get(pid)!.qty += item.quantite;
+             }
+           });
          }
       });
+      
       this.topProduits = Array.from(productSales.values())
         .sort((a,b) => b.qty - a.qty)
         .slice(0, 5);
