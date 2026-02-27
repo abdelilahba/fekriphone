@@ -6,11 +6,12 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.c
 import { AuthService } from './core/services/auth.service';
 import { SupabaseService } from './core/services/supabase.service';
 import { HelpWizard } from './components/help-wizard/help-wizard';
+import { AiAssistant } from './components/ai-assistant/ai-assistant';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, ConfirmDialogComponent, HelpWizard],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, ConfirmDialogComponent, HelpWizard, AiAssistant],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

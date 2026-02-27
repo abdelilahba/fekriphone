@@ -1,0 +1,50 @@
+<div class="ai-float" [class.open]="isOpen">
+  <!-- Trigger Button -->
+  <button class="ai-trigger" (click)="toggleChat()">
+    <span class="ai-sparkle">✨</span>
+    @if (!isOpen) {
+      <span class="ai-notification-dot"></span>
+    }
+  </button>
+
+  <!-- Chat Window -->
+  <div class="ai-window">
+    <div class="ai-header">
+      <div class="ai-brand">
+        <span class="ai-sparkle white">✨</span>
+        <div class="ai-titles">
+          <h3>المساعد الذكي</h3>
+          <small>مستشار محل فكري فون</small>
+        </div>
+      </div>
+      <button class="ai-close" (click)="toggleChat()">✕</button>
+    </div>
+
+    <div class="ai-body" #chatScroll>
+      @for (msg of messages; track $index) {
+        <div class="chat-msg" [class.user]="msg.sender === 'user'" [class.ai]="msg.sender === 'ai'">
+          <div class="msg-bubble">
+            <p>{{ msg.text }}</p>
+          </div>
+        </div>
+      }
+      @if (isThinking) {
+        <div class="chat-msg ai typing">
+          <div class="msg-bubble">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="ai-footer">
+      <div class="input-wrapper">
+        <input type="text" [(ngModel)]="userInput" (keydown.enter)="sendMessage()"
+               placeholder="سولني على أي حاجة باش نطور المحل..." autofocus>
+        <button class="send-btn" (click)="sendMessage()" [disabled]="!userInput.trim()">🚀</button>
+      </div>
+    </div>
+  </div>
+</div>

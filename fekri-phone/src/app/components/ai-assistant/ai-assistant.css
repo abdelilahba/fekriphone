@@ -1,0 +1,120 @@
+.ai-float {
+  position: fixed;
+  bottom: 24px;
+  left: 24px; /* Note: Arabic UI relies on dir="rtl" body, so "left" means visually left of screen, typically user eye starts right. We put it on bottom left. */
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Trigger Button */
+.ai-trigger {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+.ai-trigger:hover { transform: scale(1.1) rotate(5deg); }
+.ai-sparkle { font-size: 24px; }
+.ai-sparkle.white { font-size: 20px; }
+
+.ai-notification-dot {
+  position: absolute; top: -2px; right: -2px;
+  width: 14px; height: 14px; background: #ef4444;
+  border-radius: 50%; border: 2px solid white;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Chat Window */
+.ai-window {
+  position: absolute; bottom: 80px; left: 0;
+  width: 360px; height: 500px; max-height: 80vh;
+  background: white; border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transform: translateY(20px) scale(0.95);
+  transform-origin: bottom left;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.open .ai-window {
+  opacity: 1; pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.ai-header {
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+  padding: 16px 20px; color: white;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.ai-brand { display: flex; align-items: center; gap: 12px; }
+.ai-titles h3 { margin: 0; font-size: 16px; font-weight: 800; line-height: 1.2; }
+.ai-titles small { font-size: 12px; opacity: 0.8; }
+.ai-close { background: rgba(0,0,0,0.2); border: none; font-size: 15px; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: background 0.2s;}
+.ai-close:hover { background: rgba(0,0,0,0.4); }
+
+.ai-body {
+  flex: 1; padding: 20px; overflow-y: auto;
+  background: #f8fafc;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.ai-body::-webkit-scrollbar { width: 6px; }
+.ai-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.chat-msg { display: flex; max-width: 85%; }
+.chat-msg.user { align-self: flex-start; } /* Arabic RTL means user message comes from Right side when flex-start */
+.chat-msg.ai { align-self: flex-end; }   /* AI responses usually go on left */
+
+.msg-bubble {
+  padding: 12px 16px; border-radius: 16px;
+  font-size: 14px; line-height: 1.5; font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
+}
+.chat-msg.user .msg-bubble {
+  background: var(--primary); color: white;
+  border-top-right-radius: 4px;
+}
+.chat-msg.ai .msg-bubble {
+  background: white; color: var(--text-primary); border: 1px solid var(--border-light);
+  border-top-left-radius: 4px;
+}
+
+/* Typing Dots */
+.typing .msg-bubble { display: flex; gap: 4px; padding: 12px 16px; align-items: center; justify-content: center; height: 44px; }
+.dot { width: 6px; height: 6px; background: #64748b; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+.dot:nth-child(1) { animation-delay: -0.32s; }
+.dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+/* Footer */
+.ai-footer { padding: 16px; background: white; border-top: 1px solid var(--border-light); }
+.input-wrapper { display: flex; gap: 8px; background: #f1f5f9; padding: 6px; border-radius: 24px; border: 1px solid var(--border-light); }
+.input-wrapper input {
+  flex: 1; border: none; background: transparent; padding: 8px 12px;
+  font-family: inherit; font-size: 13px; color: var(--text-primary); outline: none;
+}
+.send-btn {
+  background: #8b5cf6; color: white; border: none; width: 36px; height: 36px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: 0.2s;
+}
+.send-btn:hover { background: #7c3aed; transform: scale(1.05); }
+.send-btn:disabled { background: #cbd5e1; transform: none; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+  .ai-window { width: calc(100vw - 40px); bottom: 90px; }
+}
