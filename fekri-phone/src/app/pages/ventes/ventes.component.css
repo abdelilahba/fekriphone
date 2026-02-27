@@ -13,9 +13,10 @@
 
 /* ========== POS ========== */
 .pos-fullscreen {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--bg-main); z-index: 100;
+  background: var(--bg-main);
   display: flex; flex-direction: column;
+  min-height: calc(100vh - 80px); /* Fill space below topbar */
+  margin: -24px; /* Counteract padding from main-content to fill edges */
 }
 
 /* --- Header --- */

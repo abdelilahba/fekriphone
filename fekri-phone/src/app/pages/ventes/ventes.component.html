@@ -5,59 +5,61 @@
     </div>
   }
 
-  <div class="page-header">
-    <h1>🛒 المبيعات</h1>
-    <button class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
-  </div>
-
-  <div class="stat-card total-card">
-    <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
-    <div class="stat-info">
-      <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
-      <p>مجموع المبيعات هاد الشهر</p>
+  @if (!showVenteModal) {
+    <div class="page-header">
+      <h1>🛒 المبيعات</h1>
+      <button class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
     </div>
-  </div>
 
-  @if (loading$ | async) {
-    <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
-  } @else {
-    @if (ventes$ | async; as allVentes) {
-      @if (allVentes.length > 0) {
-        <div class="card table-card">
-          <table class="data-table">
-            <thead><tr><th>التاريخ</th><th>المبلغ</th><th>التفاصيل</th><th></th></tr></thead>
-            <tbody>
-              @for (v of paginatedVentes$ | async; track v.id) {
-                <tr>
-                  <td>{{ v.date }}</td>
-                  <td class="montant-cell">{{ formatMAD(v.montant_total) }}</td>
-                  <td>
-                    @if (v.vente_items) {
-                      <div class="vente-items">
-                        @for (item of v.vente_items; track item.id) {
-                          <span class="vente-item-badge">{{ item.produits?.nom || 'منتج' }} × {{ item.quantite }}</span>
-                        }
-                      </div>
-                    }
-                  </td>
-                  <td><button class="btn btn-ghost btn-sm" (click)="deleteVente(v)">🗑️</button></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-          @if (totalPages > 1) {
-            <div class="pagination">
-              <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
-              @for (p of getPages(); track p) {
-                <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-              }
-              <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
-              <span class="pagination-info">{{ allVentes.length }} بيعة</span>
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="card empty-state"><div class="empty-icon">🛒</div><h3>مازال ما كاينين مبيعات</h3><p>كليكي على "بيعة جديدة"</p></div>
+    <div class="stat-card total-card">
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
+      <div class="stat-info">
+        <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
+        <p>مجموع المبيعات هاد الشهر</p>
+      </div>
+    </div>
+
+    @if (loading$ | async) {
+      <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
+    } @else {
+      @if (ventes$ | async; as allVentes) {
+        @if (allVentes.length > 0) {
+          <div class="card table-card">
+            <table class="data-table">
+              <thead><tr><th>التاريخ</th><th>المبلغ</th><th>التفاصيل</th><th></th></tr></thead>
+              <tbody>
+                @for (v of paginatedVentes$ | async; track v.id) {
+                  <tr>
+                    <td>{{ v.date }}</td>
+                    <td class="montant-cell">{{ formatMAD(v.montant_total) }}</td>
+                    <td>
+                      @if (v.vente_items) {
+                        <div class="vente-items">
+                          @for (item of v.vente_items; track item.id) {
+                            <span class="vente-item-badge">{{ item.produits?.nom || 'منتج' }} × {{ item.quantite }}</span>
+                          }
+                        </div>
+                      }
+                    </td>
+                    <td><button class="btn btn-ghost btn-sm" (click)="deleteVente(v)">🗑️</button></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (totalPages > 1) {
+              <div class="pagination">
+                <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
+                @for (p of getPages(); track p) {
+                  <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+                }
+                <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
+                <span class="pagination-info">{{ allVentes.length }} بيعة</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="card empty-state"><div class="empty-icon">🛒</div><h3>مازال ما كاينين مبيعات</h3><p>كليكي على "بيعة جديدة"</p></div>
+        }
       }
     }
   }
