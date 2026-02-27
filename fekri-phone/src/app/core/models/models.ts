@@ -1,0 +1,72 @@
+export interface Categorie {
+  id: string;
+  nom: string;
+  icone: string;
+  created_at: string;
+}
+
+export interface Produit {
+  id: string;
+  nom: string;
+  categorie_id: string;
+  prix_achat: number;
+  prix_vente: number;
+  quantite: number;
+  code_barre: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  categories?: Categorie;
+}
+
+export interface Vente {
+  id: string;
+  montant_total: number;
+  date: string;
+  created_at: string;
+  // Joined
+  vente_items?: VenteItem[];
+}
+
+export interface VenteItem {
+  id: string;
+  vente_id: string;
+  produit_id: string;
+  quantite: number;
+  prix_unitaire: number;
+  sous_total: number;
+  created_at: string;
+  // Joined
+  produits?: Produit;
+}
+
+export interface RevenuReparation {
+  id: string;
+  description: string;
+  montant: number;
+  date: string;
+  created_at: string;
+}
+
+export interface Depense {
+  id: string;
+  description: string;
+  montant: number;
+  categorie: string | null;
+  date: string;
+  created_at: string;
+}
+
+export interface Credit {
+  id: string;
+  nom_client: string;
+  telephone_client: string | null;
+  description: string;
+  montant: number;
+  montant_paye: number;
+  est_paye: boolean;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}

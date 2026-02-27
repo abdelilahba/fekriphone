@@ -1,0 +1,96 @@
+<div class="reparations-page">
+  @if (toastMessage$ | async; as toast) {
+    <div class="toast-container">
+      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+    </div>
+  }
+
+  <div class="page-header">
+    <h1>🔧 مداخيل الإصلاح</h1>
+    <button class="btn btn-primary" (click)="openAdd()">➕ زيد إصلاح</button>
+  </div>
+
+  <div class="stat-card total-card">
+    <div class="stat-icon" style="background: var(--info-light); color: var(--info);">🔧</div>
+    <div class="stat-info">
+      <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
+      <p>مجموع هاد الشهر</p>
+    </div>
+  </div>
+
+  @if (loading$ | async) {
+    <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
+  } @else {
+    @if (revenus$ | async; as allRevenus) {
+      @if (allRevenus.length > 0) {
+        <div class="card table-card">
+          <table class="data-table">
+            <thead><tr><th>الوصف</th><th>المبلغ</th><th>التاريخ</th><th></th></tr></thead>
+            <tbody>
+              @for (r of paginatedRevenus$ | async; track r.id) {
+                <tr>
+                  <td class="desc-cell">{{ r.description }}</td>
+                  <td class="montant-cell">{{ formatMAD(r.montant) }}</td>
+                  <td>{{ r.date }}</td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn btn-ghost btn-sm" (click)="openEdit(r)">✏️</button>
+                      <button class="btn btn-ghost btn-sm" (click)="delete(r)">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (totalPages > 1) {
+            <div class="pagination">
+              <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
+              @for (p of getPages(); track p) {
+                <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+              }
+              <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
+              <span class="pagination-info">{{ allRevenus.length }} إصلاح</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="card empty-state">
+          <div class="empty-icon">🔧</div>
+          <h3>مازال ما كاين حتا إصلاح</h3>
+          <p>كليكي على "زيد إصلاح" باش تسجل المداخيل</p>
+        </div>
+      }
+    }
+  }
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editMode ? '✏️ عدّل' : '➕ زيد إصلاح جديد' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>الوصف *</label>
+            <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="مثلا: تصليح شاشة iPhone 12">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>المبلغ (د.م) *</label>
+              <input type="number" [(ngModel)]="form.montant" class="form-control" min="0">
+            </div>
+            <div class="form-group">
+              <label>التاريخ</label>
+              <input type="date" [(ngModel)]="form.date" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
+          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

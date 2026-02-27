@@ -1,0 +1,123 @@
+<!-- Login Page: No sidebar -->
+@if (isLoginPage) {
+  <router-outlet></router-outlet>
+} @else {
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="!sidebarOpen" [class.mobile-open]="mobileMenuOpen">
+    <div class="sidebar-header">
+      <div class="logo-section" *ngIf="sidebarOpen">
+        <img src="assets/logo.jpg" alt="Fikri Phone" class="logo-img">
+        <div class="logo-text">
+          <h2>فكري فون</h2>
+          <span>إدارة المحل</span>
+        </div>
+      </div>
+      <div class="logo-icon-only" *ngIf="!sidebarOpen">
+        <img src="assets/logo.jpg" alt="FP" class="logo-img-sm">
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (item of menuItems; track item.path) {
+        <a [routerLink]="item.path"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{exact: item.exact}"
+           class="nav-item"
+           (click)="closeMobileMenu()">
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-label" *ngIf="sidebarOpen">{{ item.label }}</span>
+          @if (item.path === '/produits' && lowStockCount > 0 && sidebarOpen) {
+            <span class="stock-badge pulse">{{ lowStockCount }}</span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer" *ngIf="sidebarOpen">
+      @if (auth.user$ | async; as user) {
+        <div class="user-info">
+          <div class="user-avatar">{{ user.email?.charAt(0)?.toUpperCase() }}</div>
+          <div class="user-details">
+            <span class="user-email">{{ user.email }}</span>
+          </div>
+        </div>
+      }
+      <div class="footer-actions">
+        <button class="sidebar-action-btn" (click)="openPasswordModal()">
+          <span>🔑</span>
+          <span>تبديل الباسوورد</span>
+        </button>
+        <button class="logout-btn" (click)="logout()">
+          <span>🚪</span>
+          <span>خروج</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+
+  <!-- Main Content -->
+  <main class="main-content" [class.sidebar-collapsed]="!sidebarOpen">
+    <header class="top-bar">
+      <button class="menu-toggle" (click)="toggleSidebar()" title="قائمة">
+        <span class="hamburger">☰</span>
+      </button>
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
+    </header>
+
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <!-- Global Confirm Dialog -->
+  <app-confirm-dialog></app-confirm-dialog>
+
+  <!-- Stock Alert Toast -->
+  @if (showStockToast) {
+    <div class="stock-toast" (click)="showStockToast = false">
+      <div class="stock-toast-inner">
+        <span>{{ stockToastMessage }}</span>
+        <a routerLink="/produits" class="stock-toast-link" (click)="showStockToast = false">شوف المنتجات →</a>
+      </div>
+    </div>
+  }
+
+  <!-- Password Change Modal -->
+  @if (showPasswordModal) {
+    <div class="modal-overlay" (click)="closePasswordModal()">
+      <div class="modal-content password-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>🔑 تبديل الباسوورد</h2>
+          <button class="close-btn" (click)="closePasswordModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>الباسوورد الجديد</label>
+            <input type="password" [(ngModel)]="newPassword" class="form-control"
+                   placeholder="6 حروف على الأقل..." dir="ltr">
+          </div>
+          <div class="form-group">
+            <label>تأكيد الباسوورد</label>
+            <input type="password" [(ngModel)]="confirmPassword" class="form-control"
+                   placeholder="عاود دخل الباسوورد..." dir="ltr">
+          </div>
+          @if (passwordError) {
+            <div class="error-msg">❌ {{ passwordError }}</div>
+          }
+          @if (passwordSuccess) {
+            <div class="success-msg">{{ passwordSuccess }}</div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="changePassword()" [disabled]="passwordLoading">
+            {{ passwordLoading ? '⏳ صبر...' : '💾 حفظ' }}
+          </button>
+          <button class="btn btn-ghost" (click)="closePasswordModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  }
+}

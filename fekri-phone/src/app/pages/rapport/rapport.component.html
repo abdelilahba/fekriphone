@@ -1,0 +1,216 @@
+<div class="rapport-page">
+  <div class="page-header no-print">
+    <h1>📊 التقرير اليومي</h1>
+    <div class="header-actions">
+      <button class="btn btn-ghost" (click)="goYesterday()">⬅️ البارح</button>
+      <button class="btn btn-primary" (click)="goToday()">اليوم</button>
+      <button class="btn btn-ghost print-btn" (click)="printReport()">🖨️ طبع</button>
+    </div>
+  </div>
+
+  <!-- Date Picker -->
+  <div class="date-picker-row no-print">
+    <input type="date" [(ngModel)]="selectedDate" (ngModelChange)="onDateChange()" class="form-control date-input">
+  </div>
+
+  @if (loading$ | async) {
+    <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
+  } @else {
+    @if (today$ | async; as report) {
+      <!-- Date Title -->
+      <div class="report-date-title">
+        <h2>📅 {{ report.dateLabel }}</h2>
+      </div>
+
+      <!-- Benefice Banner -->
+      <div class="benefice-bar" [class]="report.benefice >= 0 ? 'positive' : 'negative'">
+        <div class="benefice-left">
+          <span class="benefice-icon">{{ report.benefice >= 0 ? '📈' : '📉' }}</span>
+          <div>
+            <div class="benefice-label">الربح الصافي</div>
+            <div class="benefice-amount">{{ formatMAD(report.benefice) }}</div>
+          </div>
+        </div>
+        @if (yesterday$ | async; as yest) {
+          <div class="benefice-diff">
+            <span [class]="getDiff(report.benefice, yest.benefice) >= 0 ? 'diff-up' : 'diff-down'">
+              {{ getDiffPercent(report.benefice, yest.benefice) }}
+            </span>
+            <small>مقارنة بالبارح</small>
+          </div>
+        }
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="report-stats">
+        <div class="report-stat-card">
+          <div class="stat-head">
+            <span class="stat-emoji">🛒</span>
+            <span class="stat-count">{{ report.ventesCount }} بيعة</span>
+          </div>
+          <div class="stat-amount success">{{ formatMAD(report.ventesTotal) }}</div>
+          @if (yesterday$ | async; as yest) {
+            <div class="stat-compare" [class]="getDiff(report.ventesTotal, yest.ventesTotal) >= 0 ? 'diff-up' : 'diff-down'">
+              {{ getDiffPercent(report.ventesTotal, yest.ventesTotal) }} من البارح
+            </div>
+          }
+        </div>
+
+        <div class="report-stat-card">
+          <div class="stat-head">
+            <span class="stat-emoji">🔧</span>
+            <span class="stat-count">{{ report.reparationsCount }} إصلاح</span>
+          </div>
+          <div class="stat-amount info">{{ formatMAD(report.reparationsTotal) }}</div>
+          @if (yesterday$ | async; as yest) {
+            <div class="stat-compare" [class]="getDiff(report.reparationsTotal, yest.reparationsTotal) >= 0 ? 'diff-up' : 'diff-down'">
+              {{ getDiffPercent(report.reparationsTotal, yest.reparationsTotal) }} من البارح
+            </div>
+          }
+        </div>
+
+        <div class="report-stat-card">
+          <div class="stat-head">
+            <span class="stat-emoji">💸</span>
+            <span class="stat-count">{{ report.depensesCount }} مصروف</span>
+          </div>
+          <div class="stat-amount danger">{{ formatMAD(report.depensesTotal) }}</div>
+          @if (yesterday$ | async; as yest) {
+            <div class="stat-compare" [class]="getDiff(report.depensesTotal, yest.depensesTotal) <= 0 ? 'diff-up' : 'diff-down'">
+              {{ getDiffPercent(report.depensesTotal, yest.depensesTotal) }} من البارح
+            </div>
+          }
+        </div>
+
+        <div class="report-stat-card">
+          <div class="stat-head">
+            <span class="stat-emoji">📝</span>
+            <span class="stat-count">{{ report.creditsCount }} دين</span>
+          </div>
+          <div class="stat-amount warning">{{ formatMAD(report.creditsTotal) }}</div>
+        </div>
+      </div>
+
+      <!-- Transaction Details -->
+      <div class="card details-card">
+        <div class="tabs no-print">
+          <button class="tab" [class.active]="activeTab === 'ventes'" (click)="activeTab = 'ventes'">🛒 البيعات ({{ report.ventesCount }})</button>
+          <button class="tab" [class.active]="activeTab === 'reparations'" (click)="activeTab = 'reparations'">🔧 الإصلاحات ({{ report.reparationsCount }})</button>
+          <button class="tab" [class.active]="activeTab === 'depenses'" (click)="activeTab = 'depenses'">💸 المصاريف ({{ report.depensesCount }})</button>
+          <button class="tab" [class.active]="activeTab === 'credits'" (click)="activeTab = 'credits'">📝 الديون ({{ report.creditsCount }})</button>
+        </div>
+
+        <div class="tab-content">
+          @if (activeTab === 'ventes') {
+            @if (report.ventesList.length > 0) {
+              <table class="data-table">
+                <thead><tr><th>#</th><th>المبلغ</th><th>التفاصيل</th></tr></thead>
+                <tbody>
+                  @for (v of report.ventesList; track v.id; let i = $index) {
+                    <tr>
+                      <td>{{ i + 1 }}</td>
+                      <td class="amount success">{{ formatMAD(v.montant_total) }}</td>
+                      <td>
+                        @if (v.vente_items) {
+                          @for (item of v.vente_items; track item.id) {
+                            <span class="item-badge">{{ item.produits?.nom || 'منتج' }} × {{ item.quantite }}</span>
+                          }
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="2"><strong>المجموع</strong></td><td class="amount success"><strong>{{ formatMAD(report.ventesTotal) }}</strong></td></tr>
+                </tfoot>
+              </table>
+            } @else {
+              <div class="empty-tab">ما كاينين بيعات هاد النهار</div>
+            }
+          }
+
+          @if (activeTab === 'reparations') {
+            @if (report.reparationsList.length > 0) {
+              <table class="data-table">
+                <thead><tr><th>#</th><th>الوصف</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                  @for (r of report.reparationsList; track r.id; let i = $index) {
+                    <tr>
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ r.description }}</td>
+                      <td class="amount info">{{ formatMAD(r.montant) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="2"><strong>المجموع</strong></td><td class="amount info"><strong>{{ formatMAD(report.reparationsTotal) }}</strong></td></tr>
+                </tfoot>
+              </table>
+            } @else {
+              <div class="empty-tab">ما كاينين إصلاحات هاد النهار</div>
+            }
+          }
+
+          @if (activeTab === 'depenses') {
+            @if (report.depensesList.length > 0) {
+              <table class="data-table">
+                <thead><tr><th>#</th><th>الوصف</th><th>النوع</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                  @for (d of report.depensesList; track d.id; let i = $index) {
+                    <tr>
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ d.description }}</td>
+                      <td>@if (d.categorie) { <span class="badge badge-info">{{ d.categorie }}</span> }</td>
+                      <td class="amount danger">{{ formatMAD(d.montant) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="3"><strong>المجموع</strong></td><td class="amount danger"><strong>{{ formatMAD(report.depensesTotal) }}</strong></td></tr>
+                </tfoot>
+              </table>
+            } @else {
+              <div class="empty-tab">ما كاينين مصاريف هاد النهار 🎉</div>
+            }
+          }
+
+          @if (activeTab === 'credits') {
+            @if (report.creditsList.length > 0) {
+              <table class="data-table">
+                <thead><tr><th>#</th><th>الزبون</th><th>الوصف</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                  @for (c of report.creditsList; track c.id; let i = $index) {
+                    <tr>
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ c.nom_client }}</td>
+                      <td>{{ c.description }}</td>
+                      <td class="amount warning">{{ formatMAD(c.montant) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="3"><strong>المجموع</strong></td><td class="amount warning"><strong>{{ formatMAD(report.creditsTotal) }}</strong></td></tr>
+                </tfoot>
+              </table>
+            } @else {
+              <div class="empty-tab">ما كاينين ديون هاد النهار 😊</div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Print Summary (visible only when printing) -->
+      <div class="print-only print-summary">
+        <h2>📊 تقرير يوم {{ report.dateLabel }}</h2>
+        <p>فكري فون — إدارة المحل</p>
+        <table class="print-table">
+          <tr><td>🛒 المبيعات</td><td>{{ report.ventesCount }}</td><td>{{ formatMAD(report.ventesTotal) }}</td></tr>
+          <tr><td>🔧 الإصلاحات</td><td>{{ report.reparationsCount }}</td><td>{{ formatMAD(report.reparationsTotal) }}</td></tr>
+          <tr><td>💸 المصاريف</td><td>{{ report.depensesCount }}</td><td>{{ formatMAD(report.depensesTotal) }}</td></tr>
+          <tr><td>📝 الديون</td><td>{{ report.creditsCount }}</td><td>{{ formatMAD(report.creditsTotal) }}</td></tr>
+          <tr class="total-row"><td>💰 الربح الصافي</td><td></td><td>{{ formatMAD(report.benefice) }}</td></tr>
+        </table>
+      </div>
+    }
+  }
+</div>

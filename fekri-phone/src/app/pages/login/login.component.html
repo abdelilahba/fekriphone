@@ -1,0 +1,68 @@
+<div class="login-page">
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo">
+      <img src="assets/logo.jpg" alt="Fikri Phone" class="login-logo-img">
+      <h1>فكري فون</h1>
+      <p>نظام إدارة المحل</p>
+    </div>
+
+    <!-- Reset Password Form -->
+    @if (showResetPassword) {
+      <form (ngSubmit)="onResetPassword()" class="login-form">
+        <h2>🔑 نسيتي الباسوورد؟</h2>
+        <p class="subtitle">دخل الإيميل ديالك وغنبعتو ليك رابط باش تبدلو</p>
+
+        <div class="form-group">
+          <label>الإيميل</label>
+          <input type="email" [(ngModel)]="resetEmail" name="resetEmail" class="form-control"
+                 placeholder="example&#64;email.com" dir="ltr">
+        </div>
+
+        @if (error) {
+          <div class="error-msg">❌ {{ error }}</div>
+        }
+        @if (resetMessage) {
+          <div class="success-msg">{{ resetMessage }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary btn-block" [disabled]="loading">
+          {{ loading ? '⏳ صبر...' : '📧 بعت الرابط' }}
+        </button>
+
+        <button type="button" class="btn btn-ghost btn-block" (click)="showResetPassword = false">
+          ← رجع للدخول
+        </button>
+      </form>
+    } @else {
+      <!-- Login Form -->
+      <form (ngSubmit)="onSubmit()" class="login-form">
+        <h2>🔐 دخل لحسابك</h2>
+
+        <div class="form-group">
+          <label>الإيميل</label>
+          <input type="email" [(ngModel)]="email" name="email" class="form-control"
+                 placeholder="example&#64;email.com" dir="ltr" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label>الباسوورد</label>
+          <input type="password" [(ngModel)]="password" name="password" class="form-control"
+                 placeholder="••••••••" dir="ltr" autocomplete="current-password">
+        </div>
+
+        @if (error) {
+          <div class="error-msg">❌ {{ error }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary btn-block" [disabled]="loading">
+          {{ loading ? '⏳ صبر...' : '🔐 دخل' }}
+        </button>
+
+        <button type="button" class="btn-link" (click)="showResetPassword = true">
+          نسيتي الباسوورد؟
+        </button>
+      </form>
+    }
+  </div>
+</div>

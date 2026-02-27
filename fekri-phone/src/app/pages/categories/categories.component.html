@@ -1,0 +1,72 @@
+<div class="categories-page">
+  @if (toastMessage$ | async; as toast) {
+    <div class="toast-container">
+      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+    </div>
+  }
+
+  <div class="page-header">
+    <h1>🏷️ الفئات</h1>
+    <button class="btn btn-primary" (click)="openAdd()">➕ زيد فئة</button>
+  </div>
+
+  @if (loading$ | async) {
+    <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
+  } @else {
+    @if (categories$ | async; as categories) {
+      @if (categories.length > 0) {
+        <div class="categories-grid">
+          @for (c of categories; track c.id) {
+            <div class="category-card card">
+              <div class="category-info">
+                <span class="category-icon">{{ c.icone || '📦' }}</span>
+                <h3>{{ c.nom }}</h3>
+              </div>
+              <div class="actions">
+                <button class="btn btn-ghost btn-sm" (click)="openEdit(c)">✏️</button>
+                <button class="btn btn-ghost btn-sm" (click)="delete(c)">🗑️</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="card empty-state"><div class="empty-icon">🏷️</div><h3>ما كاينين فئات</h3><p>زيد فئات باش تنظم المنتجات</p></div>
+      }
+    }
+  }
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editMode ? '✏️ عدّل الفئة' : '➕ زيد فئة جديدة' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>إسم الفئة *</label>
+            <input type="text" [(ngModel)]="form.nom" class="form-control" placeholder="مثلا: سماعات">
+          </div>
+          <div class="form-group">
+            <label>الأيقونة</label>
+            <div class="icon-picker">
+              @for (icon of iconOptions; track icon.emoji) {
+                <button type="button" class="icon-option" [class.selected]="form.icone === icon.emoji" (click)="form.icone = icon.emoji">
+                  <span class="icon-emoji">{{ icon.emoji }}</span>
+                  <span class="icon-label">{{ icon.label }}</span>
+                </button>
+              }
+            </div>
+            <div class="selected-icon-preview">
+              الأيقونة المختارة: <span>{{ form.icone }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
+          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

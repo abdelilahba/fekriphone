@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9B30FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C24FD6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="90" fill="none" stroke="url(#grad)" stroke-width="6"/>
+  <rect x="65" y="35" width="70" height="120" rx="12" fill="url(#grad)"/>
+  <rect x="75" y="50" width="50" height="75" rx="4" fill="white" opacity="0.9"/>
+  <circle cx="100" cy="140" r="6" fill="white" opacity="0.9"/>
+  <circle cx="100" cy="87" r="15" fill="url(#grad)" opacity="0.6"/>
+  <path d="M92 80 L100 72 L108 80 L108 95 L92 95 Z" fill="white" opacity="0.8"/>
+  <text x="100" y="185" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="14" fill="#9B30FF">FIKRI PHONE</text>
+</svg>

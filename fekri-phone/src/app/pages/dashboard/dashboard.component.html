@@ -1,0 +1,82 @@
+<div class="dashboard-page">
+  @if (loading$ | async) {
+    <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
+  } @else {
+    <div class="page-header">
+      <h1>📊 لوحة التحكم</h1>
+    </div>
+
+    @if (stats$ | async; as stats) {
+      <!-- Stats Cards Row -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
+          <div class="stat-info">
+            <h3>{{ formatMAD(stats.totalVentes) }}</h3>
+            <p>المبيعات ({{ ventesCount }} بيعة)</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--info-light); color: var(--info);">🔧</div>
+          <div class="stat-info">
+            <h3>{{ formatMAD(stats.totalRevenusReparation) }}</h3>
+            <p>الإصلاحات ({{ reparationsCount }})</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">💸</div>
+          <div class="stat-info">
+            <h3>{{ formatMAD(stats.totalDepenses) }}</h3>
+            <p>المصاريف</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">📝</div>
+          <div class="stat-info">
+            <h3>{{ formatMAD(stats.totalCreditsEnCours) }}</h3>
+            <p>الديون المعلقة</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefice Banner -->
+      <div class="benefice-banner" [class]="stats.benefice >= 0 ? 'positive' : 'negative'">
+        <div class="benefice-main">
+          <span class="benefice-label">💰 الربح الصافي</span>
+          <span class="benefice-amount">{{ formatMAD(stats.benefice) }}</span>
+        </div>
+        <div class="benefice-meta">
+          <span>📦 {{ stats.totalProduits }} منتج</span>
+          <span>📊 هامش الربح: {{ beneficePercent }}%</span>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <!-- Line Chart: Profit Trend -->
+        <div class="card chart-card chart-large">
+          <h2>📈 تطور الأرباح — آخر 6 أشهر</h2>
+          <div class="chart-container">
+            <canvas #revenueChart></canvas>
+          </div>
+        </div>
+
+        <!-- Doughnut: Revenue Breakdown -->
+        <div class="card chart-card chart-small">
+          <h2>🍩 توزيع المداخيل والمصاريف</h2>
+          <div class="chart-container pie-container">
+            <canvas #pieChart></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar Chart: Monthly Comparison -->
+      <div class="card chart-card">
+        <h2>📊 المقارنة الشهرية — مبيعات vs إصلاحات vs مصاريف</h2>
+        <div class="chart-container">
+          <canvas #barChart></canvas>
+        </div>
+      </div>
+    }
+  }
+</div>
