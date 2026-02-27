@@ -70,11 +70,32 @@
         </div>
       </div>
 
-      <!-- Bar Chart: Monthly Comparison -->
-      <div class="card chart-card">
-        <h2>📊 المقارنة الشهرية — مبيعات vs إصلاحات vs مصاريف</h2>
-        <div class="chart-container">
-          <canvas #barChart></canvas>
+      <!-- Bottom Row -->
+      <div class="bottom-row">
+        <!-- Bar Chart: Monthly Comparison -->
+        <div class="card chart-card flex-2">
+          <h2>📊 المقارنة الشهرية — المبيعات والمصاريف</h2>
+          <div class="chart-container">
+            <canvas #barChart></canvas>
+          </div>
+        </div>
+
+        <!-- Top Produits Vendus -->
+        <div class="card chart-card flex-1 top-produits-card">
+          <h2>🏆 أكثر 5 منتجات مبيعا</h2>
+          <div class="top-list">
+            @for (p of topProduits; track p.nom; let i = $index) {
+              <div class="top-item">
+                <span class="rank">#{{ i + 1 }}</span>
+                <span class="icon">{{ p.icone }}</span>
+                <span class="name" [title]="p.nom">{{ p.nom }}</span>
+                <span class="qty">{{ p.qty }} حبة</span>
+              </div>
+            }
+            @if (topProduits.length === 0) {
+              <div class="empty">ليست هناك مبيعات بعد</div>
+            }
+          </div>
         </div>
       </div>
     }

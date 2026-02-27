@@ -61,10 +61,20 @@
   <!-- Main Content -->
   <main class="main-content" [class.sidebar-collapsed]="!sidebarOpen">
     <header class="top-bar">
-      <button class="menu-toggle" (click)="toggleSidebar()" title="قائمة">
-        <span class="hamburger">☰</span>
-      </button>
-      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
+      <div class="top-bar-left">
+        <button class="menu-toggle" (click)="toggleSidebar()" title="قائمة">
+          <span class="hamburger">☰</span>
+        </button>
+        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
+      </div>
+      <div class="top-bar-right">
+        <button class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
+          <span>🔍</span>
+        </button>
+        <button class="action-btn circle-btn" (click)="toggleDarkMode()" title="Mode Sombre/Clair">
+          <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
+        </button>
+      </div>
     </header>
 
     <div class="page-content">
@@ -116,6 +126,36 @@
             {{ passwordLoading ? '⏳ صبر...' : '💾 حفظ' }}
           </button>
           <button class="btn btn-ghost" (click)="closePasswordModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Global Search Modal -->
+  @if (showSearchModal) {
+    <div class="modal-overlay" (click)="closeSearch()">
+      <div class="modal-content search-modal" (click)="$event.stopPropagation()">
+        <div class="search-header">
+          <input type="text" id="globalSearchInput" [(ngModel)]="searchQuery" (ngModelChange)="doSearch()"
+                 placeholder="🔍 قلب على شي منتج بالسمية ولا بالكود بار..." class="form-control search-input" autocomplete="off">
+          <button class="close-btn" (click)="closeSearch()">✕</button>
+        </div>
+        <div class="search-results">
+          @if (searchResults.length > 0) {
+            @for (res of searchResults; track res.id) {
+              <div class="search-result-item" (click)="goToResult(res)">
+                <div class="res-icon">{{ res.categorie_icone || '📦' }}</div>
+                <div class="res-info">
+                  <span class="res-nom">{{ res.nom }}</span>
+                  <span class="res-badge" *ngIf="res.quantite <= 5 && res.quantite > 0">قليل ({{ res.quantite }})</span>
+                  <span class="res-badge danger" *ngIf="res.quantite === 0">سالي</span>
+                </div>
+                <div class="res-prix">{{ res.prix_vente }} د.م</div>
+              </div>
+            }
+          } @else if (searchQuery.trim().length >= 2) {
+            <div class="empty-search">ማ كاينش هاد المنتج 🤷‍♂️</div>
+          }
         </div>
       </div>
     </div>

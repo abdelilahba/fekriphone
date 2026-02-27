@@ -85,5 +85,21 @@
 @media (max-width: 500px) {
   .stats-grid { grid-template-columns: 1fr; }
   .benefice-banner { flex-direction: column; align-items: flex-start; }
-  .chart-container { height: 220px; }
+}
+
+/* Bottom Row & Top Produits */
+.bottom-row { display: flex; gap: 24px; margin-top: 24px; }
+.flex-2 { flex: 2; min-width: 0; }
+.flex-1 { flex: 1; min-width: 0; }
+.top-produits-card { display: flex; flex-direction: column; }
+.top-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; flex: 1; }
+.top-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-main); border-radius: 8px; border: 1px solid var(--border-light); }
+.top-item .rank { font-weight: 900; color: var(--text-light); font-size: 14px; }
+.top-item .icon { font-size: 20px; }
+.top-item .name { flex: 1; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-item .qty { font-weight: 900; color: var(--success); background: var(--success-light); padding: 4px 8px; border-radius: 6px; font-size: 13px; }
+.empty { text-align: center; color: var(--text-secondary); padding: 32px; font-weight: 600; }
+
+@media (max-width: 900px) {
+  .bottom-row { flex-direction: column; }
 }

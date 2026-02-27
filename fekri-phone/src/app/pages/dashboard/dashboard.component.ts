@@ -38,6 +38,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   ventesCount = 0;
   reparationsCount = 0;
   beneficePercent = 0;
+  topProduits: { nom: string, qty: number, icone: string }[] = [];
 
   private charts: Chart[] = [];
 
@@ -49,11 +50,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   async loadStats() {
     try {
       this.loading$.next(true);
-      const [stats, ventes, depenses, revenus] = await Promise.all([
+      const [stats, ventes, depenses, revenus, produits] = await Promise.all([
         this.supabase.getDashboardStats(),
         this.supabase.getVentes(),
         this.supabase.getDepenses(),
-        this.supabase.getRevenus()
+        this.supabase.getRevenus(),
+        this.supabase.getProduits()
       ]);
       this.stats$.next(stats);
 
@@ -61,6 +63,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       this.reparationsCount = revenus.length;
       const totalIn = stats.totalVentes + stats.totalRevenusReparation;
       this.beneficePercent = totalIn > 0 ? Math.round((stats.benefice / totalIn) * 100) : 0;
+
+      // Extract top 5 products
+      const productSales = new Map<string, { qty: number, nom: string, icone: string }>();
+      ventes.forEach(v => {
+         const pid = v.produit_id;
+         if (pid) {
+           const p = produits.find((pr: any) => pr.id === pid);
+           if (!productSales.has(pid)) {
+             productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
+           }
+           productSales.get(pid)!.qty += v.quantite;
+         }
+      });
+      this.topProduits = Array.from(productSales.values())
+        .sort((a,b) => b.qty - a.qty)
+        .slice(0, 5);
 
       setTimeout(() => this.buildCharts(ventes, depenses, revenus, stats), 300);
     } catch (error) {

@@ -26,6 +26,12 @@ export class AppComponent implements OnInit {
   showStockToast = false;
   stockToastMessage = '';
 
+  isDarkMode = false;
+  showSearchModal = false;
+  searchQuery = '';
+  searchResults: any[] = [];
+  searchCache: any[] = [];
+
   menuItems = [
     { path: '/', icon: '📊', label: 'لوحة التحكم', exact: true },
     { path: '/produits', icon: '📦', label: 'المنتجات', exact: false },
@@ -48,8 +54,75 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.auth.user$.subscribe(user => {
-      if (user) this.checkLowStock();
+      if (user) {
+        this.checkLowStock();
+        this.loadSearchCache();
+      }
     });
+
+    // Dark Mode Init
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      this.toggleDarkMode(true);
+    }
+  }
+
+  toggleDarkMode(forceDark?: boolean) {
+    if (forceDark !== undefined) {
+      this.isDarkMode = forceDark;
+    } else {
+      this.isDarkMode = !this.isDarkMode;
+    }
+
+    if (this.isDarkMode) {
+      document.body.classList.add('dark-theme');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }
+
+  // --- Search ---
+  async loadSearchCache() {
+    try {
+      const produits = await this.supabase.getProduits();
+      this.searchCache = produits; 
+    } catch(e) {}
+  }
+
+  openSearch() {
+    this.searchQuery = '';
+    this.searchResults = [];
+    this.showSearchModal = true;
+    setTimeout(() => {
+      const input = document.getElementById('globalSearchInput');
+      if (input) input.focus();
+    }, 100);
+  }
+
+  closeSearch() {
+    this.showSearchModal = false;
+  }
+
+  doSearch() {
+    if (!this.searchQuery || this.searchQuery.trim().length < 2) {
+      this.searchResults = [];
+      return;
+    }
+    const q = this.searchQuery.toLowerCase();
+    this.searchResults = this.searchCache.filter(item => 
+      (item.nom && item.nom.toLowerCase().includes(q)) ||
+      (item.code_barre && item.code_barre.toLowerCase().includes(q))
+    ).slice(0, 10);
+  }
+
+  goToResult(item: any) {
+    this.closeSearch();
+    // Navigate based on item logic 
+    // Simply to produits page for now
+    this.router.navigate(['/produits']); 
   }
 
   async checkLowStock() {

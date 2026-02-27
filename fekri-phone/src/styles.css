@@ -50,6 +50,36 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ============================================
+   🌙 Dark Theme Overrides
+   ============================================ */
+body.dark-theme {
+  --bg-main: #120b1c;
+  --bg-card: #1f142e;
+  --bg-sidebar: #0a0512;
+  --bg-sidebar-hover: #1f142e;
+
+  --text-primary: #f0e8f5;
+  --text-secondary: #9b8bab;
+  --text-light: #6b5b7b;
+
+  --border: #3d2b5e;
+  --border-light: #2d1b4e;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
+
+  /* Making accents pop a bit more in dark mode if necessary, but base purple is already good */
+}
+
+body.dark-theme input, 
+body.dark-theme select, 
+body.dark-theme textarea {
+  color: var(--text-primary);
+  background: #150d24;
+}
+
 * {
   margin: 0;
   padding: 0;
