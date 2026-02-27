@@ -1,3 +1,5 @@
+@import 'driver.js/dist/driver.css';
+
 /* ============================================
    App Layout - Sidebar + Main
    ============================================ */
@@ -415,3 +417,28 @@
 .res-badge.danger { background: var(--danger-light); color: var(--danger); }
 .res-prix { font-weight: 900; color: var(--success); font-size: 16px; }
 .empty-search { padding: 32px; text-align: center; color: var(--text-secondary); font-size: 16px; font-weight: 600; }
+
+/* =========================================
+   Skeleton Loader (replaces .loading-spinner)
+   ========================================= */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+.skeleton-row {
+  height: 48px;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--border-light) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius-sm);
+  width: 100%;
+}
+.skeleton-row.short { width: 40%; height: 32px; margin-bottom: 24px; }
+.skeleton-row.tall { height: 120px; border-radius: var(--radius-md); }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

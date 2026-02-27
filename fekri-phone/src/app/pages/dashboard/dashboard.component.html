@@ -1,6 +1,11 @@
 <div class="dashboard-page">
   @if (loading$ | async) {
-    <div class="loading-spinner"><div class="spinner"></div><p>جاري التحميل...</p></div>
+    <div class="skeleton-loader">
+      <div class="skeleton-row short"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row tall"></div>
+      <div class="skeleton-row"></div>
+    </div>
   } @else {
     <div class="page-header">
       <h1>📊 لوحة التحكم</h1>

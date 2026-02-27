@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" id="tour-sidebar">
       @for (item of menuItems; track item.path) {
         <a [routerLink]="item.path"
            routerLinkActive="active"
@@ -68,7 +68,7 @@
         <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
       </div>
       <div class="top-bar-right">
-        <button class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
+        <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
           <span>🔍</span>
         </button>
         <button class="action-btn circle-btn" (click)="toggleDarkMode()" title="Mode Sombre/Clair">
