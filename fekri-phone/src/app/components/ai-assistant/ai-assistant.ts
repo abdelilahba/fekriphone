@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AIService {
-  // --- IMPORTANT: IN A REAL APP, DO NOT HARDCODE API KEYS ON THE FRONTEND ---
-  // For the sake of this prototype for your friend, we use a key here.
-  // We'll leave the string empty, you will need to replace it with a real Gemini API Key.
-  private API_KEY = 'AIzaSyDHFo17kqSSqB-3lMsxRr-_Ki0EPRPUHJ8';
+  // API Key is now securely fetched from environment configuration that is not tracked by Git
+  private API_KEY = environment.geminiKey;
   private genAI: GoogleGenerativeAI;
   private model: any;
 
