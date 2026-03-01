@@ -9,6 +9,7 @@ interface DayReport {
   dateLabel: string;
   ventesCount: number;
   ventesTotal: number;
+  ventesProfitTotal: number;
   reparationsCount: number;
   reparationsTotal: number;
   depensesCount: number;
@@ -16,6 +17,7 @@ interface DayReport {
   creditsCount: number;
   creditsTotal: number;
   benefice: number;
+  caisse: number;
   ventesList: any[];
   reparationsList: any[];
   depensesList: any[];
@@ -36,7 +38,7 @@ export class RapportComponent implements OnInit {
   selectedDate: string = '';
   activeTab: 'ventes' | 'reparations' | 'depenses' | 'credits' = 'ventes';
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   ngOnInit() {
     this.selectedDate = this.formatDate(new Date());
@@ -78,6 +80,7 @@ export class RapportComponent implements OnInit {
     const dayCredits = credits.filter((c: any) => c.date === dateStr);
 
     const ventesTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+    const ventesProfitTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const reparationsTotal = dayRevenus.reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = dayDepenses.reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
     const creditsTotal = dayCredits.reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
@@ -87,13 +90,15 @@ export class RapportComponent implements OnInit {
       dateLabel: this.getDateLabel(date),
       ventesCount: dayVentes.length,
       ventesTotal,
+      ventesProfitTotal,
       reparationsCount: dayRevenus.length,
       reparationsTotal,
       depensesCount: dayDepenses.length,
       depensesTotal,
       creditsCount: dayCredits.length,
       creditsTotal,
-      benefice: ventesTotal + reparationsTotal - depensesTotal,
+      benefice: ventesProfitTotal + reparationsTotal - depensesTotal,
+      caisse: ventesTotal + reparationsTotal - depensesTotal,
       ventesList: dayVentes,
       reparationsList: dayRevenus,
       depensesList: dayDepenses,

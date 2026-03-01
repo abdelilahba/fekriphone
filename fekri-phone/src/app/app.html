@@ -1,168 +1,173 @@
 <!-- Login Page: No sidebar -->
 @if (isLoginPage) {
-  <router-outlet></router-outlet>
+<router-outlet></router-outlet>
 } @else {
-  <!-- Sidebar -->
-  <aside class="sidebar" [class.collapsed]="!sidebarOpen" [class.mobile-open]="mobileMenuOpen">
-    <div class="sidebar-header">
-      <div class="logo-section" *ngIf="sidebarOpen">
-        <img src="assets/logo.jpg" alt="Fikri Phone" class="logo-img">
-        <div class="logo-text">
-          <h2>فكري فون</h2>
-          <span>إدارة المحل</span>
-        </div>
-      </div>
-      <div class="logo-icon-only" *ngIf="!sidebarOpen">
-        <img src="assets/logo.jpg" alt="FP" class="logo-img-sm">
+<!-- Sidebar -->
+@if (!isFullscreen) {
+<aside class="sidebar" [class.collapsed]="!sidebarOpen" [class.mobile-open]="mobileMenuOpen">
+  <div class="sidebar-header">
+    <div class="logo-section" *ngIf="sidebarOpen">
+      <img src="assets/logo.jpg" alt="Fikri Phone" class="logo-img">
+      <div class="logo-text">
+        <h2>فكري فون</h2>
+        <span>إدارة المحل</span>
       </div>
     </div>
+    <div class="logo-icon-only" *ngIf="!sidebarOpen">
+      <img src="assets/logo.jpg" alt="FP" class="logo-img-sm">
+    </div>
+  </div>
 
-    <nav class="sidebar-nav" id="tour-sidebar">
-      @for (item of menuItems; track item.path) {
-        <a [routerLink]="item.path"
-           routerLinkActive="active"
-           [routerLinkActiveOptions]="{exact: item.exact}"
-           class="nav-item"
-           (click)="closeMobileMenu()">
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span class="nav-label" *ngIf="sidebarOpen">{{ item.label }}</span>
-          @if (item.path === '/produits' && lowStockCount > 0 && sidebarOpen) {
-            <span class="stock-badge pulse">{{ lowStockCount }}</span>
-          }
-        </a>
+  <nav class="sidebar-nav" id="tour-sidebar">
+    @for (item of menuItems; track item.path) {
+    <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item.exact}"
+      class="nav-item" (click)="closeMobileMenu()">
+      <span class="nav-icon">{{ item.icon }}</span>
+      <span class="nav-label" *ngIf="sidebarOpen">{{ item.label }}</span>
+      @if (item.path === '/produits' && lowStockCount > 0 && sidebarOpen) {
+      <span class="stock-badge pulse">{{ lowStockCount }}</span>
       }
-    </nav>
+    </a>
+    }
+  </nav>
 
-    <div class="sidebar-footer" *ngIf="sidebarOpen">
-      @if (auth.user$ | async; as user) {
-        <div class="user-info">
-          <div class="user-avatar">{{ user.email?.charAt(0)?.toUpperCase() }}</div>
-          <div class="user-details">
-            <span class="user-email">{{ user.email }}</span>
-          </div>
-        </div>
+  <div class="sidebar-footer" *ngIf="sidebarOpen">
+    @if (auth.user$ | async; as user) {
+    <div class="user-info">
+      <div class="user-avatar">{{ user.email?.charAt(0)?.toUpperCase() }}</div>
+      <div class="user-details">
+        <span class="user-email">{{ user.email }}</span>
+      </div>
+    </div>
+    }
+    <div class="footer-actions">
+      <button class="sidebar-action-btn" (click)="openPasswordModal()">
+        <span>🔑</span>
+        <span>تبديل الباسوورد</span>
+      </button>
+      <button class="logout-btn" (click)="logout()">
+        <span>🚪</span>
+        <span>خروج</span>
+      </button>
+    </div>
+  </div>
+</aside>
+}
+
+<!-- Mobile Overlay -->
+@if (!isFullscreen) {
+<div class="mobile-overlay" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+}
+
+<!-- Main Content -->
+<main class="main-content" [class.sidebar-collapsed]="!sidebarOpen" [class.pos-fullscreen-mode]="isFullscreen">
+  @if (!isFullscreen) {
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <button class="menu-toggle" (click)="toggleSidebar()" title="قائمة">
+        <span class="hamburger">☰</span>
+      </button>
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
+    </div>
+    <div class="top-bar-right">
+      <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
+        <span>🔍</span>
+      </button>
+      <button class="action-btn circle-btn" (click)="toggleDarkMode()" title="Mode Sombre/Clair">
+        <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
+      </button>
+    </div>
+  </header>
+  }
+
+  <div class="page-content">
+    @if (!isFullscreen) {
+    <app-help-wizard></app-help-wizard>
+    }
+    <router-outlet></router-outlet>
+  </div>
+</main>
+
+<!-- Global Confirm Dialog -->
+<app-confirm-dialog></app-confirm-dialog>
+
+<!-- Stock Alert Toast -->
+@if (showStockToast) {
+<div class="stock-toast" (click)="showStockToast = false">
+  <div class="stock-toast-inner">
+    <span>{{ stockToastMessage }}</span>
+    <a routerLink="/produits" class="stock-toast-link" (click)="showStockToast = false">شوف المنتجات →</a>
+  </div>
+</div>
+}
+
+<!-- Password Change Modal -->
+@if (showPasswordModal) {
+<div class="modal-overlay" (click)="closePasswordModal()">
+  <div class="modal-content password-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>🔑 تبديل الباسوورد</h2>
+      <button class="close-btn" (click)="closePasswordModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>الباسوورد الجديد</label>
+        <input type="password" [(ngModel)]="newPassword" class="form-control" placeholder="6 حروف على الأقل..."
+          dir="ltr">
+      </div>
+      <div class="form-group">
+        <label>تأكيد الباسوورد</label>
+        <input type="password" [(ngModel)]="confirmPassword" class="form-control" placeholder="عاود دخل الباسوورد..."
+          dir="ltr">
+      </div>
+      @if (passwordError) {
+      <div class="error-msg">❌ {{ passwordError }}</div>
       }
-      <div class="footer-actions">
-        <button class="sidebar-action-btn" (click)="openPasswordModal()">
-          <span>🔑</span>
-          <span>تبديل الباسوورد</span>
-        </button>
-        <button class="logout-btn" (click)="logout()">
-          <span>🚪</span>
-          <span>خروج</span>
-        </button>
-      </div>
+      @if (passwordSuccess) {
+      <div class="success-msg">{{ passwordSuccess }}</div>
+      }
     </div>
-  </aside>
-
-  <!-- Mobile Overlay -->
-  <div class="mobile-overlay" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
-
-  <!-- Main Content -->
-  <main class="main-content" [class.sidebar-collapsed]="!sidebarOpen">
-    <header class="top-bar">
-      <div class="top-bar-left">
-        <button class="menu-toggle" (click)="toggleSidebar()" title="قائمة">
-          <span class="hamburger">☰</span>
-        </button>
-        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
-      </div>
-      <div class="top-bar-right">
-        <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
-          <span>🔍</span>
-        </button>
-        <button class="action-btn circle-btn" (click)="toggleDarkMode()" title="Mode Sombre/Clair">
-          <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
-        </button>
-      </div>
-    </header>
-
-    <div class="page-content">
-      <app-help-wizard></app-help-wizard>
-      <router-outlet></router-outlet>
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="changePassword()" [disabled]="passwordLoading">
+        {{ passwordLoading ? '⏳ صبر...' : '💾 حفظ' }}
+      </button>
+      <button class="btn btn-ghost" (click)="closePasswordModal()">إلغاء</button>
     </div>
-  </main>
+  </div>
+</div>
+}
 
-  <!-- Global Confirm Dialog -->
-  <app-confirm-dialog></app-confirm-dialog>
-
-  <!-- Stock Alert Toast -->
-  @if (showStockToast) {
-    <div class="stock-toast" (click)="showStockToast = false">
-      <div class="stock-toast-inner">
-        <span>{{ stockToastMessage }}</span>
-        <a routerLink="/produits" class="stock-toast-link" (click)="showStockToast = false">شوف المنتجات →</a>
-      </div>
+<!-- Global Search Modal -->
+@if (showSearchModal) {
+<div class="modal-overlay" (click)="closeSearch()">
+  <div class="modal-content search-modal" (click)="$event.stopPropagation()">
+    <div class="search-header">
+      <input type="text" id="globalSearchInput" [(ngModel)]="searchQuery" (ngModelChange)="doSearch()"
+        placeholder="🔍 قلب على شي منتج بالسمية ولا بالكود بار..." class="form-control search-input" autocomplete="off">
+      <button class="close-btn" (click)="closeSearch()">✕</button>
     </div>
-  }
-
-  <!-- Password Change Modal -->
-  @if (showPasswordModal) {
-    <div class="modal-overlay" (click)="closePasswordModal()">
-      <div class="modal-content password-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>🔑 تبديل الباسوورد</h2>
-          <button class="close-btn" (click)="closePasswordModal()">✕</button>
+    <div class="search-results">
+      @if (searchResults.length > 0) {
+      @for (res of searchResults; track res.id) {
+      <div class="search-result-item" (click)="goToResult(res)">
+        <div class="res-icon">{{ res.categorie_icone || '📦' }}</div>
+        <div class="res-info">
+          <span class="res-nom">{{ res.nom }}</span>
+          <span class="res-badge" *ngIf="res.quantite <= 5 && res.quantite > 0">قليل ({{ res.quantite }})</span>
+          <span class="res-badge danger" *ngIf="res.quantite === 0">سالي</span>
         </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>الباسوورد الجديد</label>
-            <input type="password" [(ngModel)]="newPassword" class="form-control"
-                   placeholder="6 حروف على الأقل..." dir="ltr">
-          </div>
-          <div class="form-group">
-            <label>تأكيد الباسوورد</label>
-            <input type="password" [(ngModel)]="confirmPassword" class="form-control"
-                   placeholder="عاود دخل الباسوورد..." dir="ltr">
-          </div>
-          @if (passwordError) {
-            <div class="error-msg">❌ {{ passwordError }}</div>
-          }
-          @if (passwordSuccess) {
-            <div class="success-msg">{{ passwordSuccess }}</div>
-          }
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" (click)="changePassword()" [disabled]="passwordLoading">
-            {{ passwordLoading ? '⏳ صبر...' : '💾 حفظ' }}
-          </button>
-          <button class="btn btn-ghost" (click)="closePasswordModal()">إلغاء</button>
-        </div>
+        <div class="res-prix">{{ res.prix_vente }} د.م</div>
       </div>
+      }
+      } @else if (searchQuery.trim().length >= 2) {
+      <div class="empty-search">ማ كاينش هاد المنتج 🤷‍♂️</div>
+      }
     </div>
-  }
+  </div>
+</div>
+}
 
-  <!-- Global Search Modal -->
-  @if (showSearchModal) {
-    <div class="modal-overlay" (click)="closeSearch()">
-      <div class="modal-content search-modal" (click)="$event.stopPropagation()">
-        <div class="search-header">
-          <input type="text" id="globalSearchInput" [(ngModel)]="searchQuery" (ngModelChange)="doSearch()"
-                 placeholder="🔍 قلب على شي منتج بالسمية ولا بالكود بار..." class="form-control search-input" autocomplete="off">
-          <button class="close-btn" (click)="closeSearch()">✕</button>
-        </div>
-        <div class="search-results">
-          @if (searchResults.length > 0) {
-            @for (res of searchResults; track res.id) {
-              <div class="search-result-item" (click)="goToResult(res)">
-                <div class="res-icon">{{ res.categorie_icone || '📦' }}</div>
-                <div class="res-info">
-                  <span class="res-nom">{{ res.nom }}</span>
-                  <span class="res-badge" *ngIf="res.quantite <= 5 && res.quantite > 0">قليل ({{ res.quantite }})</span>
-                  <span class="res-badge danger" *ngIf="res.quantite === 0">سالي</span>
-                </div>
-                <div class="res-prix">{{ res.prix_vente }} د.م</div>
-              </div>
-            }
-          } @else if (searchQuery.trim().length >= 2) {
-            <div class="empty-search">ማ كاينش هاد المنتج 🤷‍♂️</div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- AI Assistant Floating Widget -->
-  <app-ai-assistant></app-ai-assistant>
+<!-- AI Assistant Floating Widget -->
+<app-ai-assistant></app-ai-assistant>
 
 }

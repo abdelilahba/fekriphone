@@ -65,7 +65,7 @@ export class HelpWizard implements OnInit {
     }
   ];
 
-  constructor(private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(private router: Router, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     // Check local storage so we don't annoy experts too much (optional feature)

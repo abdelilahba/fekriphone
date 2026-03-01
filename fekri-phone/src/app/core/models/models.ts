@@ -23,6 +23,7 @@ export interface Produit {
 export interface Vente {
   id: string;
   montant_total: number;
+  profit_total: number;
   date: string;
   created_at: string;
   // Joined
@@ -35,6 +36,8 @@ export interface VenteItem {
   produit_id: string;
   quantite: number;
   prix_unitaire: number;
+  prix_achat_unitaire: number;
+  profit: number;
   sous_total: number;
   created_at: string;
   // Joined

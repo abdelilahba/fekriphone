@@ -1,193 +1,232 @@
 <div class="ventes-page">
   @if (toastMessage$ | async; as toast) {
-    <div class="toast-container">
-      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
-    </div>
+  <div class="toast-container">
+    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+  </div>
   }
 
   @if (!showVenteModal) {
-    <div class="page-header">
-      <h1>🛒 المبيعات</h1>
-      <button class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
-    </div>
+  <div class="page-header">
+    <h1>🛒 المبيعات</h1>
+    <button class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
+  </div>
 
-    <div class="stat-card total-card">
-      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
-      <div class="stat-info">
-        <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
-        <p>مجموع المبيعات هاد الشهر</p>
+  <div class="stat-card total-card">
+    <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
+    <div class="stat-info">
+      <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
+      <p>مجموع المبيعات هاد الشهر</p>
+    </div>
+  </div>
+
+  @if (loading$ | async) {
+  <div class="skeleton-loader">
+    <div class="skeleton-row short"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row tall"></div>
+    <div class="skeleton-row"></div>
+  </div>
+  } @else {
+  @if (ventes$ | async; as allVentes) {
+  @if (allVentes.length > 0) {
+  <div class="modern-ventes-list">
+    @for (v of paginatedVentes$ | async; track v.id) {
+    <div class="modern-vente-row">
+      <div class="mvr-icon">
+        <div class="icon-circle">🛍️</div>
+      </div>
+
+      <div class="mvr-details">
+        <div class="mvr-date-section">
+          <span class="mvr-date">{{ v.date.split(' ')[0] || v.date }}</span>
+          <span class="mvr-time">{{ v.date.split(' ')[1] || '' }}</span>
+        </div>
+
+        <div class="mvr-products">
+          @if (v.vente_items && v.vente_items.length > 0) {
+          @for (item of v.vente_items; track item.id) {
+          <div class="mvr-product-badge">
+            <span class="mpb-name">{{ item.produits?.nom || 'منتج' }}</span>
+            <span class="mpb-qty">{{ item.quantite }}</span>
+          </div>
+          }
+          }
+        </div>
+      </div>
+
+      <div class="mvr-summary">
+        <div class="mvr-price">{{ formatMAD(v.montant_total) }}</div>
+        <div class="mvr-profit">الربح: {{ formatMAD(v.profit_total) }}</div>
+        <div class="mvr-items-count">{{ v.vente_items?.length || 0 }} منتجات</div>
+      </div>
+
+      <div class="mvr-actions">
+        <button class="mvr-btn-delete" (click)="deleteVente(v)" title="حذف هذه البيعة">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
       </div>
     </div>
-
-    @if (loading$ | async) {
-      <div class="skeleton-loader">
-      <div class="skeleton-row short"></div>
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row tall"></div>
-      <div class="skeleton-row"></div>
-    </div>
-    } @else {
-      @if (ventes$ | async; as allVentes) {
-        @if (allVentes.length > 0) {
-          <div class="card table-card">
-            <table class="data-table">
-              <thead><tr><th>التاريخ</th><th>المبلغ</th><th>التفاصيل</th><th></th></tr></thead>
-              <tbody>
-                @for (v of paginatedVentes$ | async; track v.id) {
-                  <tr>
-                    <td>{{ v.date }}</td>
-                    <td class="montant-cell">{{ formatMAD(v.montant_total) }}</td>
-                    <td>
-                      @if (v.vente_items) {
-                        <div class="vente-items">
-                          @for (item of v.vente_items; track item.id) {
-                            <span class="vente-item-badge">{{ item.produits?.nom || 'منتج' }} × {{ item.quantite }}</span>
-                          }
-                        </div>
-                      }
-                    </td>
-                    <td><button class="btn btn-ghost btn-sm" (click)="deleteVente(v)">🗑️</button></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (totalPages > 1) {
-              <div class="pagination">
-                <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
-                @for (p of getPages(); track p) {
-                  <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-                }
-                <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
-                <span class="pagination-info">{{ allVentes.length }} بيعة</span>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="card empty-state"><div class="empty-icon">🛒</div><h3>مازال ما كاينين مبيعات</h3><p>كليكي على "بيعة جديدة"</p></div>
-        }
-      }
     }
+  </div>
+
+  <div class="pagination">
+    <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
+    <div class="page-numbers">
+      @for (p of getPages(); track p) {
+      <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+      }
+    </div>
+    <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    </button>
+    <div class="pagination-info">إجمالي: {{ allVentes.length }} بيعة</div>
+  </div>
+  } @else {
+  <div class="card empty-state">
+    <div class="empty-icon">🛒</div>
+    <h3>مازال ما كاينين مبيعات</h3>
+    <p>كليكي على "بيعة جديدة"</p>
+  </div>
+  }
+  }
+  }
   }
 
   <!-- ========== POS SIMPLE ========== -->
   <!-- ========== POS SIMPLE ========== -->
   @if (showVenteModal) {
-    <div class="pos-fullscreen">
-      <div class="pos-header">
-        <div class="pos-title">
-          <h2>مرحبا بك في نقطة البيع</h2>
-          <span class="pos-date">{{ currentDate() }}</span>
+  <div class="pos-fullscreen">
+    <div class="pos-header">
+      <div class="pos-title">
+        <h2>مرحبا بك في نقطة البيع</h2>
+        <span class="pos-date">{{ currentDate() }}</span>
+      </div>
+      <div class="pos-search">
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"
+          class="form-control pos-search-input" placeholder="🔍 قلّب على منتج أو إمسح بالسكانر..." autofocus>
+      </div>
+      <button class="pos-close-btn" (click)="closeVenteModal()">غادر نقطة البيع ✕</button>
+    </div>
+
+    <div class="pos-body">
+      <!-- المنتجات -->
+      <div class="pos-products-side">
+        <!-- فئات -->
+        <div class="pos-categories">
+          <button class="cat-btn" [class.active]="activeCategory === ''" (click)="filterByCategory('')">
+            📋 الكل
+          </button>
+          @for (cat of categories$ | async; track cat.id) {
+          <button class="cat-btn" [class.active]="activeCategory === cat.id" (click)="filterByCategory(cat.id)">
+            {{ cat.icone }} {{ cat.nom }}
+          </button>
+          }
         </div>
-        <div class="pos-search">
-          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"
-                 class="form-control pos-search-input" placeholder="🔍 قلّب على منتج أو إمسح بالسكانر..." autofocus>
+
+        <!-- منتجات -->
+        <div class="pos-grid">
+          @if (filteredProduits$ | async; as prods) {
+          @for (p of prods; track p.id) {
+          <div class="product-card" (click)="incrementCartByProductId(p.id)" [class.selected]="getCartQty(p.id) > 0"
+            [class.out-of-stock]="p.quantite <= 0">
+            <div class="card-visual">
+              <div class="product-emoji" [title]="p.nom">{{ getCategoryIcon(p) }}</div>
+              @if (getCartQty(p.id) > 0) {
+              <div class="qty-badge-action remove" (click)="$event.stopPropagation(); decrementCartByProductId(p.id)">−
+              </div>
+              } @else {
+              <div class="qty-badge-action add">＋</div>
+              }
+            </div>
+            <div class="card-details">
+              <div class="product-name" [title]="p.nom">{{ p.nom }}</div>
+              <div class="product-price-row">
+                <span class="product-price">{{ p.prix_vente }} د.م</span>
+                <span class="product-stock" [class.danger]="p.quantite <= 3">{{ p.quantite }} حبة</span>
+              </div>
+            </div>
+          </div>
+          }
+          @if (prods.length === 0) {
+          <div class="no-results">🔍 ما لقيت والو...</div>
+          }
+          }
         </div>
-        <button class="pos-close-btn" (click)="closeVenteModal()">غادر نقطة البيع ✕</button>
       </div>
 
-      <div class="pos-body">
-        <!-- المنتجات -->
-        <div class="pos-products-side">
-          <!-- فئات -->
-          <div class="pos-categories">
-            <button class="cat-btn" [class.active]="activeCategory === ''" (click)="filterByCategory('')">
-              📋 الكل
-            </button>
-            @for (cat of categories$ | async; track cat.id) {
-              <button class="cat-btn" [class.active]="activeCategory === cat.id" (click)="filterByCategory(cat.id)">
-                {{ cat.icone }} {{ cat.nom }}
-              </button>
-            }
-          </div>
-
-          <!-- منتجات -->
-          <div class="pos-grid">
-            @if (filteredProduits$ | async; as prods) {
-              @for (p of prods; track p.id) {
-                <div class="product-card" (click)="incrementCartByProductId(p.id)" [class.selected]="getCartQty(p.id) > 0" [class.out-of-stock]="p.quantite <= 0">
-                  <div class="card-visual">
-                    <div class="product-emoji" [title]="p.nom">{{ getCategoryIcon(p) }}</div>
-                    @if (getCartQty(p.id) > 0) {
-                      <div class="qty-badge-action remove" (click)="$event.stopPropagation(); decrementCartByProductId(p.id)">−</div>
-                    } @else {
-                      <div class="qty-badge-action add">＋</div>
-                    }
-                  </div>
-                  <div class="card-details">
-                    <div class="product-name" [title]="p.nom">{{ p.nom }}</div>
-                    <div class="product-price-row">
-                      <span class="product-price">{{ p.prix_vente }} د.م</span>
-                      <span class="product-stock" [class.danger]="p.quantite <= 3">{{ p.quantite }} حبة</span>
-                    </div>
-                  </div>
-                </div>
-              }
-              @if (prods.length === 0) {
-                <div class="no-results">🔍 ما لقيت والو...</div>
-              }
-            }
-          </div>
+      <!-- سلة المشتريات -->
+      <div class="pos-cart-side">
+        <div class="cart-header">
+          <h3>فاتورة جديدة</h3>
+          <span class="cart-items-count">عدد الأنواع: {{ (cart$ | async)?.length || 0 }}</span>
         </div>
 
-        <!-- سلة المشتريات -->
-        <div class="pos-cart-side">
-          <div class="cart-header">
-            <h3>فاتورة جديدة</h3>
-            <span class="cart-items-count">عدد الأنواع: {{ (cart$ | async)?.length || 0 }}</span>
-          </div>
+        <div class="cart-table-header">
+          <div class="col-product">المنتج</div>
+          <div class="col-qty">الكمية</div>
+          <div class="col-price">الثمن</div>
+          <div class="col-action"></div>
+        </div>
 
-          <div class="cart-table-header">
-            <div class="col-product">المنتج</div>
-            <div class="col-qty">الكمية</div>
-            <div class="col-price">الثمن</div>
-            <div class="col-action"></div>
-          </div>
-
-          <div class="cart-list">
-            @if (cart$ | async; as cartItems) {
-              @for (item of cartItems; track item.produit_id; let i = $index) {
-                <div class="cart-row">
-                  <div class="col-product">
-                    <div class="cart-item-name">{{ item.nom }}</div>
-                    <div class="cart-item-sub">
-                       الثمن: <input type="number" [(ngModel)]="item.prix_unitaire" (ngModelChange)="updateCartItem(item)" class="cart-inline-input" min="0"> د.م
-                    </div>
-                  </div>
-                  <div class="col-qty">
-                    <div class="qty-control">
-                      <button (click)="decrementCartItem(item)">-</button>
-                      <span>{{ item.quantite }}</span>
-                      <button (click)="incrementCartItem(item)">+</button>
-                    </div>
-                  </div>
-                  <div class="col-price">{{ item.sous_total }}</div>
-                  <div class="col-action">
-                    <button class="cart-trash" (click)="removeFromCart(i)">🗑️</button>
-                  </div>
-                </div>
-              }
-              @if (cartItems.length === 0) {
-                <div class="cart-empty">السلة فارغة، إبدأ بإضافة المنتجات.</div>
-              }
-            }
-          </div>
-
-          <!-- المجموع -->
-          <div class="cart-bottom">
-            <div class="cart-summary-line">
-              <span>المجموع الفردي (Sub Total)</span>
-              <span>{{ formatMAD((cartTotal$ | async) || 0) }}</span>
+        <div class="cart-list">
+          @if (cart$ | async; as cartItems) {
+          @for (item of cartItems; track item.produit_id; let i = $index) {
+          <div class="cart-row">
+            <div class="col-product">
+              <div class="cart-item-name">{{ item.nom }}</div>
+              <div class="cart-item-sub">
+                الثمن: <input type="number" [(ngModel)]="item.prix_unitaire" (ngModelChange)="updateCartItem(item)"
+                  class="cart-inline-input" min="0"> د.م
+              </div>
             </div>
-            <div class="cart-grand-total">
-              <span>المجموع الكلي (Total)</span>
-              <strong>{{ formatMAD((cartTotal$ | async) || 0) }}</strong>
+            <div class="col-qty">
+              <div class="qty-control">
+                <button (click)="decrementCartItem(item)">-</button>
+                <span>{{ item.quantite }}</span>
+                <button (click)="incrementCartItem(item)">+</button>
+              </div>
             </div>
-            <button class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
-              دفع وحفظ الفاتورة
-            </button>
+            <div class="col-price">{{ item.sous_total }}</div>
+            <div class="col-action">
+              <button class="cart-trash" (click)="removeFromCart(i)">🗑️</button>
+            </div>
           </div>
+          }
+          @if (cartItems.length === 0) {
+          <div class="cart-empty">السلة فارغة، إبدأ بإضافة المنتجات.</div>
+          }
+          }
+        </div>
+
+        <!-- المجموع -->
+        <div class="cart-bottom">
+          <div class="cart-summary-line">
+            <span>المجموع الفردي (Sub Total)</span>
+            <span>{{ formatMAD((cartTotal$ | async) || 0) }}</span>
+          </div>
+          <div class="cart-grand-total">
+            <span>المجموع الكلي (Total)</span>
+            <strong>{{ formatMAD((cartTotal$ | async) || 0) }}</strong>
+          </div>
+          <button class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
+            دفع وحفظ الفاتورة
+          </button>
         </div>
       </div>
     </div>
+  </div>
   }
 </div>

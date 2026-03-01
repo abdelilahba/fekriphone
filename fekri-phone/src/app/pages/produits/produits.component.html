@@ -1,9 +1,9 @@
 <div class="produits-page">
   <!-- Toast -->
   @if (toastMessage$ | async; as toast) {
-    <div class="toast-container">
-      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
-    </div>
+  <div class="toast-container">
+    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+  </div>
   }
 
   <div class="page-header">
@@ -16,13 +16,13 @@
     <div class="filter-row">
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()"
-               placeholder="قلّب على منتج..." class="form-control">
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="قلّب على منتج..."
+          class="form-control">
       </div>
       <select [(ngModel)]="filterCategorie" (ngModelChange)="applyFilter()" class="form-control filter-select">
         <option value="">كل الفئات</option>
         @for (cat of categories$ | async; track cat.id) {
-          <option [value]="cat.id">{{ cat.nom }}</option>
+        <option [value]="cat.id">{{ cat.nom }}</option>
         }
       </select>
     </div>
@@ -30,221 +30,232 @@
 
   <!-- Loading -->
   @if (loading$ | async) {
-    <div class="skeleton-loader">
-      <div class="skeleton-row short"></div>
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row tall"></div>
-      <div class="skeleton-row"></div>
-    </div>
+  <div class="skeleton-loader">
+    <div class="skeleton-row short"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row tall"></div>
+    <div class="skeleton-row"></div>
+  </div>
   } @else {
-    @if (filteredProduits$ | async; as allProduits) {
-      @if (allProduits.length > 0) {
-        <div class="card table-card">
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>المنتج</th>
-                  <th>الفئة</th>
-                  <th>ثمن الشراء</th>
-                  <th>ثمن البيع</th>
-                  <th>المخزن</th>
-                  <th>الباركود</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (p of paginatedProduits$ | async; track p.id) {
-                  <tr>
-                    <td class="product-name">{{ p.nom }}</td>
-                    <td>{{ getCategoryName(p.categorie_id) }}</td>
-                    <td>{{ formatMAD(p.prix_achat) }}</td>
-                    <td class="prix-vente">{{ formatMAD(p.prix_vente) }}</td>
-                    <td>
-                      <button class="stock-btn" (click)="openStockModal(p)" [class]="'stock-' + getStockBadge(p.quantite)">
-                        {{ p.quantite }} {{ getStockLabel(p.quantite) }} ✏️
-                      </button>
-                    </td>
-                    <td class="code-barre">{{ p.code_barre || '—' }}</td>
-                    <td>
-                      <div class="actions">
-                        <button class="btn btn-ghost btn-sm" (click)="viewProduct(p)">👁️</button>
-                        <button class="btn btn-ghost btn-sm" (click)="openEdit(p)">✏️</button>
-                        <button class="btn btn-ghost btn-sm" (click)="delete(p)">🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-          <!-- Pagination -->
-          @if (totalPages > 1) {
-            <div class="pagination">
-              <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
-              @for (p of getPages(); track p) {
-                <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-              }
-              <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
-              <span class="pagination-info">{{ allProduits.length }} منتج</span>
-            </div>
+  @if (filteredProduits$ | async; as allProduits) {
+  @if (allProduits.length > 0) {
+  <div class="card table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>المنتج</th>
+            <th>الفئة</th>
+            <th>ثمن الشراء</th>
+            <th>ثمن البيع</th>
+            <th>المخزن</th>
+            <th>الباركود</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paginatedProduits$ | async; track p.id) {
+          <tr>
+            <td class="product-name">{{ p.nom }}</td>
+            <td>{{ getCategoryName(p.categorie_id) }}</td>
+            <td>{{ formatMAD(p.prix_achat) }}</td>
+            <td class="prix-vente">{{ formatMAD(p.prix_vente) }}</td>
+            <td>
+              <button class="stock-btn" (click)="openStockModal(p)" [class]="'stock-' + getStockBadge(p.quantite)">
+                {{ p.quantite }} {{ getStockLabel(p.quantite) }} ✏️
+              </button>
+            </td>
+            <td class="code-barre">{{ p.code_barre || '—' }}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-ghost btn-sm" (click)="viewProduct(p)">👁️</button>
+                <button class="btn btn-ghost btn-sm" (click)="openEdit(p)">✏️</button>
+                <button class="btn btn-ghost btn-sm" (click)="delete(p)">🗑️</button>
+              </div>
+            </td>
+          </tr>
           }
-        </div>
-      } @else {
-        <div class="card empty-state">
-          <div class="empty-icon">📦</div>
-          <h3>مازال ما كاينين منتجات</h3>
-          <p>كليكي على "زيد منتج" باش تبدا</p>
-        </div>
-      }
-    }
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination -->
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage === totalPages">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
+      <div class="page-numbers">
+        @for (p of getPages(); track p) {
+        <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+        }
+      </div>
+      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <div class="pagination-info">إجمالي: {{ allProduits.length }} منتج</div>
+    </div>
+  </div>
+  } @else {
+  <div class="card empty-state">
+    <div class="empty-icon">📦</div>
+    <h3>مازال ما كاينين منتجات</h3>
+    <p>كليكي على "زيد منتج" باش تبدا</p>
+  </div>
+  }
+  }
   }
 
   <!-- Modal -->
   @if (showModal) {
-    <div class="modal-overlay" (click)="closeModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>{{ editMode ? '✏️ عدّل المنتج' : '➕ زيد منتج جديد' }}</h2>
-          <button class="close-btn" (click)="closeModal()">✕</button>
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editMode ? '✏️ عدّل المنتج' : '➕ زيد منتج جديد' }}</h2>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>إسم المنتج *</label>
+          <input type="text" [(ngModel)]="form.nom" class="form-control" placeholder="مثلا: iPhone 15 Pro">
         </div>
-        <div class="modal-body">
+        <div class="form-group">
+          <label>الفئة *</label>
+          <select [(ngModel)]="form.categorie_id" class="form-control">
+            @for (cat of categories$ | async; track cat.id) {
+            <option [value]="cat.id">{{ cat.nom }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-row">
           <div class="form-group">
-            <label>إسم المنتج *</label>
-            <input type="text" [(ngModel)]="form.nom" class="form-control" placeholder="مثلا: iPhone 15 Pro">
-          </div>
-          <div class="form-group">
-            <label>الفئة *</label>
-            <select [(ngModel)]="form.categorie_id" class="form-control">
-              @for (cat of categories$ | async; track cat.id) {
-                <option [value]="cat.id">{{ cat.nom }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>ثمن الشراء (د.م)</label>
-              <input type="number" [(ngModel)]="form.prix_achat" class="form-control" min="0">
-            </div>
-            <div class="form-group">
-              <label>ثمن البيع (د.م)</label>
-              <input type="number" [(ngModel)]="form.prix_vente" class="form-control" min="0">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>الكمية</label>
-              <input type="number" [(ngModel)]="form.quantite" class="form-control" min="0">
-            </div>
-            <div class="form-group">
-              <label>الباركود</label>
-              <input type="text" [(ngModel)]="form.code_barre" class="form-control" placeholder="إمسح بالسكانر...">
-            </div>
+            <label>ثمن الشراء (د.م)</label>
+            <input type="number" [(ngModel)]="form.prix_achat" class="form-control" min="0">
           </div>
           <div class="form-group">
-            <label>الوصف</label>
-            <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="وصف إختياري...">
+            <label>ثمن البيع (د.م)</label>
+            <input type="number" [(ngModel)]="form.prix_vente" class="form-control" min="0">
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
-          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+        <div class="form-row">
+          <div class="form-group">
+            <label>الكمية</label>
+            <input type="number" [(ngModel)]="form.quantite" class="form-control" min="0">
+          </div>
+          <div class="form-group">
+            <label>الباركود</label>
+            <input type="text" [(ngModel)]="form.code_barre" class="form-control" placeholder="إمسح بالسكانر...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>الوصف</label>
+          <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="وصف إختياري...">
         </div>
       </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
+        <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+      </div>
     </div>
+  </div>
   }
 
   <!-- Product Detail Modal -->
   @if (showDetailModal && selectedProduct) {
-    <div class="modal-overlay" (click)="closeDetailModal()">
-      <div class="modal-content detail-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>📋 تفاصيل المنتج</h2>
-          <button class="close-btn" (click)="closeDetailModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="detail-top">
-            <span class="detail-icon">{{ getCategoryIcon(selectedProduct.categorie_id) }}</span>
-            <div>
-              <h3 class="detail-name">{{ selectedProduct.nom }}</h3>
-              <span class="detail-cat">{{ getCategoryName(selectedProduct.categorie_id) }}</span>
-            </div>
+  <div class="modal-overlay" (click)="closeDetailModal()">
+    <div class="modal-content detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📋 تفاصيل المنتج</h2>
+        <button class="close-btn" (click)="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-top">
+          <span class="detail-icon">{{ getCategoryIcon(selectedProduct.categorie_id) }}</span>
+          <div>
+            <h3 class="detail-name">{{ selectedProduct.nom }}</h3>
+            <span class="detail-cat">{{ getCategoryName(selectedProduct.categorie_id) }}</span>
           </div>
+        </div>
 
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">ثمن الشراء</span>
-              <span class="detail-value">{{ formatMAD(selectedProduct.prix_achat) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">ثمن البيع</span>
-              <span class="detail-value prix-vente">{{ formatMAD(selectedProduct.prix_vente) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">الربح</span>
-              <span class="detail-value profit">{{ formatMAD(getProfit(selectedProduct)) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">الكمية</span>
-              <span class="detail-value">
-                <span class="badge" [class]="'badge-' + getStockBadge(selectedProduct.quantite)">
-                  {{ selectedProduct.quantite }} - {{ getStockLabel(selectedProduct.quantite) }}
-                </span>
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">الباركود</span>
-              <span class="detail-value">{{ selectedProduct.code_barre || '—' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">الوصف</span>
-              <span class="detail-value">{{ selectedProduct.description || '—' }}</span>
-            </div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">ثمن الشراء</span>
+            <span class="detail-value">{{ formatMAD(selectedProduct.prix_achat) }}</span>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" (click)="closeDetailModal(); openEdit(selectedProduct!)">✏️ عدّل</button>
-          <button class="btn btn-ghost" (click)="closeDetailModal()">إغلاق</button>
+          <div class="detail-item">
+            <span class="detail-label">ثمن البيع</span>
+            <span class="detail-value prix-vente">{{ formatMAD(selectedProduct.prix_vente) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">الربح</span>
+            <span class="detail-value profit">{{ formatMAD(getProfit(selectedProduct)) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">الكمية</span>
+            <span class="detail-value">
+              <span class="badge" [class]="'badge-' + getStockBadge(selectedProduct.quantite)">
+                {{ selectedProduct.quantite }} - {{ getStockLabel(selectedProduct.quantite) }}
+              </span>
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">الباركود</span>
+            <span class="detail-value">{{ selectedProduct.code_barre || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">الوصف</span>
+            <span class="detail-value">{{ selectedProduct.description || '—' }}</span>
+          </div>
         </div>
       </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="closeDetailModal(); openEdit(selectedProduct!)">✏️ عدّل</button>
+        <button class="btn btn-ghost" (click)="closeDetailModal()">إغلاق</button>
+      </div>
     </div>
+  </div>
   }
 
   <!-- Stock Adjustment Modal -->
   @if (showStockModal && stockProduct) {
-    <div class="modal-overlay" (click)="closeStockModal()">
-      <div class="modal-content stock-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>📦 تعديل المخزن</h2>
-          <button class="close-btn" (click)="closeStockModal()">✕</button>
+  <div class="modal-overlay" (click)="closeStockModal()">
+    <div class="modal-content stock-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📦 تعديل المخزن</h2>
+        <button class="close-btn" (click)="closeStockModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="stock-product-name">{{ stockProduct.nom }}</div>
+        <div class="stock-current">الكمية الحالية: <strong>{{ stockProduct.quantite }}</strong></div>
+
+        <div class="stock-adjuster">
+          <button class="stock-adj-btn minus" (click)="adjustStock(-10)">-10</button>
+          <button class="stock-adj-btn minus" (click)="adjustStock(-1)">-1</button>
+          <input type="number" [(ngModel)]="stockNewQty" min="0" class="stock-qty-input">
+          <button class="stock-adj-btn plus" (click)="adjustStock(1)">+1</button>
+          <button class="stock-adj-btn plus" (click)="adjustStock(10)">+10</button>
         </div>
-        <div class="modal-body">
-          <div class="stock-product-name">{{ stockProduct.nom }}</div>
-          <div class="stock-current">الكمية الحالية: <strong>{{ stockProduct.quantite }}</strong></div>
 
-          <div class="stock-adjuster">
-            <button class="stock-adj-btn minus" (click)="adjustStock(-10)">-10</button>
-            <button class="stock-adj-btn minus" (click)="adjustStock(-1)">-1</button>
-            <input type="number" [(ngModel)]="stockNewQty" min="0" class="stock-qty-input">
-            <button class="stock-adj-btn plus" (click)="adjustStock(1)">+1</button>
-            <button class="stock-adj-btn plus" (click)="adjustStock(10)">+10</button>
-          </div>
-
-          @if (stockNewQty !== stockProduct.quantite) {
-            <div class="stock-diff">
-              @if (stockNewQty > stockProduct.quantite) {
-                <span class="diff-plus">+{{ stockNewQty - stockProduct.quantite }} وحدة</span>
-              } @else {
-                <span class="diff-minus">-{{ stockProduct.quantite - stockNewQty }} وحدة</span>
-              }
-            </div>
+        @if (stockNewQty !== stockProduct.quantite) {
+        <div class="stock-diff">
+          @if (stockNewQty > stockProduct.quantite) {
+          <span class="diff-plus">+{{ stockNewQty - stockProduct.quantite }} وحدة</span>
+          } @else {
+          <span class="diff-minus">-{{ stockProduct.quantite - stockNewQty }} وحدة</span>
           }
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" (click)="saveStock()" [disabled]="stockNewQty === stockProduct.quantite">💾 حفظ</button>
-          <button class="btn btn-ghost" (click)="closeStockModal()">إلغاء</button>
-        </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="saveStock()" [disabled]="stockNewQty === stockProduct.quantite">💾
+          حفظ</button>
+        <button class="btn btn-ghost" (click)="closeStockModal()">إلغاء</button>
       </div>
     </div>
+  </div>
   }
 </div>

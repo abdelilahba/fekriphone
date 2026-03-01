@@ -22,28 +22,28 @@ export class CategoriesComponent implements OnInit {
   form = { id: '', nom: '', icone: '📦' };
 
   iconOptions = [
-    { emoji: '📱', label: 'هواتف ذكية (جديد ومستعمل)' },
+    { emoji: '📲', label: 'هواتف ذكية (جديد ومستعمل)' },
     { emoji: '🎧', label: 'أكسسوارات هواتف (Accessoires)' },
-    { emoji: '🔌', label: 'شواحن (شارجورات كوامل / روسان)' },
-    { emoji: '🧲', label: 'كابلات (Type-C, iPhone, V8)' },
+    { emoji: '⚡', label: 'شواحن (شارجورات كوامل / روسان)' },
+    { emoji: '🔌', label: 'كابلات (Type-C, iPhone, V8)' },
     { emoji: '🔋', label: 'بطاريات وباور بانك (Powerbank)' },
     { emoji: '🛡️', label: 'بوشيطات وكفرات (Pochettes)' },
-    { emoji: '✨', label: 'حماية الشاشة (أنتي كاس، جيلاتين)' },
+    { emoji: '💎', label: 'حماية الشاشة (أنتي كاس، جيلاتين)' },
     { emoji: '⌚', label: 'ماڭانات ذكية (Smartwatch / براسلي)' },
-    { emoji: '🚗', label: 'أكسسوارات سيارات (سيبورة، طرونسميتور، الوم سيجار)' },
+    { emoji: '🚘', label: 'أكسسوارات سيارات (سيبورة، طرونسميتور)' },
     { emoji: '💾', label: 'كارط ميموار وكلي USB' },
-    { emoji: '📶', label: 'راوتر / ويفي 4G/5G' },
+    { emoji: '📡', label: 'راوتر / ويفي 4G/5G' },
     { emoji: '💻', label: 'حواسيب وأكسسوارات' },
     { emoji: '🎮', label: 'ألعاب (مانيطات، كاسك ڭايمينڭ...)' },
     { emoji: '📸', label: 'رينغ لايت / تريپود للـ TikTok' },
-    { emoji: '🎙️', label: 'ميكروفونات (للستريمرز وصناع المحتوى)' },
+    { emoji: '🎤', label: 'ميكروفونات (للستريمرز وصناع المحتوى)' },
     { emoji: '🔊', label: 'بافلات وبافات بلوتوث' },
-    { emoji: '🔧', label: 'قطع غيار (أفيشور، كونيكتور، ناب...)' },
+    { emoji: '⚙️', label: 'قطع غيار (أفيشور، كونيكتور، ناب...)' },
     { emoji: '🛠️', label: 'ماطريال الصيانة (كاوية، لاصق، تورنوفيس)' },
     { emoji: '📦', label: 'أخرى (منوعات)' },
   ];
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   ngOnInit() { this.loadData(); }
 

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 import { AuthService } from './core/services/auth.service';
 import { SupabaseService } from './core/services/supabase.service';
+import { LayoutService } from './core/services/layout.service';
 import { HelpWizard } from './components/help-wizard/help-wizard';
 import { AiAssistant } from './components/ai-assistant/ai-assistant';
 import { driver } from "driver.js";
@@ -18,6 +19,7 @@ import { driver } from "driver.js";
 })
 export class AppComponent implements OnInit {
   sidebarOpen = true;
+  isFullscreen = false;
   mobileMenuOpen = false;
   showPasswordModal = false;
   newPassword = '';
@@ -38,13 +40,13 @@ export class AppComponent implements OnInit {
   menuItems = [
     { path: '/', icon: '📊', label: 'لوحة التحكم', exact: true },
     { path: '/produits', icon: '📦', label: 'المنتجات', exact: false },
-    { path: '/pieces', icon: '🔧', label: 'قطع الغيار', exact: false },
+    { path: '/pieces', icon: '⚙️', label: 'قطع الغيار', exact: false },
     { path: '/ventes', icon: '🛒', label: 'المبيعات', exact: false },
     { path: '/reparations', icon: '🔧', label: 'مداخيل الإصلاح', exact: false },
     { path: '/depenses', icon: '💸', label: 'المصاريف', exact: false },
-    { path: '/credits', icon: '📝', label: 'الديون', exact: false },
+    { path: '/credits', icon: '📋', label: 'الديون', exact: false },
     { path: '/categories', icon: '🏷️', label: 'الفئات', exact: false },
-    { path: '/rapport', icon: '📊', label: 'التقرير اليومي', exact: false },
+    { path: '/rapport', icon: '📈', label: 'التقرير اليومي', exact: false },
   ];
 
   constructor(
@@ -52,8 +54,9 @@ export class AppComponent implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
-    private supabase: SupabaseService
-  ) {}
+    private supabase: SupabaseService,
+    private layoutService: LayoutService
+  ) { }
 
   ngOnInit() {
     this.auth.user$.subscribe(user => {
@@ -63,13 +66,19 @@ export class AppComponent implements OnInit {
       }
     });
 
+    // Listen for fullscreen mode (POS)
+    this.layoutService.fullscreenMode$.subscribe(fs => {
+      this.isFullscreen = fs;
+      this.cdr.detectChanges();
+    });
+
     // Dark Mode Init
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       this.toggleDarkMode(true);
     }
-    
+
     // Onboarding Tour Driver
     setTimeout(() => {
       this.startTourIfNew();
@@ -78,7 +87,7 @@ export class AppComponent implements OnInit {
 
   startTourIfNew() {
     if (localStorage.getItem('tour_done')) return;
-    
+
     const driverObj = driver({
       animate: true,
       showProgress: true,
@@ -127,8 +136,8 @@ export class AppComponent implements OnInit {
   async loadSearchCache() {
     try {
       const produits = await this.supabase.getProduits();
-      this.searchCache = produits; 
-    } catch(e) {}
+      this.searchCache = produits;
+    } catch (e) { }
   }
 
   openSearch() {
@@ -151,7 +160,7 @@ export class AppComponent implements OnInit {
       return;
     }
     const q = this.searchQuery.toLowerCase();
-    this.searchResults = this.searchCache.filter(item => 
+    this.searchResults = this.searchCache.filter(item =>
       (item.nom && item.nom.toLowerCase().includes(q)) ||
       (item.code_barre && item.code_barre.toLowerCase().includes(q))
     ).slice(0, 10);
@@ -161,7 +170,7 @@ export class AppComponent implements OnInit {
     this.closeSearch();
     // Navigate based on item logic 
     // Simply to produits page for now
-    this.router.navigate(['/produits']); 
+    this.router.navigate(['/produits']);
   }
 
   async checkLowStock() {

@@ -114,10 +114,10 @@ export class SupabaseService {
     return data;
   }
 
-  async addVente(montantTotal: number, items: any[]) {
+  async addVente(montantTotal: number, profitTotal: number, items: any[]) {
     const { data: vente, error: venteError } = await this.supabase
       .from('ventes')
-      .insert({ montant_total: montantTotal })
+      .insert({ montant_total: montantTotal, profit_total: profitTotal })
       .select()
       .single();
     if (venteError) throw venteError;
@@ -127,7 +127,9 @@ export class SupabaseService {
       produit_id: item.produit_id,
       quantite: item.quantite,
       prix_unitaire: item.prix_unitaire,
-      sous_total: item.quantite * item.prix_unitaire
+      prix_achat_unitaire: item.prix_achat_unitaire || 0,
+      profit: item.profit || 0,
+      sous_total: item.sous_total
     }));
 
     const { error: itemsError } = await this.supabase
@@ -289,13 +291,14 @@ export class SupabaseService {
       this.supabase.from('revenus_reparation').select('montant').gte('date', firstDay).lte('date', lastDay),
       this.supabase.from('depenses').select('montant').gte('date', firstDay).lte('date', lastDay),
       this.supabase.from('credits').select('montant, montant_paye').eq('est_paye', false),
-      this.supabase.from('ventes').select('montant_total').gte('date', firstDay).lte('date', lastDay)
+      this.supabase.from('ventes').select('montant_total, profit_total').gte('date', firstDay).lte('date', lastDay)
     ]);
 
     const totalRevenus = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant), 0);
     const totalDepenses = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant), 0);
     const totalCredits = (credits.data || []).reduce((s: number, c: any) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
     const totalVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total), 0);
+    const totalProfitVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
 
     return {
       totalProduits: produits.count || 0,
@@ -303,7 +306,7 @@ export class SupabaseService {
       totalDepenses: totalDepenses,
       totalCreditsEnCours: totalCredits,
       totalVentes: totalVentes,
-      benefice: totalVentes + totalRevenus - totalDepenses
+      benefice: totalProfitVentes + totalRevenus - totalDepenses
     };
   }
 }

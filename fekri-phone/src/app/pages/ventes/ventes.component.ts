@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { LayoutService } from '../../core/services/layout.service';
 import Swal from 'sweetalert2';
 import { Produit, Vente, Categorie } from '../../core/models/models';
 
@@ -12,6 +13,8 @@ interface CartItem {
   icone: string;
   prix_unitaire: number;
   prix_original: number;
+  prix_achat_unitaire: number;
+  profit: number;
   quantite: number;
   stock_restant: number;
   sous_total: number;
@@ -39,7 +42,7 @@ export class VentesComponent implements OnInit {
   searchTerm = '';
   activeCategory = '';
   currentPage = 1;
-  pageSize = 10;
+  pageSize = 5;
   totalPages = 1;
   paginatedVentes$ = new BehaviorSubject<Vente[]>([]);
 
@@ -48,8 +51,9 @@ export class VentesComponent implements OnInit {
   constructor(
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
-  ) {}
+    private ngZone: NgZone,
+    private layout: LayoutService
+  ) { }
 
   ngOnInit() { this.loadData(); }
 
@@ -113,11 +117,13 @@ export class VentesComponent implements OnInit {
     this.activeCategory = '';
     this.filteredProduits$.next([...this.allProduits]);
     this.showVenteModal = true;
+    this.layout.enterFullscreen();
     this.cdr.detectChanges();
   }
 
   closeVenteModal() {
     this.showVenteModal = false;
+    this.layout.exitFullscreen();
     this.cdr.detectChanges();
   }
 
@@ -165,6 +171,7 @@ export class VentesComponent implements OnInit {
       if (existing.quantite < p.quantite) {
         existing.quantite++;
         existing.sous_total = existing.quantite * existing.prix_unitaire;
+        existing.profit = (existing.prix_unitaire - existing.prix_achat_unitaire) * existing.quantite;
         existing.stock_restant = p.quantite - existing.quantite;
       } else {
         this.showToast('ما بقاش فالمخزن!', 'error');
@@ -174,7 +181,10 @@ export class VentesComponent implements OnInit {
       if (p.quantite <= 0) { this.showToast('هاد المنتج سالي!', 'error'); return; }
       this.cart.push({
         produit_id: p.id, nom: p.nom, icone: this.getCategoryIcon(p),
-        prix_unitaire: p.prix_vente, prix_original: p.prix_vente, quantite: 1,
+        prix_unitaire: p.prix_vente, prix_original: p.prix_vente,
+        prix_achat_unitaire: p.prix_achat || 0,
+        profit: p.prix_vente - (p.prix_achat || 0),
+        quantite: 1,
         stock_restant: p.quantite - 1, sous_total: p.prix_vente
       });
     }
@@ -186,6 +196,7 @@ export class VentesComponent implements OnInit {
     if (item.quantite > 1) {
       item.quantite--;
       item.sous_total = item.quantite * item.prix_unitaire;
+      item.profit = (item.prix_unitaire - item.prix_achat_unitaire) * item.quantite;
       item.stock_restant++;
       this.cart$.next([...this.cart]);
       this.updateCartTotal();
@@ -223,6 +234,7 @@ export class VentesComponent implements OnInit {
 
   updateCartItem(item: CartItem) {
     item.sous_total = item.quantite * item.prix_unitaire;
+    item.profit = (item.prix_unitaire - item.prix_achat_unitaire) * item.quantite;
     this.cart$.next([...this.cart]);
     this.updateCartTotal();
   }
@@ -235,7 +247,8 @@ export class VentesComponent implements OnInit {
     if (this.cart.length === 0) { this.showToast('السلة فارغة!', 'error'); return; }
     try {
       const total = this.cart.reduce((s, i) => s + i.sous_total, 0);
-      await this.supabase.addVente(total, this.cart);
+      const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
+      await this.supabase.addVente(total, profitTotal, this.cart);
       this.ngZone.run(() => {
         this.showToast('تسجلت البيعة بنجاح ✅', 'success');
         this.closeVenteModal();

@@ -42,7 +42,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   private charts: Chart[] = [];
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   ngOnInit() { this.loadStats(); }
   ngAfterViewInit() { this.chartReady = true; }
@@ -67,22 +67,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       // Extract top 5 products from vente_items
       const productSales = new Map<string, { qty: number, nom: string, icone: string }>();
       ventes.forEach((v: any) => {
-         if (v.vente_items && Array.isArray(v.vente_items)) {
-           v.vente_items.forEach((item: any) => {
-             const pid = item.produit_id;
-             if (pid) {
-               const p = produits.find((pr: any) => pr.id === pid);
-               if (!productSales.has(pid)) {
-                 productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
-               }
-               productSales.get(pid)!.qty += item.quantite;
-             }
-           });
-         }
+        if (v.vente_items && Array.isArray(v.vente_items)) {
+          v.vente_items.forEach((item: any) => {
+            const pid = item.produit_id;
+            if (pid) {
+              const p = produits.find((pr: any) => pr.id === pid);
+              if (!productSales.has(pid)) {
+                productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
+              }
+              productSales.get(pid)!.qty += item.quantite;
+            }
+          });
+        }
       });
-      
+
       this.topProduits = Array.from(productSales.values())
-        .sort((a,b) => b.qty - a.qty)
+        .sort((a, b) => b.qty - a.qty)
         .slice(0, 5);
 
       setTimeout(() => this.buildCharts(ventes, depenses, revenus, stats), 300);
@@ -111,9 +111,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const months = this.getLast6Months();
     const labels = months.map(m => this.getMonthName(m.month));
     const ventesData = months.map(m => this.sumByMonth(ventes, 'montant_total', m.year, m.month));
+    const ventesProfitData = months.map(m => this.sumByMonth(ventes, 'profit_total', m.year, m.month));
     const revenusData = months.map(m => this.sumByMonth(revenus, 'montant', m.year, m.month));
     const depensesData = months.map(m => this.sumByMonth(depenses, 'montant', m.year, m.month));
-    const beneficeData = months.map((m, i) => ventesData[i] + revenusData[i] - depensesData[i]);
+    const beneficeData = months.map((m, i) => ventesProfitData[i] + revenusData[i] - depensesData[i]);
 
     const chart = new Chart(ctx, {
       type: 'line',
@@ -121,7 +122,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         labels,
         datasets: [
           {
-            label: '💰 الربح الصافي',
+            label: '💰 الربح الصافي (Bénéfice Net)',
             data: beneficeData,
             borderColor: '#9b30ff',
             backgroundColor: 'rgba(155, 48, 255, 0.08)',
@@ -130,7 +131,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             pointBorderColor: '#fff', pointBorderWidth: 2,
           },
           {
-            label: '🛒 المبيعات',
+            label: '🛒 إجمالي المبيعات (Chiffre d\'Affaires)',
             data: ventesData,
             borderColor: '#22c55e',
             backgroundColor: 'rgba(34, 197, 94, 0.05)',
@@ -138,7 +139,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             pointRadius: 4, pointBackgroundColor: '#22c55e',
           },
           {
-            label: '💸 المصاريف',
+            label: '💸 المصاريف (Dépenses)',
             data: depensesData,
             borderColor: '#ef4444',
             backgroundColor: 'rgba(239, 68, 68, 0.05)',

@@ -1,8 +1,8 @@
 <div class="reparations-page">
   @if (toastMessage$ | async; as toast) {
-    <div class="toast-container">
-      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
-    </div>
+  <div class="toast-container">
+    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+  </div>
   }
 
   <div class="page-header">
@@ -19,83 +19,101 @@
   </div>
 
   @if (loading$ | async) {
-    <div class="skeleton-loader">
-      <div class="skeleton-row short"></div>
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row tall"></div>
-      <div class="skeleton-row"></div>
-    </div>
+  <div class="skeleton-loader">
+    <div class="skeleton-row short"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row tall"></div>
+    <div class="skeleton-row"></div>
+  </div>
   } @else {
-    @if (revenus$ | async; as allRevenus) {
-      @if (allRevenus.length > 0) {
-        <div class="card table-card">
-          <table class="data-table">
-            <thead><tr><th>الوصف</th><th>المبلغ</th><th>التاريخ</th><th></th></tr></thead>
-            <tbody>
-              @for (r of paginatedRevenus$ | async; track r.id) {
-                <tr>
-                  <td class="desc-cell">{{ r.description }}</td>
-                  <td class="montant-cell">{{ formatMAD(r.montant) }}</td>
-                  <td>{{ r.date }}</td>
-                  <td>
-                    <div class="actions">
-                      <button class="btn btn-ghost btn-sm" (click)="openEdit(r)">✏️</button>
-                      <button class="btn btn-ghost btn-sm" (click)="delete(r)">🗑️</button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-          @if (totalPages > 1) {
-            <div class="pagination">
-              <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
-              @for (p of getPages(); track p) {
-                <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-              }
-              <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
-              <span class="pagination-info">{{ allRevenus.length }} إصلاح</span>
+  @if (revenus$ | async; as allRevenus) {
+  @if (allRevenus.length > 0) {
+  <div class="card table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>الوصف</th>
+          <th>المبلغ</th>
+          <th>التاريخ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of paginatedRevenus$ | async; track r.id) {
+        <tr>
+          <td class="desc-cell">{{ r.description }}</td>
+          <td class="montant-cell">{{ formatMAD(r.montant) }}</td>
+          <td>{{ r.date }}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-ghost btn-sm" (click)="openEdit(r)">✏️</button>
+              <button class="btn btn-ghost btn-sm" (click)="delete(r)">🗑️</button>
             </div>
-          }
-        </div>
-      } @else {
-        <div class="card empty-state">
-          <div class="empty-icon">🔧</div>
-          <h3>مازال ما كاين حتا إصلاح</h3>
-          <p>كليكي على "زيد إصلاح" باش تسجل المداخيل</p>
-        </div>
-      }
-    }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage === totalPages">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
+      <div class="page-numbers">
+        @for (p of getPages(); track p) {
+        <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+        }
+      </div>
+      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <div class="pagination-info">إجمالي: {{ allRevenus.length }} إصلاح</div>
+    </div>
+  </div>
+  } @else {
+  <div class="card empty-state">
+    <div class="empty-icon">🔧</div>
+    <h3>مازال ما كاين حتا إصلاح</h3>
+    <p>كليكي على "زيد إصلاح" باش تسجل المداخيل</p>
+  </div>
+  }
+  }
   }
 
   @if (showModal) {
-    <div class="modal-overlay" (click)="closeModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>{{ editMode ? '✏️ عدّل' : '➕ زيد إصلاح جديد' }}</h2>
-          <button class="close-btn" (click)="closeModal()">✕</button>
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editMode ? '✏️ عدّل' : '➕ زيد إصلاح جديد' }}</h2>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>الوصف *</label>
+          <input type="text" [(ngModel)]="form.description" class="form-control"
+            placeholder="مثلا: تصليح شاشة iPhone 12">
         </div>
-        <div class="modal-body">
+        <div class="form-row">
           <div class="form-group">
-            <label>الوصف *</label>
-            <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="مثلا: تصليح شاشة iPhone 12">
+            <label>المبلغ (د.م) *</label>
+            <input type="number" [(ngModel)]="form.montant" class="form-control" min="0">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>المبلغ (د.م) *</label>
-              <input type="number" [(ngModel)]="form.montant" class="form-control" min="0">
-            </div>
-            <div class="form-group">
-              <label>التاريخ</label>
-              <input type="date" [(ngModel)]="form.date" class="form-control">
-            </div>
+          <div class="form-group">
+            <label>التاريخ</label>
+            <input type="date" [(ngModel)]="form.date" class="form-control">
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
-          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
         </div>
       </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
+        <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+      </div>
     </div>
+  </div>
   }
 </div>
