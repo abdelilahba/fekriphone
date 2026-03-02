@@ -25,7 +25,24 @@
 .header-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
+
+.btn-export {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid #9b30ff;
+  background: linear-gradient(135deg, #f3f0ff, #ede9fe);
+  color: #7c3aed;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Cairo', sans-serif;
+}
+.btn-export:hover { background: #9b30ff; color: white; }
+.btn-export.excel { border-color: #16a34a; color: #16a34a; background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+.btn-export.excel:hover { background: #16a34a; color: white; }
 
 /* Date Picker */
 .date-picker-row {
