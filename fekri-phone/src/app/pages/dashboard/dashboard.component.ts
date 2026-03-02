@@ -1,5 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { Chart, registerables } from 'chart.js';
@@ -12,13 +13,22 @@ interface DashboardStats {
   totalRevenusReparation: number;
   totalDepenses: number;
   totalCreditsEnCours: number;
+  totalPertes?: number;
   benefice: number;
+}
+
+interface SmartAlert {
+  type: 'danger' | 'warning' | 'success' | 'info';
+  icon: string;
+  title: string;
+  message: string;
+  link?: string;
 }
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -39,6 +49,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   reparationsCount = 0;
   beneficePercent = 0;
   topProduits: { nom: string, qty: number, icone: string }[] = [];
+  alerts: SmartAlert[] = [];
+  alertsDismissed = false;
 
   private charts: Chart[] = [];
 
@@ -50,12 +62,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   async loadStats() {
     try {
       this.loading$.next(true);
-      const [stats, ventes, depenses, revenus, produits] = await Promise.all([
+      const [stats, ventes, depenses, revenus, produits, pertes, credits] = await Promise.all([
         this.supabase.getDashboardStats(),
         this.supabase.getVentes(),
         this.supabase.getDepenses(),
         this.supabase.getRevenus(),
-        this.supabase.getProduits()
+        this.supabase.getProduits(),
+        this.supabase.getPertes(),
+        this.supabase.getCredits()
       ]);
       this.stats$.next(stats);
 
@@ -85,6 +99,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         .sort((a, b) => b.qty - a.qty)
         .slice(0, 5);
 
+      this.generateAlerts(produits, ventes, depenses, pertes, credits, stats);
       setTimeout(() => this.buildCharts(ventes, depenses, revenus, stats), 300);
     } catch (error) {
       console.error('خطأ:', error);
@@ -263,6 +278,122 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private getMonthName(m: number): string {
     const names = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
     return names[m] || '';
+  }
+
+  // ========== Smart Alerts ==========
+  private generateAlerts(produits: any[], ventes: any[], depenses: any[], pertes: any[], credits: any[], stats: DashboardStats) {
+    const alerts: SmartAlert[] = [];
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
+    const lastMonth = lastMonthDate.getMonth();
+    const lastMonthYear = lastMonthDate.getFullYear();
+
+    // 1. Stock critique
+    const lowStock = produits.filter((p: any) => p.quantite <= 2 && p.quantite > 0);
+    const outOfStock = produits.filter((p: any) => p.quantite <= 0);
+    if (outOfStock.length > 0) {
+      alerts.push({
+        type: 'danger', icon: '🚨',
+        title: outOfStock.length + ' منتجات خلاو من المخزون!',
+        message: outOfStock.slice(0, 3).map((p: any) => p.nom).join('، ') + (outOfStock.length > 3 ? ' ...' : ''),
+        link: '/produits'
+      });
+    }
+    if (lowStock.length > 0) {
+      alerts.push({
+        type: 'warning', icon: '📦',
+        title: lowStock.length + ' منتجات قربو يخلصو!',
+        message: lowStock.slice(0, 3).map((p: any) => p.nom + ' (' + p.quantite + ')').join('، '),
+        link: '/produits'
+      });
+    }
+
+    // 2. Crédits anciens (> 30 jours)
+    const oldCredits = credits.filter((c: any) => {
+      if (c.est_paye) return false;
+      const days = Math.floor((now.getTime() - new Date(c.date).getTime()) / (1000 * 60 * 60 * 24));
+      return days > 30;
+    });
+    if (oldCredits.length > 0) {
+      const totalOld = oldCredits.reduce((s: number, c: any) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
+      alerts.push({
+        type: 'warning', icon: '⏰',
+        title: oldCredits.length + ' ديون فايتين 30 يوم!',
+        message: this.formatMAD(totalOld) + ' — خصك تتصل بالزبناء: ' + oldCredits.slice(0, 2).map((c: any) => c.nom_client).join('، '),
+        link: '/credits'
+      });
+    }
+
+    // 3. Pertes ce mois
+    const pertesThisMonth = pertes.filter((p: any) => {
+      const d = new Date(p.date);
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    });
+    if (pertesThisMonth.length >= 3) {
+      const totalPertes = pertesThisMonth.reduce((s: number, p: any) => s + Number(p.montant_perte), 0);
+      alerts.push({
+        type: 'danger', icon: '💔',
+        title: pertesThisMonth.length + ' منتجات تالفة هاد الشهر!',
+        message: this.formatMAD(totalPertes) + ' ضايعة — واش المورد كيبيع سلعة مزيانة؟',
+        link: '/pertes'
+      });
+    }
+
+    // 4. Comparer dépenses ce mois vs mois dernier
+    const depThisMonth = depenses.filter((d: any) => { const dt = new Date(d.date); return dt.getMonth() === thisMonth && dt.getFullYear() === thisYear; })
+      .reduce((s: number, d: any) => s + Number(d.montant), 0);
+    const depLastMonth = depenses.filter((d: any) => { const dt = new Date(d.date); return dt.getMonth() === lastMonth && dt.getFullYear() === lastMonthYear; })
+      .reduce((s: number, d: any) => s + Number(d.montant), 0);
+    if (depLastMonth > 0 && depThisMonth > depLastMonth * 1.5) {
+      const pct = Math.round(((depThisMonth - depLastMonth) / depLastMonth) * 100);
+      alerts.push({
+        type: 'warning', icon: '💸',
+        title: 'المصاريف زادو بـ ' + pct + '%!',
+        message: this.formatMAD(depThisMonth) + ' هاد الشهر مقارنة بـ ' + this.formatMAD(depLastMonth) + ' الشهر الفايت',
+        link: '/depenses'
+      });
+    }
+
+    // 5. Comparer ventes ce mois vs mois dernier
+    const ventesThisMonth = ventes.filter((v: any) => { const d = new Date(v.date || v.created_at); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+      .reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+    const ventesLastMonth = ventes.filter((v: any) => { const d = new Date(v.date || v.created_at); return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear; })
+      .reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+    if (ventesLastMonth > 0 && ventesThisMonth < ventesLastMonth * 0.7) {
+      const pct = Math.round(((ventesLastMonth - ventesThisMonth) / ventesLastMonth) * 100);
+      alerts.push({
+        type: 'danger', icon: '📉',
+        title: 'المبيعات نازلين بـ ' + pct + '%!',
+        message: this.formatMAD(ventesThisMonth) + ' هاد الشهر مقارنة بـ ' + this.formatMAD(ventesLastMonth) + ' الشهر الفايت',
+        link: '/ventes'
+      });
+    } else if (ventesLastMonth > 0 && ventesThisMonth > ventesLastMonth * 1.2) {
+      const pct = Math.round(((ventesThisMonth - ventesLastMonth) / ventesLastMonth) * 100);
+      alerts.push({
+        type: 'success', icon: '🚀',
+        title: 'المبيعات طالعين بـ ' + pct + '%!',
+        message: 'كمل هكا! ' + this.formatMAD(ventesThisMonth) + ' هاد الشهر 💪',
+        link: '/ventes'
+      });
+    }
+
+    // 6. Bénéfice positif encouragement
+    if (stats.benefice > 0 && alerts.filter(a => a.type === 'danger').length === 0) {
+      alerts.push({
+        type: 'success', icon: '🎉',
+        title: 'الحمد لله، المحل رابح!',
+        message: 'الربح الصافي هاد الشهر: ' + this.formatMAD(stats.benefice),
+        link: '/rapport'
+      });
+    }
+
+    this.alerts = alerts;
+  }
+
+  dismissAlerts() {
+    this.alertsDismissed = true;
   }
 
   formatMAD(amount: number): string {

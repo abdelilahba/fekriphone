@@ -11,6 +11,28 @@
       <h1>📊 لوحة التحكم</h1>
     </div>
 
+    <!-- Smart Alerts -->
+    @if (alerts.length > 0 && !alertsDismissed) {
+      <div class="alerts-panel">
+        <div class="alerts-header">
+          <h2>🔔 تنبيهات ذكية</h2>
+          <button class="dismiss-btn" (click)="dismissAlerts()">✕</button>
+        </div>
+        <div class="alerts-grid">
+          @for (alert of alerts; track alert.title) {
+            <a class="alert-card" [class]="'alert-' + alert.type" [href]="alert.link || '#'" routerLink="{{ alert.link }}">
+              <div class="alert-icon">{{ alert.icon }}</div>
+              <div class="alert-body">
+                <div class="alert-title">{{ alert.title }}</div>
+                <div class="alert-message">{{ alert.message }}</div>
+              </div>
+              <div class="alert-arrow">←</div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
     @if (stats$ | async; as stats) {
       <!-- Stats Cards Row -->
       <div class="stats-grid">
