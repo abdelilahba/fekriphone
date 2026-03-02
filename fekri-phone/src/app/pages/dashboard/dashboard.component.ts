@@ -65,6 +65,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   thisMonthLabel = '';
   lastMonthLabel = '';
 
+  // Stock predictions
+  stockPredictions: {
+    nom: string; icone: string; stock: number;
+    ventesParMois: number; joursRestants: number;
+    status: 'danger' | 'warning' | 'safe';
+    statusLabel: string;
+  }[] = [];
+
   private charts: Chart[] = [];
 
   constructor(private supabase: SupabaseService) { }
@@ -114,6 +122,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
       this.generateAlerts(produits, ventes, depenses, pertes, credits, stats);
       this.buildComparison(ventes, depenses, revenus, pertes);
+      this.buildStockPredictions(produits, ventes);
       setTimeout(() => this.buildCharts(ventes, depenses, revenus, stats), 300);
     } catch (error) {
       console.error('خطأ:', error);
@@ -292,6 +301,58 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private getMonthName(m: number): string {
     const names = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
     return names[m] || '';
+  }
+
+  // ========== Stock Predictions ==========
+  private buildStockPredictions(produits: any[], ventes: any[]) {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Count sales per product in the last 30 days
+    const salesCount = new Map<string, number>();
+    ventes.forEach((v: any) => {
+      const vDate = new Date(v.date || v.created_at);
+      if (vDate >= thirtyDaysAgo && v.vente_items && Array.isArray(v.vente_items)) {
+        v.vente_items.forEach((item: any) => {
+          const pid = item.produit_id;
+          if (pid) {
+            salesCount.set(pid, (salesCount.get(pid) || 0) + item.quantite);
+          }
+        });
+      }
+    });
+
+    // Build predictions for all products
+    const predictions = produits.map((p: any) => {
+      const ventesMois = salesCount.get(p.id) || 0;
+      const ventesParJour = ventesMois / 30;
+      const joursRestants = ventesParJour > 0 ? Math.round(p.quantite / ventesParJour) : (p.quantite > 0 ? 999 : 0);
+
+      let status: 'danger' | 'warning' | 'safe' = 'safe';
+      let statusLabel = '🟢 مرتاح';
+      if (p.quantite <= 0) {
+        status = 'danger'; statusLabel = '🔴 خلاص!';
+      } else if (joursRestants <= 7) {
+        status = 'danger'; statusLabel = '🔴 طلب دابا!';
+      } else if (joursRestants <= 30) {
+        status = 'warning'; statusLabel = '🟡 طلب قريباً';
+      }
+
+      return {
+        nom: p.nom, icone: p.categorie_icone || '📦',
+        stock: p.quantite, ventesParMois: ventesMois,
+        joursRestants, status, statusLabel
+      };
+    });
+
+    // Sort: danger first, then warning, then safe. Within each, sort by days remaining
+    this.stockPredictions = predictions
+      .sort((a, b) => {
+        const order = { danger: 0, warning: 1, safe: 2 };
+        if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+        return a.joursRestants - b.joursRestants;
+      })
+      .slice(0, 10); // Show top 10
   }
 
   // ========== Monthly Comparison ==========

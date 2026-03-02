@@ -163,6 +163,48 @@
           </div>
         </div>
       }
+
+      <!-- Stock Predictions -->
+      @if (stockPredictions.length > 0) {
+        <div class="card prediction-card">
+          <h2>🔮 توقعات المخزون — إمتى غادي يخلص؟</h2>
+          <div class="prediction-table-wrap">
+            <table class="prediction-table">
+              <thead>
+                <tr>
+                  <th>المنتج</th>
+                  <th>المخزون</th>
+                  <th>المبيعات/شهر</th>
+                  <th>باقي ليه</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of stockPredictions; track p.nom) {
+                  <tr [class]="'pred-' + p.status">
+                    <td class="product-cell">
+                      <span class="pred-icon">{{ p.icone }}</span>
+                      <span>{{ p.nom }}</span>
+                    </td>
+                    <td><strong>{{ p.stock }}</strong></td>
+                    <td>{{ p.ventesParMois }}</td>
+                    <td class="days-cell">
+                      @if (p.joursRestants >= 999) {
+                        <span>∞</span>
+                      } @else {
+                        <strong>{{ p.joursRestants }} يوم</strong>
+                      }
+                    </td>
+                    <td>
+                      <span class="status-badge status-{{ p.status }}">{{ p.statusLabel }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     }
   }
 </div>
