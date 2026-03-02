@@ -20,7 +20,7 @@
         </div>
         <div class="alerts-grid">
           @for (alert of alerts; track alert.title) {
-            <a class="alert-card" [class]="'alert-' + alert.type" [href]="alert.link || '#'" routerLink="{{ alert.link }}">
+            <a class="alert-card" [class]="'alert-' + alert.type" [routerLink]="alert.link || '/'">
               <div class="alert-icon">{{ alert.icon }}</div>
               <div class="alert-body">
                 <div class="alert-title">{{ alert.title }}</div>
