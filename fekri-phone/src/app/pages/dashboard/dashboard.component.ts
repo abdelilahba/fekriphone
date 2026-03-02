@@ -52,6 +52,19 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   alerts: SmartAlert[] = [];
   alertsDismissed = false;
 
+  // Comparison data
+  comparison: {
+    label: string;
+    thisMonth: number;
+    lastMonth: number;
+    diff: number;
+    pct: string;
+    icon: string;
+    color: string;
+  }[] = [];
+  thisMonthLabel = '';
+  lastMonthLabel = '';
+
   private charts: Chart[] = [];
 
   constructor(private supabase: SupabaseService) { }
@@ -100,6 +113,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         .slice(0, 5);
 
       this.generateAlerts(produits, ventes, depenses, pertes, credits, stats);
+      this.buildComparison(ventes, depenses, revenus, pertes);
       setTimeout(() => this.buildCharts(ventes, depenses, revenus, stats), 300);
     } catch (error) {
       console.error('خطأ:', error);
@@ -278,6 +292,47 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private getMonthName(m: number): string {
     const names = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
     return names[m] || '';
+  }
+
+  // ========== Monthly Comparison ==========
+  private buildComparison(ventes: any[], depenses: any[], revenus: any[], pertes: any[]) {
+    const now = new Date();
+    const thisM = now.getMonth();
+    const thisY = now.getFullYear();
+    const lastDate = new Date(thisY, thisM - 1, 1);
+    const lastM = lastDate.getMonth();
+    const lastY = lastDate.getFullYear();
+
+    this.thisMonthLabel = this.getMonthName(thisM);
+    this.lastMonthLabel = this.getMonthName(lastM);
+
+    const calcPct = (curr: number, prev: number): string => {
+      if (prev === 0) return curr > 0 ? '+∞' : '—';
+      const pct = ((curr - prev) / prev) * 100;
+      return (pct >= 0 ? '+' : '') + pct.toFixed(0) + '%';
+    };
+
+    const ventesThis = this.sumByMonth(ventes, 'montant_total', thisY, thisM);
+    const ventesLast = this.sumByMonth(ventes, 'montant_total', lastY, lastM);
+    const profitThis = this.sumByMonth(ventes, 'profit_total', thisY, thisM);
+    const profitLast = this.sumByMonth(ventes, 'profit_total', lastY, lastM);
+    const repThis = this.sumByMonth(revenus, 'montant', thisY, thisM);
+    const repLast = this.sumByMonth(revenus, 'montant', lastY, lastM);
+    const depThis = this.sumByMonth(depenses, 'montant', thisY, thisM);
+    const depLast = this.sumByMonth(depenses, 'montant', lastY, lastM);
+    const pertesThis = this.sumByMonth(pertes, 'montant_perte', thisY, thisM);
+    const pertesLast = this.sumByMonth(pertes, 'montant_perte', lastY, lastM);
+    const benefThis = profitThis + repThis - depThis - pertesThis;
+    const benefLast = profitLast + repLast - depLast - pertesLast;
+
+    this.comparison = [
+      { label: '🛒 المبيعات', thisMonth: ventesThis, lastMonth: ventesLast, diff: ventesThis - ventesLast, pct: calcPct(ventesThis, ventesLast), icon: '🛒', color: ventesThis >= ventesLast ? '#16a34a' : '#dc2626' },
+      { label: '💰 ربح المبيعات', thisMonth: profitThis, lastMonth: profitLast, diff: profitThis - profitLast, pct: calcPct(profitThis, profitLast), icon: '💰', color: profitThis >= profitLast ? '#16a34a' : '#dc2626' },
+      { label: '🔧 الإصلاحات', thisMonth: repThis, lastMonth: repLast, diff: repThis - repLast, pct: calcPct(repThis, repLast), icon: '🔧', color: repThis >= repLast ? '#16a34a' : '#dc2626' },
+      { label: '💸 المصاريف', thisMonth: depThis, lastMonth: depLast, diff: depThis - depLast, pct: calcPct(depThis, depLast), icon: '💸', color: depThis <= depLast ? '#16a34a' : '#dc2626' },
+      { label: '💔 الخسائر', thisMonth: pertesThis, lastMonth: pertesLast, diff: pertesThis - pertesLast, pct: calcPct(pertesThis, pertesLast), icon: '💔', color: pertesThis <= pertesLast ? '#16a34a' : '#dc2626' },
+      { label: '📈 الربح الصافي', thisMonth: benefThis, lastMonth: benefLast, diff: benefThis - benefLast, pct: calcPct(benefThis, benefLast), icon: '📈', color: benefThis >= benefLast ? '#16a34a' : '#dc2626' },
+    ];
   }
 
   // ========== Smart Alerts ==========

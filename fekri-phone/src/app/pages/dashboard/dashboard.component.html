@@ -108,6 +108,7 @@
         </div>
 
         <!-- Top Produits Vendus -->
+        <!-- Top Produits Vendus -->
         <div class="card chart-card flex-1 top-produits-card">
           <h2>🏆 أكثر 5 منتجات مبيعا</h2>
           <div class="top-list">
@@ -125,6 +126,43 @@
           </div>
         </div>
       </div>
+
+      <!-- Monthly Comparison Table -->
+      @if (comparison.length > 0) {
+        <div class="card comparison-card">
+          <h2>📊 المقارنة الشهرية — {{ thisMonthLabel }} مقابل {{ lastMonthLabel }}</h2>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>البند</th>
+                  <th>{{ lastMonthLabel }}</th>
+                  <th>{{ thisMonthLabel }}</th>
+                  <th>الفرق</th>
+                  <th>التغيير</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of comparison; track row.label) {
+                  <tr [class]="row.label.includes('الربح الصافي') ? 'total-row' : ''">
+                    <td class="label-cell">{{ row.label }}</td>
+                    <td>{{ formatMAD(row.lastMonth) }}</td>
+                    <td><strong>{{ formatMAD(row.thisMonth) }}</strong></td>
+                    <td [style.color]="row.color" class="diff-cell">
+                      {{ row.diff >= 0 ? '+' : '' }}{{ formatMAD(row.diff) }}
+                    </td>
+                    <td>
+                      <span class="pct-badge" [style.background]="row.color + '18'" [style.color]="row.color">
+                        {{ row.pct }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     }
   }
 </div>
