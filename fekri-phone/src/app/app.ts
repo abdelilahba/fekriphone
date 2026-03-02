@@ -44,6 +44,7 @@ export class AppComponent implements OnInit {
     { path: '/ventes', icon: '🛒', label: 'المبيعات', exact: false },
     { path: '/reparations', icon: '🔧', label: 'مداخيل الإصلاح', exact: false },
     { path: '/depenses', icon: '💸', label: 'المصاريف', exact: false },
+    { path: '/pertes', icon: '💔', label: 'المنتجات التالفة', exact: false },
     { path: '/credits', icon: '📋', label: 'الديون', exact: false },
     { path: '/categories', icon: '🏷️', label: 'الفئات', exact: false },
     { path: '/rapport', icon: '📈', label: 'التقرير اليومي', exact: false },

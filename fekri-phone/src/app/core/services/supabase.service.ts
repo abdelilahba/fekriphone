@@ -280,18 +280,58 @@ export class SupabaseService {
     if (error) throw error;
   }
 
+  // ==================== Pertes (Produits défectueux) ====================
+  async getPertes() {
+    const { data, error } = await this.supabase
+      .from('pertes')
+      .select('*')
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
+  async addPerte(perte: any) {
+    const { data, error } = await this.supabase
+      .from('pertes')
+      .insert(perte)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async updatePerte(id: string, perte: any) {
+    const { data, error } = await this.supabase
+      .from('pertes')
+      .update(perte)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async deletePerte(id: string) {
+    const { error } = await this.supabase
+      .from('pertes')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
+
   // ==================== Dashboard Stats ====================
   async getDashboardStats() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    const [produits, revenus, depenses, credits, ventes] = await Promise.all([
+    const [produits, revenus, depenses, credits, ventes, pertes] = await Promise.all([
       this.supabase.from('produits').select('id', { count: 'exact', head: true }),
       this.supabase.from('revenus_reparation').select('montant').gte('date', firstDay).lte('date', lastDay),
       this.supabase.from('depenses').select('montant').gte('date', firstDay).lte('date', lastDay),
       this.supabase.from('credits').select('montant, montant_paye').eq('est_paye', false),
-      this.supabase.from('ventes').select('montant_total, profit_total').gte('date', firstDay).lte('date', lastDay)
+      this.supabase.from('ventes').select('montant_total, profit_total').gte('date', firstDay).lte('date', lastDay),
+      this.supabase.from('pertes').select('montant_perte').gte('date', firstDay).lte('date', lastDay)
     ]);
 
     const totalRevenus = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant), 0);
@@ -299,6 +339,7 @@ export class SupabaseService {
     const totalCredits = (credits.data || []).reduce((s: number, c: any) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
     const totalVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total), 0);
     const totalProfitVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
+    const totalPertes = (pertes.data || []).reduce((s: number, p: any) => s + Number(p.montant_perte), 0);
 
     return {
       totalProduits: produits.count || 0,
@@ -306,7 +347,8 @@ export class SupabaseService {
       totalDepenses: totalDepenses,
       totalCreditsEnCours: totalCredits,
       totalVentes: totalVentes,
-      benefice: totalProfitVentes + totalRevenus - totalDepenses
+      totalPertes: totalPertes,
+      benefice: totalProfitVentes + totalRevenus - totalDepenses - totalPertes
     };
   }
 }

@@ -1,0 +1,117 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>💔 المنتجات التالفة / الخسائر</h1>
+      <p>تتبع المنتجات المكسورة والتالفة لي ما عندهم رجوع</p>
+    </div>
+    <button class="btn btn-danger" (click)="openAdd()">+ سجل خسارة</button>
+  </div>
+
+  <div class="stat-card loss-card">
+    <div class="stat-icon" style="background: #fee2e2; color: #dc2626;">💔</div>
+    <div class="stat-info">
+      <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
+      <p>مجموع الخسائر هاد الشهر</p>
+    </div>
+  </div>
+
+  @if (loading$ | async) {
+    <div class="skeleton-loader">
+      <div class="skeleton-row short"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row tall"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  } @else {
+    @if (pertes$ | async; as allPertes) {
+      @if (allPertes.length > 0) {
+        <div class="card table-card">
+          <table class="data-table">
+            <thead><tr><th>التاريخ</th><th>المنتج</th><th>السبب</th><th>الكمية</th><th>مبلغ الخسارة</th><th></th></tr></thead>
+            <tbody>
+              @for (p of paginatedPertes$ | async; track p.id) {
+                <tr>
+                  <td>{{ p.date }}</td>
+                  <td><strong>{{ p.produit_nom }}</strong></td>
+                  <td><span class="raison-badge">{{ p.raison }}</span></td>
+                  <td>{{ p.quantite }}</td>
+                  <td class="montant-cell loss">-{{ formatMAD(p.montant_perte) }}</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm" (click)="openEdit(p)">✏️</button>
+                    <button class="btn btn-ghost btn-sm" (click)="delete(p)">🗑️</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (totalPages > 1) {
+            <div class="pagination">
+              <button class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">→</button>
+              @for (pg of getPages(); track pg) {
+                <button class="pagination-btn" [class.active]="pg === currentPage" (click)="goToPage(pg)">{{ pg }}</button>
+              }
+              <button class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">←</button>
+              <span class="pagination-info">{{ allPertes.length }} خسارة</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="card empty-state">
+          <div class="empty-icon">🎉</div>
+          <h3>الحمد لله، ما كاينين خسائر</h3>
+          <p>كليكي على "سجل خسارة" إلا كان شي منتج تالف</p>
+        </div>
+      }
+    }
+  }
+</div>
+
+<!-- Toast -->
+@if (toastMessage$ | async; as toast) {
+  <div class="toast" [class.success]="toast.type === 'success'" [class.error]="toast.type === 'error'">
+    {{ toast.message }}
+  </div>
+}
+
+<!-- Modal -->
+@if (showModal) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal-content">
+    <h2>{{ editMode ? '✏️ تعديل الخسارة' : '💔 سجل خسارة جديدة' }}</h2>
+    <div class="form-group">
+      <label>اسم المنتج</label>
+      <input type="text" [(ngModel)]="form.produit_nom" class="form-control" placeholder="مثلا: Samsung A15">
+    </div>
+    <div class="form-group">
+      <label>سبب الخسارة</label>
+      <select [(ngModel)]="form.raison" class="form-control">
+        <option value="">اختار السبب</option>
+        @for (r of raisonsPertes; track r) {
+          <option [value]="r">{{ r }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>الكمية</label>
+        <input type="number" [(ngModel)]="form.quantite" class="form-control" min="1">
+      </div>
+      <div class="form-group">
+        <label>مبلغ الخسارة (د.م)</label>
+        <input type="number" [(ngModel)]="form.montant_perte" class="form-control" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>التاريخ</label>
+      <input type="date" [(ngModel)]="form.date" class="form-control">
+    </div>
+    <div class="form-group">
+      <label>ملاحظات (اختياري)</label>
+      <textarea [(ngModel)]="form.description" class="form-control" rows="2" placeholder="أي تفاصيل إضافية..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeModal()">إلغاء</button>
+      <button class="btn btn-danger" (click)="save()">{{ editMode ? 'حفظ التعديل' : '💔 سجل الخسارة' }}</button>
+    </div>
+  </div>
+}

@@ -73,3 +73,14 @@ export interface Credit {
   created_at: string;
   updated_at: string;
 }
+
+export interface Perte {
+  id: string;
+  produit_nom: string;
+  description: string | null;
+  montant_perte: number;
+  quantite: number;
+  raison: string;
+  date: string;
+  created_at: string;
+}

@@ -53,6 +53,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'pertes',
+    loadComponent: () => import('./pages/pertes/pertes.component').then(m => m.PertesComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: ''
   }
