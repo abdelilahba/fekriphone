@@ -8,7 +8,13 @@
 
   <div class="page-header">
     <h1>📦 المنتجات</h1>
-    <button class="btn btn-primary" (click)="openAdd()">➕ زيد منتج</button>
+    <div class="header-actions">
+      <button class="btn btn-secondary scan-btn" (click)="fileInput.click()">
+        📸 صور الفاتورة (IA)
+      </button>
+      <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      <button class="btn btn-primary" (click)="openAdd()">➕ زيد منتج</button>
+    </div>
   </div>
 
   <!-- Filters -->
@@ -255,6 +261,71 @@
           حفظ</button>
         <button class="btn btn-ghost" (click)="closeStockModal()">إلغاء</button>
       </div>
+    </div>
+  </div>
+  }
+
+  <!-- AI Scan Confirmation Modal -->
+  @if (showScanModal || isScanning) {
+  <div class="modal-overlay">
+    <div class="modal-content scan-modal" [class.scanning]="isScanning">
+      <div class="modal-header">
+        <h2>📸 منتجات الفاتورة</h2>
+        @if (!isScanning) {
+        <button class="close-btn" (click)="closeScanModal()">✕</button>
+        }
+      </div>
+
+      <div class="modal-body scan-body">
+        @if (isScanning) {
+        <div class="scanning-state">
+          <div class="scanner-line"></div>
+          <div class="scanner-icon">🤖</div>
+          <h3>ذكاء اصطناعي خدام...</h3>
+          <p>كانقرا الفاتورة ونجبد المنتجات والأثمنة، تسنى شوية!</p>
+        </div>
+        } @else {
+        <div class="scanned-list">
+          <p class="scan-info">هادشي لي لقيت فالفاتورة، راجع الأثمنة وزيدهم للمخزن:</p>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" checked disabled title="كلشي معزول" /></th>
+                  <th>السمية</th>
+                  <th>الكمية</th>
+                  <th>الثمن (شراء)</th>
+                  <th>الثمن (بيع)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of scannedProducts; track p.nom; let idx = $index) {
+                <tr>
+                  <td><input type="checkbox" [(ngModel)]="p.selected" /></td>
+                  <td><input type="text" class="form-control" [(ngModel)]="p.nom" /></td>
+                  <td><input type="number" class="form-control" [(ngModel)]="p.quantite" /></td>
+                  <td><input type="number" class="form-control" [(ngModel)]="p.prix_achat" /></td>
+                  <td><input type="number" class="form-control" [(ngModel)]="p.prix_vente" /></td>
+                </tr>
+                }
+                @if (scannedProducts.length === 0) {
+                <tr>
+                  <td colspan="5" style="text-align: center; color: red;">مالقيت حتى منتج، الصور مكلخة ولا ماشي فاتورة!</td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        }
+      </div>
+
+      @if (!isScanning) {
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="saveScannedProducts()">💾 تسجيل المنتجات المحددة</button>
+        <button class="btn btn-ghost" (click)="closeScanModal()">إلغاء</button>
+      </div>
+      }
     </div>
   </div>
   }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AIService } from '../../components/ai-assistant/ai-assistant';
 import { Produit, Categorie } from '../../core/models/models';
 import Swal from 'sweetalert2';
 
@@ -35,7 +36,12 @@ export class ProduitsComponent implements OnInit {
 
   private categories: Categorie[] = [];
 
-  constructor(private supabase: SupabaseService) {}
+  // Scanned Invoice Logic
+  showScanModal = false;
+  isScanning = false;
+  scannedProducts: any[] = [];
+
+  constructor(private supabase: SupabaseService, private aiService: AIService) {}
 
   ngOnInit() { this.loadData(); }
 
@@ -235,4 +241,88 @@ export class ProduitsComponent implements OnInit {
       this.showToast('وقع مشكل', 'error');
     }
   }
+
+  // ========== AI Invoice Scanner ==========
+  async onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // reset input so the exact same file can be selected again if needed
+    event.target.value = '';
+
+    this.isScanning = true;
+    this.scannedProducts = [];
+    this.showScanModal = true;
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = (reader.result as string).split(',')[1];
+        const mimeType = file.type;
+
+        try {
+          // Send to Gemini
+          const extractedProducts = await this.aiService.parseInvoiceImage(base64Data, mimeType);
+          this.scannedProducts = extractedProducts.map(p => ({
+            ...p,
+            selected: true // By default, everything is selected to be imported
+          }));
+        } catch (apiError) {
+          console.error(apiError);
+          this.showToast('فشل قراءة الفاتورة! جرب صورة أوضح', 'error');
+          this.closeScanModal();
+        } finally {
+          this.isScanning = false;
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      this.isScanning = false;
+      this.showToast('مشكل فالصورة', 'error');
+      this.closeScanModal();
+    }
+  }
+
+  closeScanModal() {
+    this.showScanModal = false;
+    this.scannedProducts = [];
+    this.isScanning = false;
+  }
+
+  async saveScannedProducts() {
+    const toSave = this.scannedProducts.filter(p => p.selected);
+    if (toSave.length === 0) {
+      this.showToast('عزل بعدا المنتجات لي بغيتي تحفظ', 'error');
+      return;
+    }
+
+    try {
+      this.isScanning = true;
+      // We will perform batched insertions
+      for (const p of toSave) {
+        // Find if code_barre or name already exists to update quantity?
+        // Basic implementation: just insert them as new row or you can write a check here.
+        // For simplicity, we create new records. Note: a robust implementation should check for duplicates.
+        await this.supabase.addProduit({
+          nom: p.nom,
+          categorie_id: p.categorie_id || this.categories[0]?.id || null, // default to first category if none
+          quantite: p.quantite || 0,
+          prix_achat: p.prix_achat || 0,
+          prix_vente: p.prix_vente || 0,
+          code_barre: p.code_barre || null,
+          description: 'مضاف عبر الفاتورة الآلية'
+        });
+      }
+      this.showToast(`تمت إضافة ${toSave.length} منتجات بنجاح ✅`, 'success');
+      this.closeScanModal();
+      await this.loadData();
+    } catch (err) {
+      console.error(err);
+      this.showToast('مشكل أثناء حفظ المنتجات', 'error');
+    } finally {
+      this.isScanning = false;
+    }
+  }
+
 }

@@ -63,6 +63,53 @@ USER QUESTION: ${question}
       yield "عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.";
     }
   }
+
+  async parseInvoiceImage(base64Image: string, mimeType: string): Promise<any[]> {
+    if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
+      throw new Error("API Key is missing.");
+    }
+
+    try {
+      const prompt = `
+        أنت محاسب وخبير في إدارة المخزون لمتجر هواتف وإكسسوارات في المغرب (فكري فون).
+        مرفق صورة لفاتورة شراء من مورد.
+        الرجاء استخراج المنتجات الموجودة في الفاتورة مع الكمية وسعر الشراء.
+        قُم بتقدير سعر البيع (prix_vente) بناءً على سعر الشراء (prix_achat) مع هامش ربح معقول لمتجر هواتف (مثلاً 20% أو 30% زيادة).
+        
+        أريد الإجابة فقط بتنسيق JSON صارم عبارة عن مصفوفة (Array) من العناصر (Objects).
+        كل عنصر يجب أن يحتوي على الحقول التالية فقط:
+        - nom (اسم المنتج، String)
+        - categorie_id (يمكنك تركه null، String)
+        - code_barre (إذا كان موجوداً في الفاتورة وإلا اتركه فارغاً، String)
+        - quantite (الكمية، Number)
+        - prix_achat (سعر الشراء، Number)
+        - prix_vente (سعر البيع المقترح، Number)
+        
+        لا تضف أي نص آخر، فقط مصفوفة الـ JSON.
+      `;
+
+      const imageParts = [
+        {
+          inlineData: {
+            data: base64Image,
+            mimeType
+          }
+        }
+      ];
+
+      const result = await this.model.generateContent([prompt, ...imageParts]);
+      const response = await result.response;
+      let text = response.text();
+      
+      // Clean the response if it contains markdown formatting
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('Error parsing invoice image:', error);
+      throw error;
+    }
+  }
 }
 
 @Component({
