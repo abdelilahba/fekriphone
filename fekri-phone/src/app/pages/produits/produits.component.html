@@ -287,13 +287,6 @@
         } @else {
         <div class="scanned-list">
           <p class="scan-info">هادشي لي لقيت فالفاتورة، راجع الأثمنة وزيدهم للمخزن:</p>
-          <div class="margin-buttons">
-            <span class="margin-label">⚡ ثمن البيع السريع:</span>
-            <button class="margin-btn" (click)="applyMargin(20)">+20%</button>
-            <button class="margin-btn" (click)="applyMargin(25)">+25%</button>
-            <button class="margin-btn" (click)="applyMargin(30)">+30%</button>
-            <button class="margin-btn" (click)="applyMargin(50)">+50%</button>
-          </div>
           <div class="table-responsive">
             <table class="data-table">
               <thead>
@@ -322,7 +315,14 @@
                   </td>
                   <td><input type="number" class="form-control" [(ngModel)]="p.quantite" /></td>
                   <td><input type="number" class="form-control" [(ngModel)]="p.prix_achat" /></td>
-                  <td><input type="number" class="form-control" [(ngModel)]="p.prix_vente" /></td>
+                  <td>
+                    <input type="number" class="form-control" [(ngModel)]="p.prix_vente" />
+                    <div class="row-margin-btns">
+                      <button class="mini-margin" (click)="applyMarginToProduct(p, 20)">+20%</button>
+                      <button class="mini-margin" (click)="applyMarginToProduct(p, 30)">+30%</button>
+                      <button class="mini-margin" (click)="applyMarginToProduct(p, 50)">+50%</button>
+                    </div>
+                  </td>
                   <td>
                     @if (p.isExisting) {
                     <span class="badge badge-warning" title="موجود فالمخزن، غادي نزيد الكمية">📦 موجود ({{p.existingStock}})</span>

@@ -189,20 +189,16 @@
 .badge-success { background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 8px; font-size: 11px; white-space: nowrap; }
 .scan-modal select.form-control { min-width: 100px; }
 
-/* Quick Margin Buttons */
-.margin-buttons {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin-bottom: 14px; padding: 10px 14px;
-  background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(168,85,247,0.08));
-  border-radius: 12px; border: 1px solid rgba(124,58,237,0.15);
+/* Per-row Mini Margin Buttons */
+.row-margin-btns {
+  display: flex; gap: 4px; margin-top: 4px;
 }
-.margin-label { font-weight: 700; font-size: 13px; color: var(--primary); }
-.margin-btn {
-  padding: 6px 16px; border-radius: 20px; border: 2px solid var(--primary);
-  background: white; color: var(--primary); font-weight: 800; font-size: 13px;
-  cursor: pointer; transition: all 0.2s;
+.mini-margin {
+  padding: 2px 8px; border-radius: 10px; border: 1px solid var(--primary);
+  background: white; color: var(--primary); font-weight: 700; font-size: 10px;
+  cursor: pointer; transition: all 0.15s;
 }
-.margin-btn:hover { background: var(--primary); color: white; transform: scale(1.05); }
+.mini-margin:hover { background: var(--primary); color: white; }
 
 @media (max-width: 768px) {
   .header-actions { flex-direction: column; width: 100%; }
