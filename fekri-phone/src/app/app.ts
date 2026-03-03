@@ -6,14 +6,12 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.c
 import { AuthService } from './core/services/auth.service';
 import { SupabaseService } from './core/services/supabase.service';
 import { LayoutService } from './core/services/layout.service';
-import { HelpWizard } from './components/help-wizard/help-wizard';
 import { AiAssistant } from './components/ai-assistant/ai-assistant';
-import { driver } from "driver.js";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, ConfirmDialogComponent, HelpWizard, AiAssistant],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, ConfirmDialogComponent, AiAssistant],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -79,42 +77,6 @@ export class AppComponent implements OnInit {
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       this.toggleDarkMode(true);
     }
-
-    // Onboarding Tour Driver
-    setTimeout(() => {
-      this.startTourIfNew();
-    }, 1000); // 1-second delay so rendering finishes
-  }
-
-  startTourIfNew() {
-    if (localStorage.getItem('tour_done')) return;
-
-    const driverObj = driver({
-      animate: true,
-      showProgress: true,
-      nextBtnText: 'التالي ➔',
-      prevBtnText: 'السابق ⬅',
-      doneBtnText: 'فهمت ✅',
-      progressText: '{{current}} من {{total}}',
-      steps: [
-        {
-          element: '#tour-sidebar',
-          popover: { title: '📱 القائمة الجانبية', description: 'من هنا يمكن لك تدخل لأي صفحة فالتطبيق (المنتجات، المبيعات...)' }
-        },
-        {
-          element: '#tour-search',
-          popover: { title: '🔍 البحث السريع', description: 'كليكي هنا باش تقلب على أي تيليفون أو بياصة بالزربة فين ما كنتي' }
-        },
-        {
-          element: 'app-ai-assistant',
-          popover: { title: '✨ المساعد الذكي', description: 'هادا الدري ديالك! سول الذكاء الاصطناعي ديال المحل أي حاجة غادي يعاونك بالدارجة.' }
-        }
-      ],
-      onDestroyed: () => {
-        localStorage.setItem('tour_done', 'true');
-      }
-    });
-    driverObj.drive();
   }
 
   toggleDarkMode(forceDark?: boolean) {
