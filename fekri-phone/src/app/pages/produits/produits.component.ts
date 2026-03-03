@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
@@ -41,7 +41,7 @@ export class ProduitsComponent implements OnInit {
   isScanning = false;
   scannedProducts: any[] = [];
 
-  constructor(private supabase: SupabaseService, private aiService: AIService) {}
+  constructor(private supabase: SupabaseService, private aiService: AIService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.loadData(); }
 
@@ -263,8 +263,9 @@ export class ProduitsComponent implements OnInit {
       
       this.scannedProducts = extractedProducts.map(p => ({
         ...p,
-        selected: true // By default, everything is selected to be imported
+        selected: true
       }));
+      this.cdr.detectChanges();
 
     } catch (apiError: any) {
       console.error(apiError);
@@ -273,6 +274,7 @@ export class ProduitsComponent implements OnInit {
       this.closeScanModal();
     } finally {
       this.isScanning = false;
+      this.cdr.detectChanges();
     }
   }
 
