@@ -287,6 +287,13 @@
         } @else {
         <div class="scanned-list">
           <p class="scan-info">هادشي لي لقيت فالفاتورة، راجع الأثمنة وزيدهم للمخزن:</p>
+          <div class="margin-buttons">
+            <span class="margin-label">⚡ ثمن البيع السريع:</span>
+            <button class="margin-btn" (click)="applyMargin(20)">+20%</button>
+            <button class="margin-btn" (click)="applyMargin(25)">+25%</button>
+            <button class="margin-btn" (click)="applyMargin(30)">+30%</button>
+            <button class="margin-btn" (click)="applyMargin(50)">+50%</button>
+          </div>
           <div class="table-responsive">
             <table class="data-table">
               <thead>

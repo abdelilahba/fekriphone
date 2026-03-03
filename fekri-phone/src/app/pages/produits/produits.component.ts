@@ -349,6 +349,16 @@ export class ProduitsComponent implements OnInit {
     this.isScanning = false;
   }
 
+  // Apply a quick margin % to all scanned products
+  applyMargin(percent: number) {
+    this.scannedProducts.forEach(p => {
+      if (p.prix_achat > 0) {
+        p.prix_vente = Math.round(p.prix_achat * (1 + percent / 100));
+      }
+    });
+    this.cdr.detectChanges();
+  }
+
   async saveScannedProducts() {
     const toSave = this.scannedProducts.filter(p => p.selected);
     if (toSave.length === 0) {
