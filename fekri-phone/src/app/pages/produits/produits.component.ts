@@ -258,13 +258,32 @@ export class ProduitsComponent implements OnInit {
       const base64Data = await this.compressImage(file);
       const mimeType = 'image/jpeg'; // After compression it's jpeg
 
-      // Send to Gemini
-      const extractedProducts = await this.aiService.parseInvoiceImage(base64Data, mimeType);
+      // Send to Gemini with categories list so AI can auto-detect
+      const categoryNames = this.categories.map(c => c.nom);
+      const extractedProducts = await this.aiService.parseInvoiceImage(base64Data, mimeType, categoryNames);
       
-      this.scannedProducts = extractedProducts.map(p => ({
-        ...p,
-        selected: true
-      }));
+      this.scannedProducts = extractedProducts.map(p => {
+        // Try to match AI's categorie_nom to a real category
+        const matchedCat = this.categories.find(c =>
+          c.nom.toLowerCase().includes((p.categorie_nom || '').toLowerCase()) ||
+          (p.categorie_nom || '').toLowerCase().includes(c.nom.toLowerCase())
+        );
+
+        // Check if product already exists in current stock (by name similarity)
+        const existingProduct = this.produits.find(ep =>
+          ep.nom.toLowerCase().trim() === (p.nom || '').toLowerCase().trim()
+        );
+
+        return {
+          ...p,
+          selected: true,
+          categorie_id: matchedCat?.id || '',
+          categorie_nom: matchedCat?.nom || p.categorie_nom || '',
+          existingProductId: existingProduct?.id || null,
+          existingStock: existingProduct?.quantite || 0,
+          isExisting: !!existingProduct
+        };
+      });
       this.cdr.detectChanges();
 
     } catch (apiError: any) {
@@ -339,23 +358,39 @@ export class ProduitsComponent implements OnInit {
 
     try {
       this.isScanning = true;
-      
-      const insertPromises = toSave.map(p => {
-        return this.supabase.addProduit({
-          nom: p.nom,
-          categorie_id: p.categorie_id || this.categories[0]?.id || null, // default to first category if none
-          quantite: p.quantite || 0,
-          prix_achat: p.prix_achat || 0,
-          prix_vente: p.prix_vente || 0,
-          code_barre: p.code_barre || null,
-          description: 'مضاف عبر الفاتورة الآلية'
-        });
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      const promises = toSave.map(async (p) => {
+        if (p.isExisting && p.existingProductId) {
+          // Product exists: just add the new quantity to existing stock
+          const newQty = (p.existingStock || 0) + (p.quantite || 0);
+          await this.supabase.updateProduit(p.existingProductId, {
+            quantite: newQty,
+            prix_achat: p.prix_achat || undefined, // Update purchase price if available
+          });
+          updatedCount++;
+        } else {
+          // New product: insert it
+          await this.supabase.addProduit({
+            nom: p.nom,
+            categorie_id: p.categorie_id || this.categories[0]?.id || null,
+            quantite: p.quantite || 0,
+            prix_achat: p.prix_achat || 0,
+            prix_vente: p.prix_vente || 0,
+            code_barre: p.code_barre || null,
+            description: 'مضاف عبر الفاتورة الآلية'
+          });
+          addedCount++;
+        }
       });
 
-      // Execute all inserts concurrently
-      await Promise.all(insertPromises);
+      await Promise.all(promises);
 
-      this.showToast(`تمت إضافة ${toSave.length} منتجات بنجاح ✅`, 'success');
+      let msg = '';
+      if (addedCount > 0) msg += `تزادو ${addedCount} منتجات جدد ➕`;
+      if (updatedCount > 0) msg += ` | تزاد الستوك ل ${updatedCount} منتجات موجودين 📦`;
+      this.showToast(msg || 'تم بنجاح ✅', 'success');
       this.closeScanModal();
       await this.loadData();
     } catch (err) {

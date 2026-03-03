@@ -74,18 +74,24 @@ USER QUESTION: ${question}
     }
   }
 
-  async parseInvoiceImage(base64Image: string, mimeType: string): Promise<any[]> {
+  async parseInvoiceImage(base64Image: string, mimeType: string, categoriesList: string[] = []): Promise<any[]> {
     if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
       throw new Error("API Key is missing.");
     }
 
     try {
+      const catListStr = categoriesList.length > 0
+        ? `\nالفئات الموجودة فالمتجر: [${categoriesList.join(', ')}]. خاصك تختار واحدة من هاد الفئات لكل منتج وتديرها ف "categorie_nom".`
+        : `\nقدر الفئة ديال كل منتج (مثلا: هواتف، إكسسوارات، سماعات، شواحن، واقيات، باور بانك...) وديرها ف "categorie_nom".`;
+
       const prompt = `
 استخرج المنتجات من هاد الصورة ديال فاتورة/ورقة (سواء كانت مطبوعة أو مكتوبة باليد) ديال محل هواتف وإكسسوارات.
 ركز مزيان وقرا أي حاجة كتشبه لمنتج (تيليفون، كابل، بوشيطة، سماعات، الخ).
+${catListStr}
 
 رد الجواب **فقط** بتنسيق JSON (مصفوفة من العناصر Array of Objects). الحقول لي خاصك تجبد لكل منتج:
 - "nom": السمية ديال المنتج (بالتفصيل لي مكتوب).
+- "categorie_nom": الفئة ديال المنتج (String).
 - "quantite": الكمية (رقم فقط، إذا مالقيتيهاش دير 1).
 - "prix_achat": ثمن الشراء للوحدة (رقم فقط، إذا كان الثمن الإجمالي قسمو على الكمية).
 - "prix_vente": قدر ثمن البيع بزيادة 25% على ثمن الشراء (رقم فقط).

@@ -291,26 +291,43 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th><input type="checkbox" checked disabled title="كلشي معزول" /></th>
+                  <th><input type="checkbox" checked disabled /></th>
                   <th>السمية</th>
+                  <th>الفئة</th>
                   <th>الكمية</th>
                   <th>الثمن (شراء)</th>
                   <th>الثمن (بيع)</th>
+                  <th>الحالة</th>
                 </tr>
               </thead>
               <tbody>
                 @for (p of scannedProducts; track p.nom; let idx = $index) {
-                <tr>
+                <tr [class.existing-row]="p.isExisting">
                   <td><input type="checkbox" [(ngModel)]="p.selected" /></td>
                   <td><input type="text" class="form-control" [(ngModel)]="p.nom" /></td>
+                  <td>
+                    <select class="form-control" [(ngModel)]="p.categorie_id">
+                      <option value="">-- فئة --</option>
+                      @for (cat of categories$ | async; track cat.id) {
+                      <option [value]="cat.id">{{ cat.nom }}</option>
+                      }
+                    </select>
+                  </td>
                   <td><input type="number" class="form-control" [(ngModel)]="p.quantite" /></td>
                   <td><input type="number" class="form-control" [(ngModel)]="p.prix_achat" /></td>
                   <td><input type="number" class="form-control" [(ngModel)]="p.prix_vente" /></td>
+                  <td>
+                    @if (p.isExisting) {
+                    <span class="badge badge-warning" title="موجود فالمخزن، غادي نزيد الكمية">📦 موجود ({{p.existingStock}})</span>
+                    } @else {
+                    <span class="badge badge-success">🆕 جديد</span>
+                    }
+                  </td>
                 </tr>
                 }
                 @if (scannedProducts.length === 0) {
                 <tr>
-                  <td colspan="5" style="text-align: center; color: red;">مالقيت حتى منتج، الصور مكلخة ولا ماشي فاتورة!</td>
+                  <td colspan="7" style="text-align: center; color: red;">مالقيت حتى منتج، الصور مكلخة ولا ماشي فاتورة!</td>
                 </tr>
                 }
               </tbody>
