@@ -200,6 +200,16 @@
 }
 .mini-margin:hover { background: var(--primary); color: white; }
 
+/* Existing product price indicators */
+.existing-price {
+  display: block; margin-top: 2px; font-size: 10px; color: #b45309;
+  font-weight: 600; background: #fef3c7; padding: 1px 6px; border-radius: 4px;
+}
+.existing-info {
+  display: block; margin-top: 4px; font-size: 10px; color: #6b7280;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .header-actions { flex-direction: column; width: 100%; }
   .header-actions button { width: 100%; justify-content: center; }

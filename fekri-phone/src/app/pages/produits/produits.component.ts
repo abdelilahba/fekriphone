@@ -281,6 +281,8 @@ export class ProduitsComponent implements OnInit {
           categorie_nom: matchedCat?.nom || p.categorie_nom || '',
           existingProductId: existingProduct?.id || null,
           existingStock: existingProduct?.quantite || 0,
+          existingPrixAchat: existingProduct?.prix_achat || 0,
+          existingPrixVente: existingProduct?.prix_vente || 0,
           isExisting: !!existingProduct
         };
       });
@@ -370,12 +372,16 @@ export class ProduitsComponent implements OnInit {
 
       const promises = toSave.map(async (p) => {
         if (p.isExisting && p.existingProductId) {
-          // Product exists: just add the new quantity to existing stock
+          // Product exists: add quantity + update prices if user changed them
           const newQty = (p.existingStock || 0) + (p.quantite || 0);
-          await this.supabase.updateProduit(p.existingProductId, {
-            quantite: newQty,
-            prix_achat: p.prix_achat || undefined, // Update purchase price if available
-          });
+          const updateData: any = { quantite: newQty };
+          
+          // Update prix_achat if provided
+          if (p.prix_achat > 0) updateData.prix_achat = p.prix_achat;
+          // Update prix_vente if user set one
+          if (p.prix_vente > 0) updateData.prix_vente = p.prix_vente;
+          
+          await this.supabase.updateProduit(p.existingProductId, updateData);
           updatedCount++;
         } else {
           // New product: insert it

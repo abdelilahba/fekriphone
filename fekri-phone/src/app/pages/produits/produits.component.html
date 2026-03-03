@@ -314,7 +314,12 @@
                     </select>
                   </td>
                   <td><input type="number" class="form-control" [(ngModel)]="p.quantite" /></td>
-                  <td><input type="number" class="form-control" [(ngModel)]="p.prix_achat" /></td>
+                  <td>
+                    <input type="number" class="form-control" [(ngModel)]="p.prix_achat" />
+                    @if (p.isExisting && p.existingPrixAchat > 0) {
+                    <small class="existing-price">📌 دابا: {{ p.existingPrixAchat }} د.م</small>
+                    }
+                  </td>
                   <td>
                     <input type="number" class="form-control" [(ngModel)]="p.prix_vente" />
                     <div class="row-margin-btns">
@@ -322,10 +327,14 @@
                       <button class="mini-margin" (click)="applyMarginToProduct(p, 30)">+30%</button>
                       <button class="mini-margin" (click)="applyMarginToProduct(p, 50)">+50%</button>
                     </div>
+                    @if (p.isExisting && p.existingPrixVente > 0) {
+                    <small class="existing-price">📌 دابا: {{ p.existingPrixVente }} د.م</small>
+                    }
                   </td>
                   <td>
                     @if (p.isExisting) {
-                    <span class="badge badge-warning" title="موجود فالمخزن، غادي نزيد الكمية">📦 موجود ({{p.existingStock}})</span>
+                    <span class="badge badge-warning">📦 موجود</span>
+                    <small class="existing-info">ستوك: {{p.existingStock}} | +{{p.quantite}} جديد</small>
                     } @else {
                     <span class="badge badge-success">🆕 جديد</span>
                     }
