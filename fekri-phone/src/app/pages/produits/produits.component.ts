@@ -255,33 +255,70 @@ export class ProduitsComponent implements OnInit {
     this.showScanModal = true;
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = (reader.result as string).split(',')[1];
-        const mimeType = file.type;
+      const base64Data = await this.compressImage(file);
+      const mimeType = 'image/jpeg'; // After compression it's jpeg
 
-        try {
-          // Send to Gemini
-          const extractedProducts = await this.aiService.parseInvoiceImage(base64Data, mimeType);
-          this.scannedProducts = extractedProducts.map(p => ({
-            ...p,
-            selected: true // By default, everything is selected to be imported
-          }));
-        } catch (apiError) {
-          console.error(apiError);
-          this.showToast('فشل قراءة الفاتورة! جرب صورة أوضح', 'error');
-          this.closeScanModal();
-        } finally {
-          this.isScanning = false;
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error(err);
-      this.isScanning = false;
-      this.showToast('مشكل فالصورة', 'error');
+      // Send to Gemini
+      const extractedProducts = await this.aiService.parseInvoiceImage(base64Data, mimeType);
+      
+      this.scannedProducts = extractedProducts.map(p => ({
+        ...p,
+        selected: true // By default, everything is selected to be imported
+      }));
+
+    } catch (apiError) {
+      console.error(apiError);
+      this.showToast('فشل قراءة الفاتورة! جرب صورة أوضح', 'error');
       this.closeScanModal();
+    } finally {
+      this.isScanning = false;
     }
+  }
+
+  // Compress large images to speed up AI parsing
+  private compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Compress generic JPEG (90% quality)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            // return only base64 string
+            resolve(dataUrl.split(',')[1]);
+          } else {
+            reject(new Error('Canvas ctx null'));
+          }
+        };
+        img.onerror = () => reject(new Error('Image creation failed'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('File reading failed'));
+      reader.readAsDataURL(file);
+    });
   }
 
   closeScanModal() {
