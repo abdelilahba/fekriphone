@@ -12,6 +12,7 @@ export class AIService {
   private genAI: GoogleGenerativeAI;
   private model: any;
   private visionModel: any;
+  private fallbackVisionModel: any;
 
   constructor(private supabase: SupabaseService) {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
@@ -29,7 +30,16 @@ export class AIService {
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.1, // Low temp for maximum deterministic speed
+        temperature: 0.1,
+      }
+    });
+
+    // Fallback model when primary quota is exceeded
+    this.fallbackVisionModel = this.genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.1,
       }
     });
   }
@@ -112,12 +122,23 @@ ${catListStr}
         }
       ];
 
-      // Use the visionModel which has JSON response type enforced and low temperature for speed
-      const result = await this.visionModel.generateContent([prompt, ...imageParts]);
+      // Try primary model first, fallback on quota error
+      let result;
+      try {
+        result = await this.visionModel.generateContent([prompt, ...imageParts]);
+      } catch (primaryError: any) {
+        if (primaryError?.message?.includes('429') || primaryError?.message?.includes('quota')) {
+          console.warn('Primary model quota exceeded, switching to fallback model...');
+          result = await this.fallbackVisionModel.generateContent([prompt, ...imageParts]);
+        } else {
+          throw primaryError;
+        }
+      }
+
       const response = await result.response;
       let text = response.text();
       
-      // Clean the response if it contains markdown formatting (though json type should prevent it)
+      // Clean the response if it contains markdown formatting
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       
       return JSON.parse(text);
@@ -125,6 +146,9 @@ ${catListStr}
       console.error('Error parsing invoice image:', error);
       if (error?.message?.includes('503') || error?.message?.includes('high demand')) {
         throw new Error('السيرفور ديال جوجل عامر دابا (503)، جرب مرة أخرى من بعد شوية!');
+      }
+      if (error?.message?.includes('429') || error?.message?.includes('quota')) {
+        throw new Error('وصلتي للحد اليومي ديال الذكاء الاصطناعي (20 مرة/اليوم). جرب غدا!');
       }
       throw error;
     }
