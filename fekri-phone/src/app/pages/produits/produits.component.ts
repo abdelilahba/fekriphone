@@ -266,9 +266,10 @@ export class ProduitsComponent implements OnInit {
         selected: true // By default, everything is selected to be imported
       }));
 
-    } catch (apiError) {
+    } catch (apiError: any) {
       console.error(apiError);
-      this.showToast('فشل قراءة الفاتورة! جرب صورة أوضح', 'error');
+      const errorMsg = apiError.message || 'فشل قراءة الفاتورة! جرب صورة أوضح';
+      this.showToast(errorMsg, 'error');
       this.closeScanModal();
     } finally {
       this.isScanning = false;

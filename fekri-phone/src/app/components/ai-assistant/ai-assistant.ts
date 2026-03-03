@@ -15,7 +15,7 @@ export class AIService {
   constructor(private supabase: SupabaseService) {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
+      model: "gemini-1.5-flash",
       systemInstruction: "You are an expert Moroccan AI assistant for a mobile phone store called 'Fekri Phone'. " +
         "You always answer in Moroccan Darija (Arabic script). " +
         "You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. " +
@@ -105,8 +105,11 @@ USER QUESTION: ${question}
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       
       return JSON.parse(text);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error parsing invoice image:', error);
+      if (error?.message?.includes('503') || error?.message?.includes('high demand')) {
+        throw new Error('السيرفور ديال جوجل عامر دابا (503)، جرب مرة أخرى من بعد شوية!');
+      }
       throw error;
     }
   }
