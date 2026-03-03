@@ -11,6 +11,7 @@ export class AIService {
   private API_KEY = environment.geminiKey;
   private genAI: GoogleGenerativeAI;
   private model: any;
+  private visionModel: any;
 
   constructor(private supabase: SupabaseService) {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
@@ -21,6 +22,15 @@ export class AIService {
         "You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. " +
         "When the user asks about their data (like products, sales, stock), formulate your answer using the data block provided in their prompt. " +
         "Respond clearly and keep answers practical, and business-oriented.",
+    });
+    
+    // Create a specific fast model for invoice parsing
+    this.visionModel = this.genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.1, // Low temp for maximum deterministic speed
+      }
     });
   }
 
@@ -71,22 +81,10 @@ USER QUESTION: ${question}
 
     try {
       const prompt = `
-        أنت محاسب وخبير في إدارة المخزون لمتجر هواتف وإكسسوارات في المغرب (فكري فون).
-        مرفق صورة لفاتورة شراء من مورد.
-        الرجاء استخراج المنتجات الموجودة في الفاتورة مع الكمية وسعر الشراء.
-        قُم بتقدير سعر البيع (prix_vente) بناءً على سعر الشراء (prix_achat) مع هامش ربح معقول لمتجر هواتف (مثلاً 20% أو 30% زيادة).
-        
-        أريد الإجابة فقط بتنسيق JSON صارم عبارة عن مصفوفة (Array) من العناصر (Objects).
-        كل عنصر يجب أن يحتوي على الحقول التالية فقط:
-        - nom (اسم المنتج، String)
-        - categorie_id (يمكنك تركه null، String)
-        - code_barre (إذا كان موجوداً في الفاتورة وإلا اتركه فارغاً، String)
-        - quantite (الكمية، Number)
-        - prix_achat (سعر الشراء، Number)
-        - prix_vente (سعر البيع المقترح، Number)
-        
-        لا تضف أي نص آخر، فقط مصفوفة الـ JSON.
-      `;
+استخرج المنتجات من هاد الفاتورة ديال محل هواتف بالمغرب.
+رد الجواب فقط بتنسيق JSON (مصفوفة من العناصر). الحقول:
+"nom" (اسم المنتج), "quantite" (الكمية - أرقام فقط), "prix_achat" (ثمن الشراء), "prix_vente" (قدر ثمن البيع بزيادة 25%), "code_barre" (فاتغ أو استخرجه إذا كان موجود).
+لا تشرح أي شيء، فقط JSON.`;
 
       const imageParts = [
         {
@@ -97,11 +95,12 @@ USER QUESTION: ${question}
         }
       ];
 
-      const result = await this.model.generateContent([prompt, ...imageParts]);
+      // Use the visionModel which has JSON response type enforced and low temperature for speed
+      const result = await this.visionModel.generateContent([prompt, ...imageParts]);
       const response = await result.response;
       let text = response.text();
       
-      // Clean the response if it contains markdown formatting
+      // Clean the response if it contains markdown formatting (though json type should prevent it)
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       
       return JSON.parse(text);
