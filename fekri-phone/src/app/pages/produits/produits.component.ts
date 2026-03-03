@@ -337,12 +337,9 @@ export class ProduitsComponent implements OnInit {
 
     try {
       this.isScanning = true;
-      // We will perform batched insertions
-      for (const p of toSave) {
-        // Find if code_barre or name already exists to update quantity?
-        // Basic implementation: just insert them as new row or you can write a check here.
-        // For simplicity, we create new records. Note: a robust implementation should check for duplicates.
-        await this.supabase.addProduit({
+      
+      const insertPromises = toSave.map(p => {
+        return this.supabase.addProduit({
           nom: p.nom,
           categorie_id: p.categorie_id || this.categories[0]?.id || null, // default to first category if none
           quantite: p.quantite || 0,
@@ -351,7 +348,11 @@ export class ProduitsComponent implements OnInit {
           code_barre: p.code_barre || null,
           description: 'مضاف عبر الفاتورة الآلية'
         });
-      }
+      });
+
+      // Execute all inserts concurrently
+      await Promise.all(insertPromises);
+
       this.showToast(`تمت إضافة ${toSave.length} منتجات بنجاح ✅`, 'success');
       this.closeScanModal();
       await this.loadData();
