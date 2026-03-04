@@ -12,6 +12,7 @@
 .printable-area {
   padding: 30px; font-family: 'Inter', system-ui, sans-serif;
   color: #111; direction: rtl;
+  max-height: 75vh; overflow-y: auto;
 }
 
 .modal-backdrop {
@@ -47,5 +48,5 @@
   .view-modal { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: none; }
   .view-modal .modal-content { box-shadow: none; width: 100%; border: none; max-width: 100%; transform: none; animation: none; padding: 0; }
   .printable-area, .printable-area * { visibility: visible; }
-  .printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+  .printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; max-height: none !important; overflow: visible !important; }
 }
