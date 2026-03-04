@@ -683,23 +683,147 @@ select.form-control {
    ============================================ */
 @media (max-width: 768px) {
   .search-box input {
-    width: 200px;
+    width: 100%;
   }
 
   .search-box input:focus {
-    width: 220px;
+    width: 100%;
   }
 
   .page-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .page-header h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
+  /* Tables: horizontal scroll */
+  .table-responsive,
+  .table-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* Cards: less padding */
+  .card {
+    padding: 14px;
+  }
+
+  /* Stat cards: smaller */
+  .stat-card {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .stat-card .stat-info h3 {
+    font-size: 18px;
+  }
+
+  .stat-card .stat-info p {
+    font-size: 11px;
+  }
+
+  /* Modals: full width */
   .modal-content {
-    max-width: 95%;
+    max-width: 98% !important;
+    margin: 8px;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 15px;
+  }
+
+  .modal-body {
+    padding: 14px 16px;
+  }
+
+  .modal-footer {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  /* Buttons: full width on small screens */
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Form rows: single column */
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Badges */
+  .badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  /* Pagination */
+  .pagination {
+    gap: 8px;
+    padding: 12px 8px;
+  }
+
+  .pagination-btn {
+    min-width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  /* Toast */
+  .toast-container {
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+
+  .toast {
+    min-width: auto;
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  /* Empty states */
+  .empty-state {
+    padding: 30px 16px;
+  }
+
+  .empty-state .empty-icon {
+    font-size: 36px;
+  }
+
+  .empty-state h3 {
+    font-size: 16px;
   }
 }

@@ -384,7 +384,28 @@
   }
 
   .page-content {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  .top-bar {
+    padding: 8px 12px;
+  }
+
+  .circle-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .search-modal {
+    max-width: 98%;
+  }
+
+  .stock-toast-inner {
+    min-width: auto;
+    padding: 10px 14px;
+    font-size: 13px;
+    flex-wrap: wrap;
   }
 }
 
