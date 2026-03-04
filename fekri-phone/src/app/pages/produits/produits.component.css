@@ -157,22 +157,6 @@
 .scan-btn { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; border: none; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .scan-btn:hover { opacity: 0.9; transform: translateY(-2px); }
 
-/* Quick Add */
-.btn-accent { background: linear-gradient(135deg, #f59e0b, #f97316); color: white; border: none; font-weight: 700; }
-.btn-accent:hover { opacity: 0.9; transform: translateY(-2px); }
-.quick-add-bar {
-  padding: 12px 16px; margin-bottom: 12px;
-  background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(249,115,22,0.06));
-  border: 2px solid rgba(245,158,11,0.2); animation: slideDown 0.2s ease;
-}
-.quick-add-row {
-  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-}
-.quick-add-row input, .quick-add-row select { flex: 1; min-width: 80px; }
-.quick-add-row input:first-child { flex: 2.5; min-width: 150px; }
-.quick-add-btn { white-space: nowrap; flex: 0 0 auto; }
-@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
 .scan-modal { max-width: 1100px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
 .scan-body { overflow-y: auto; padding: 20px; flex-grow: 1; }
 .scan-info { margin-bottom: 15px; font-weight: 600; color: var(--text-muted); }
@@ -225,17 +209,6 @@
   display: block; margin-top: 4px; font-size: 10px; color: #6b7280;
   font-weight: 500;
 }
-
-/* Excel Style Bulk Add */
-.excel-table th { padding: 8px; font-size: 12px; background: rgba(0,0,0,0.02); text-align: center; }
-.excel-table td { padding: 2px; text-align: center; vertical-align: middle; border: 1px solid #e5e7eb; }
-.excel-input { 
-  width: 100%; border: none; padding: 12px 8px; font-size: 14px; 
-  background: transparent; outline: none; transition: background 0.2s;
-}
-.excel-input:focus { background: rgba(124, 58, 237, 0.05); }
-.excel-input.text-center { text-align: center; }
-.excel-table tbody tr:hover { background: rgba(0,0,0,0.01); }
 
 @media (max-width: 768px) {
   .header-actions { flex-direction: column; width: 100%; }
