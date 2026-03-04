@@ -226,6 +226,17 @@
   font-weight: 500;
 }
 
+/* Excel Style Bulk Add */
+.excel-table th { padding: 8px; font-size: 12px; background: rgba(0,0,0,0.02); text-align: center; }
+.excel-table td { padding: 2px; text-align: center; vertical-align: middle; border: 1px solid #e5e7eb; }
+.excel-input { 
+  width: 100%; border: none; padding: 12px 8px; font-size: 14px; 
+  background: transparent; outline: none; transition: background 0.2s;
+}
+.excel-input:focus { background: rgba(124, 58, 237, 0.05); }
+.excel-input.text-center { text-align: center; }
+.excel-table tbody tr:hover { background: rgba(0,0,0,0.01); }
+
 @media (max-width: 768px) {
   .header-actions { flex-direction: column; width: 100%; }
   .header-actions button { width: 100%; justify-content: center; }

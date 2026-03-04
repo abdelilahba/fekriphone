@@ -45,6 +45,10 @@ export class ProduitsComponent implements OnInit {
   showQuickAdd = false;
   quickForm = { nom: '', categorie_id: '', prix_achat: 0, prix_vente: 0, quantite: 1 };
 
+  // Bulk Add (Excel Style)
+  showBulkAddModal = false;
+  bulkProducts: any[] = [];
+
   constructor(private supabase: SupabaseService, private aiService: AIService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.loadData(); }
@@ -143,6 +147,68 @@ export class ProduitsComponent implements OnInit {
     } catch (err) {
       console.error(err);
       this.showToast('مشكل فالإضافة', 'error');
+    }
+  }
+
+  // --- Bulk Add (Excel Style) Logic ---
+  openBulkAdd() {
+    this.showBulkAddModal = true;
+    this.bulkProducts = [];
+    const defaultCat = this.categories[0]?.id || '';
+    // Start with 10 empty rows
+    for (let i = 0; i < 10; i++) {
+      this.addBulkRow(defaultCat);
+    }
+  }
+
+  addBulkRow(defaultCat: string = '') {
+    this.bulkProducts.push({
+      nom: '',
+      categorie_id: defaultCat || this.categories[0]?.id || '',
+      quantite: 1,
+      prix_achat: '',
+      prix_vente: '',
+      code_barre: ''
+    });
+  }
+
+  closeBulkAdd() {
+    this.showBulkAddModal = false;
+    this.bulkProducts = [];
+  }
+
+  async saveBulkAdd() {
+    // Filter out rows that don't have a name
+    const validRows = this.bulkProducts.filter(p => p.nom && p.nom.trim() !== '');
+    
+    if (validRows.length === 0) {
+      this.showToast('عمر بعدا شي منتج باش تحفظو!', 'error');
+      return;
+    }
+
+    try {
+      this.loading$.next(true); // Reusing loading to block UI
+      const promises = validRows.map(p => {
+        return this.supabase.addProduit({
+          nom: p.nom.trim(),
+          categorie_id: p.categorie_id || this.categories[0]?.id || null,
+          quantite: Number(p.quantite) || 0,
+          prix_achat: Number(p.prix_achat) || 0,
+          prix_vente: Number(p.prix_vente) || 0,
+          code_barre: p.code_barre || null,
+          description: 'مضاف بالجملة (Excel Mode)'
+        });
+      });
+
+      await Promise.all(promises);
+      this.showToast(`✅ تم إضافة ${validRows.length} منتجات بنجاح!`, 'success');
+      this.closeBulkAdd();
+      await this.loadData();
+    } catch (err) {
+      console.error(err);
+      this.showToast('وقع مشكل فالحفظ. تأكد من المعلومات!', 'error');
+    } finally {
+      this.loading$.next(false);
     }
   }
 

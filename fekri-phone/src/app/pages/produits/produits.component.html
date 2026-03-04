@@ -13,8 +13,9 @@
         📸 صور الفاتورة (IA)
       </button>
       <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
-      <button class="btn btn-accent" (click)="toggleQuickAdd()">⚡ إضافة سريعة</button>
-      <button class="btn btn-primary" (click)="openAdd()">➕ زيد منتج</button>
+      <button class="btn btn-accent" (click)="toggleQuickAdd()">⚡ سريعة</button>
+      <button class="btn" style="background: #10b981; color: white;" (click)="openBulkAdd()">📊 بالجملة (Excel)</button>
+      <button class="btn btn-primary" (click)="openAdd()">➕ منتج</button>
     </div>
   </div>
 
@@ -380,6 +381,61 @@
         <button class="btn btn-ghost" (click)="closeScanModal()">إلغاء</button>
       </div>
       }
+    </div>
+  </div>
+  }
+
+  <!-- Bulk Add (Excel Style) Modal -->
+  @if (showBulkAddModal) {
+  <div class="modal-backdrop error-backdrop">
+    <div class="modal-content scan-modal" style="max-width: 1400px; width: 98vw; height: 95vh; max-height: 95vh;">
+      <div class="modal-header">
+        <h2>📊 إضافة بالجملة (Excel Mode)</h2>
+        <button class="close-btn" (click)="closeBulkAdd()">×</button>
+      </div>
+      <div class="modal-body scan-body" style="padding: 10px;">
+        <div class="table-responsive" style="height: 100%;">
+          <table class="data-table excel-table">
+            <thead>
+              <tr>
+                <th>الرقم</th>
+                <th style="min-width: 250px;">السمية (Nom)</th>
+                <th>الفئة (Catégorie)</th>
+                <th style="width: 100px;">الكمية (Qté)</th>
+                <th style="width: 120px;">ثمن الشراء</th>
+                <th style="width: 120px;">ثمن البيع</th>
+                <th style="min-width: 200px;">الباركود (Code)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of bulkProducts; track $index; let i = $index) {
+              <tr>
+                <td style="text-align: center; color: #888; font-weight: bold;">{{ i + 1 }}</td>
+                <td><input type="text" class="excel-input" [(ngModel)]="row.nom" placeholder="اسم المنتج..." /></td>
+                <td>
+                  <select class="excel-input" [(ngModel)]="row.categorie_id">
+                    @for (cat of categories$ | async; track cat.id) {
+                    <option [value]="cat.id">{{ cat.nom }}</option>
+                    }
+                  </select>
+                </td>
+                <td><input type="number" class="excel-input text-center" [(ngModel)]="row.quantite" min="1" /></td>
+                <td><input type="number" class="excel-input text-center" [(ngModel)]="row.prix_achat" /></td>
+                <td><input type="number" class="excel-input text-center" [(ngModel)]="row.prix_vente" /></td>
+                <td><input type="text" class="excel-input" [(ngModel)]="row.code_barre" placeholder="SCAN_BARCODE" /></td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn btn-secondary" (click)="addBulkRow()">➕ زيد سطر جديد</button>
+        <div>
+          <button class="btn btn-primary" (click)="saveBulkAdd()" [disabled]="(loading$ | async)">💾 حفظ الكل (Sauvegarder)</button>
+          <button class="btn btn-ghost" (click)="closeBulkAdd()">إلغاء</button>
+        </div>
+      </div>
     </div>
   </div>
   }
