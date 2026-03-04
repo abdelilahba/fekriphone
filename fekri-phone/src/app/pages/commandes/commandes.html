@@ -139,7 +139,11 @@
       </div>
       <div class="modal-footer" style="justify-content: space-between;">
         <span style="color: var(--text-muted); font-size: 0.9rem;">
+          @if (orderType === 'auto') {
           الذكاء الاصطناعي اقترح هاد المنتجات حيت الكمية ديالهم قل من 4.
+          } @else {
+          لائحة يدوية الموظف (يمكنك إضافة أي منتج للائحة).
+          }
         </span>
         <div>
           <button class="btn btn-primary" (click)="saveOrder()" [disabled]="newOrder.articles.length === 0">💾 حفظ الطلبية</button>
