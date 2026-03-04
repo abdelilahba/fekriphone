@@ -6,15 +6,11 @@
 @if (!isFullscreen) {
 <aside class="sidebar" [class.collapsed]="!sidebarOpen" [class.mobile-open]="mobileMenuOpen">
   <div class="sidebar-header">
-    <div class="logo-section" *ngIf="sidebarOpen">
-      <img src="assets/logo.jpg" alt="Fikri Phone" class="logo-img">
-      <div class="logo-text">
-        <h2>فكري فون</h2>
-        <span>إدارة المحل</span>
-      </div>
+    <div class="logo-section" *ngIf="sidebarOpen" style="justify-content: center; width: 100%;">
+      <img src="assets/logo.jpg" alt="Fikri Phone" style="width: 160px; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
     </div>
-    <div class="logo-icon-only" *ngIf="!sidebarOpen">
-      <img src="assets/logo.jpg" alt="FP" class="logo-img-sm">
+    <div class="logo-icon-only" *ngIf="!sidebarOpen" style="display: flex; justify-content: center; width: 100%;">
+      <img src="assets/logo.jpg" alt="FP" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px;">
     </div>
   </div>
 

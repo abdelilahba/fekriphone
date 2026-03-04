@@ -18,7 +18,7 @@ export class AIService {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
     this.model = this.genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: "You are an expert Moroccan AI assistant for a mobile phone store called 'Fekri Phone'. " +
+      systemInstruction: "You are an expert Moroccan AI assistant for a mobile phone store. " +
         "You always answer in Moroccan Darija (Arabic script). " +
         "You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. " +
         "When the user asks about their data (like products, sales, stock), formulate your answer using the data block provided in their prompt. " +
@@ -170,7 +170,7 @@ export class AiAssistant {
   isThinking = false;
 
   messages: { text: string; sender: 'user' | 'ai' }[] = [
-    { text: 'السلام عليكم صديقي! أنا المساعد الذكي ديال "فكري فون". كيفاش نقدر نعاونك باش نطوروا المحل اليوم؟', sender: 'ai' }
+    { text: 'السلام عليكم! أنا المساعد الذكي الخاص بالمحل. كيفاش نقدر نعاونك باش نطوروا خدامطنا اليوم؟', sender: 'ai' }
   ];
 
   constructor(private aiService: AIService, private cdr: ChangeDetectorRef) {}
