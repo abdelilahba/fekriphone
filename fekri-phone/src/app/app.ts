@@ -38,6 +38,7 @@ export class AppComponent implements OnInit {
   menuItems = [
     { path: '/', icon: '📊', label: 'لوحة التحكم', exact: true },
     { path: '/produits', icon: '📦', label: 'المنتجات', exact: false },
+    { path: '/commandes', icon: '📥', label: 'سلعة خاصدار', exact: false },
     { path: '/pieces', icon: '⚙️', label: 'قطع الغيار', exact: false },
     { path: '/ventes', icon: '🛒', label: 'المبيعات', exact: false },
     { path: '/reparations', icon: '🔧', label: 'مداخيل الإصلاح', exact: false },

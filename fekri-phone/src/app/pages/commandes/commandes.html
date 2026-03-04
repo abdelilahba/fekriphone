@@ -1,0 +1,186 @@
+<div class="produits-page commandes-page">
+  <!-- Toast -->
+  @if (toastMessage$ | async; as toast) {
+  <div class="toast-container">
+    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+  </div>
+  }
+
+  <div class="page-header no-print">
+    <h1>📥 سلعة خاصدار (Commandes)</h1>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openAutoGenerate()">
+        🤖 توليد طلبية أوتوماتيكية (سلعة ناقصة)
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading$ | async) {
+  <div class="skeleton-loader no-print">
+    <div class="skeleton-row short"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row tall"></div>
+  </div>
+  } @else {
+  @if (commandes$ | async; as commandes) {
+  @if (commandes.length > 0) {
+  <div class="card table-card no-print">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>التاريخ</th>
+            <th>المنتجات المطلوبة (العدد)</th>
+            <th>المبلغ التقديري</th>
+            <th>الحالة</th>
+            <th class="text-left">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of commandes; track c.id) {
+          <tr>
+            <td>{{ c.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <span class="badge badge-info">{{ c.articles.length }} منتجات</span>
+            </td>
+            <td>
+              <strong>{{ c.total_estime | number:'1.2-2' }} د.م</strong>
+            </td>
+            <td>
+              <span class="badge badge-success">{{ c.statut === 'validee' ? '✅ مسجلة' : c.statut }}</span>
+            </td>
+            <td class="text-left">
+              <button class="btn btn-ghost btn-icon" (click)="viewOrder(c)" title="عرض الطلبية (PDF)">👁️/🖨️</button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  } @else {
+  <div class="empty-state no-print">
+    <div class="empty-icon">🛒</div>
+    <h3>ما كاين حتى طلبية باقا</h3>
+    <button class="btn btn-primary" (click)="openAutoGenerate()">🤖 جرد السلعة الناقصة</button>
+  </div>
+  }
+  }
+  }
+
+  <!-- Generate Order Modal -->
+  @if (showModal) {
+  <div class="modal-backdrop error-backdrop no-print">
+    <div class="modal-content" style="max-width: 900px; width: 95%;">
+      <div class="modal-header">
+        <h2>📦 السلعة اللي خاصك تشري</h2>
+        <button class="close-btn" (click)="closeModal()">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+        
+        @if (newOrder.articles.length === 0) {
+        <div style="text-align: center; color: #10b981; padding: 20px;">
+          🎉 ستوك ديالك عامر! ماكينا تا سلعة فيها 3 حبات ولا قل.
+        </div>
+        } @else {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>السمية</th>
+              <th>الثمن التقديري</th>
+              <th>الكمية اللي تشري</th>
+              <th>المجموع التقديري</th>
+              <th>حذف</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (art of newOrder.articles; track art.produit_id; let i = $index) {
+            <tr>
+              <td><strong>{{ art.nom }}</strong></td>
+              <td>
+                <input type="number" class="form-control" [(ngModel)]="art.prix_achat_estime" (change)="calculateTotal()" />
+              </td>
+              <td>
+                <input type="number" class="form-control" [(ngModel)]="art.quantite_demandee" (change)="calculateTotal()" />
+              </td>
+              <td>{{ art.quantite_demandee * art.prix_achat_estime | number:'1.2-2' }}</td>
+              <td>
+                <button class="btn btn-ghost btn-icon" (click)="removeArticle(i)" style="color: var(--danger);">🗑️</button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+        
+        <div style="text-align: left; padding: 20px 0; font-size: 1.2rem; font-weight: bold; border-top: 2px dashed #eee; margin-top: 15px;">
+           مجموع الفلوس اللي غاتخصك: <span style="color: var(--primary);">{{ newOrder.total_estime | number:'1.2-2' }} د.م</span>
+        </div>
+        }
+
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <span style="color: var(--text-muted); font-size: 0.9rem;">
+          الذكاء الاصطناعي اقترح هاد المنتجات حيت الكمية ديالهم قل من 4.
+        </span>
+        <div>
+          <button class="btn btn-primary" (click)="saveOrder()" [disabled]="newOrder.articles.length === 0">💾 حفظ الطلبية</button>
+          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- View / Print PDF Modal -->
+  @if (viewModal && selectedCommande) {
+  <div class="modal-backdrop view-modal">
+    <div class="modal-content" style="max-width: 800px; width: 95%;">
+      <!-- This block is printable -->
+      <div class="printable-area">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #ccc; padding-bottom: 20px; margin-bottom: 20px;">
+          <div>
+            <h1 style="margin: 0; color: #111;">Fekri Phone</h1>
+            <p style="margin: 5px 0 0 0; color: #555;">لائحة السلعة الخاصة بالمتجر</p>
+          </div>
+          <div style="text-align: left;">
+            <p style="margin: 0; color: #333;"><strong>التاريخ:</strong> {{ selectedCommande.created_at | date:'dd/MM/yyyy' }}</p>
+            <p style="margin: 4px 0 0 0; color: #333;"><strong>معرف:</strong> {{ selectedCommande.id | slice:0:8 }}</p>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">المنتج</th>
+              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">الكمية المطلوبة</th>
+              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">ثمن شراء كل حبة</th>
+              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (art of selectedCommande.articles; track art.produit_id) {
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;">{{ art.nom }}</td>
+              <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{{ art.quantite_demandee }} حبات</td>
+              <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{{ art.prix_achat_estime | number:'1.2-2' }} د.م</td>
+              <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{{ art.quantite_demandee * art.prix_achat_estime | number:'1.2-2' }} د.م</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; text-align: left; border: 1px solid #eee;">
+          <strong style="font-size: 1.2rem; color: #111;">المجموع التقديري: </strong>
+          <strong style="font-size: 1.5rem; color: #7c3aed;">{{ selectedCommande.total_estime | number:'1.2-2' }} د.م</strong>
+        </div>
+      </div>
+      <!-- Print Actions -->
+      <div class="modal-footer no-print">
+        <button class="btn btn-primary" (click)="printOrder()" style="background: #10b981; color: white;">🖨️ طباعة أو تحميل (PDF)</button>
+        <button class="btn btn-secondary" (click)="closeViewModal()">إغلاق</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

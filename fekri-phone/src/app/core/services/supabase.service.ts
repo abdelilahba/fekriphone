@@ -351,4 +351,43 @@ export class SupabaseService {
       benefice: totalProfitVentes + totalRevenus - totalDepenses - totalPertes
     };
   }
+
+  // ==================== Commandes Fournisseur ====================
+  async getCommandes() {
+    const { data, error } = await this.supabase
+      .from('commandes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
+  async addCommande(commande: any) {
+    const { data, error } = await this.supabase
+      .from('commandes')
+      .insert(commande)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async updateCommande(id: string, commande: any) {
+    const { data, error } = await this.supabase
+      .from('commandes')
+      .update(commande)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteCommande(id: string) {
+    const { error } = await this.supabase
+      .from('commandes')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
 }
