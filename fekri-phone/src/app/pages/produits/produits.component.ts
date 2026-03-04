@@ -41,6 +41,10 @@ export class ProduitsComponent implements OnInit {
   isScanning = false;
   scannedProducts: any[] = [];
 
+  // Quick Add
+  showQuickAdd = false;
+  quickForm = { nom: '', categorie_id: '', prix_achat: 0, prix_vente: 0, quantite: 1 };
+
   constructor(private supabase: SupabaseService, private aiService: AIService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.loadData(); }
@@ -113,6 +117,34 @@ export class ProduitsComponent implements OnInit {
   }
 
   closeModal() { this.showModal = false; }
+
+  toggleQuickAdd() { this.showQuickAdd = !this.showQuickAdd; }
+
+  async quickAdd() {
+    if (!this.quickForm.nom.trim()) {
+      this.showToast('خصك تدخل السمية!', 'error');
+      return;
+    }
+    try {
+      await this.supabase.addProduit({
+        nom: this.quickForm.nom,
+        categorie_id: this.quickForm.categorie_id || this.categories[0]?.id || null,
+        quantite: this.quickForm.quantite || 1,
+        prix_achat: this.quickForm.prix_achat || 0,
+        prix_vente: this.quickForm.prix_vente || 0,
+        code_barre: null,
+        description: null
+      });
+      this.showToast(`✅ ${this.quickForm.nom} تزاد!`, 'success');
+      // Reset form but keep category
+      const catId = this.quickForm.categorie_id;
+      this.quickForm = { nom: '', categorie_id: catId, prix_achat: 0, prix_vente: 0, quantite: 1 };
+      await this.loadData();
+    } catch (err) {
+      console.error(err);
+      this.showToast('مشكل فالإضافة', 'error');
+    }
+  }
 
   async save() {
     if (!this.form.nom || !this.form.categorie_id) {

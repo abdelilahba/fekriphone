@@ -13,9 +13,30 @@
         📸 صور الفاتورة (IA)
       </button>
       <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      <button class="btn btn-accent" (click)="toggleQuickAdd()">⚡ إضافة سريعة</button>
       <button class="btn btn-primary" (click)="openAdd()">➕ زيد منتج</button>
     </div>
   </div>
+
+  <!-- Quick Add Bar -->
+  @if (showQuickAdd) {
+  <div class="quick-add-bar card">
+    <div class="quick-add-row">
+      <input type="text" class="form-control" [(ngModel)]="quickForm.nom" placeholder="📝 السمية..."
+        (keyup.enter)="quickAdd()" autofocus>
+      <select class="form-control" [(ngModel)]="quickForm.categorie_id">
+        <option value="">📂 فئة</option>
+        @for (cat of categories$ | async; track cat.id) {
+        <option [value]="cat.id">{{ cat.nom }}</option>
+        }
+      </select>
+      <input type="number" class="form-control" [(ngModel)]="quickForm.quantite" placeholder="الكمية" min="1">
+      <input type="number" class="form-control" [(ngModel)]="quickForm.prix_achat" placeholder="💰 شراء">
+      <input type="number" class="form-control" [(ngModel)]="quickForm.prix_vente" placeholder="💵 بيع">
+      <button class="btn btn-primary quick-add-btn" (click)="quickAdd()">✅ زيد</button>
+    </div>
+  </div>
+  }
 
   <!-- Filters -->
   <div class="filters card">
