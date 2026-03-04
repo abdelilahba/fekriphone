@@ -157,9 +157,7 @@ export class RapportComponent implements OnInit {
       .negative { color: #dc2626; }
       .footer { text-align: center; margin-top: 30px; color: #aaa; font-size: 12px; }
     </style></head><body>
-    <div style="text-align: center; margin-bottom: 10px;">
-      <img src="assets/logo.jpg" alt="Fikri Phone" style="max-height: 80px; border-radius: 8px;">
-    </div>
+    <h1>📊 فكري فون</h1>
     <div class="subtitle">تقرير يومي — إدارة المحل</div>
     <div class="date-title">📅 ${report.dateLabel}</div>
 
@@ -176,7 +174,7 @@ export class RapportComponent implements OnInit {
       </tbody>
     </table>
 
-    <div class="footer">تقرير تم إنشاؤه أوتوماتيكياً من تطبيق إدارة المحل — ${new Date().toLocaleString('ar-MA')}</div>
+    <div class="footer">تقرير تم إنشاؤه أوتوماتيكياً من تطبيق فكري فون — ${new Date().toLocaleString('ar-MA')}</div>
     </body></html>`;
 
     const printWindow = window.open('', '_blank');
