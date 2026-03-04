@@ -12,6 +12,9 @@
       <button class="btn btn-primary" (click)="openAutoGenerate()">
         🤖 توليد طلبية أوتوماتيكية (سلعة ناقصة)
       </button>
+      <button class="btn btn-secondary" (click)="openManualGenerate()">
+        ✍️ لائحة يدوية الموظف (جديد)
+      </button>
     </div>
   </div>
 
@@ -79,9 +82,24 @@
       </div>
       <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
         
+        <!-- Search Bar for adding items -->
+        <div style="margin-bottom: 20px; position: relative;" class="no-print">
+          <input type="text" class="form-control" [(ngModel)]="searchProduit" (ngModelChange)="filterProduits()" placeholder="🔍 قلب على منتج باش تزيدو للائحة..." style="width: 100%; font-size: 1.1rem; padding: 10px;" />
+          @if (filteredSearchProduits.length > 0) {
+          <div style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; z-index: 10; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 5px;">
+            @for (p of filteredSearchProduits; track p.id) {
+            <div (click)="addProduitToOrder(p)" style="padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between;">
+              <strong>{{ p.nom }}</strong>
+              <span style="color: #666; font-size: 0.9em;">في الستوك: {{ p.quantite }}</span>
+            </div>
+            }
+          </div>
+          }
+        </div>
+
         @if (newOrder.articles.length === 0) {
         <div style="text-align: center; color: #10b981; padding: 20px;">
-          🎉 ستوك ديالك عامر! ماكينا تا سلعة فيها 3 حبات ولا قل.
+          🎉 اللائحة خاوية دابا، استعمل البحث الفوق باش تزيد منتجات!
         </div>
         } @else {
         <table class="data-table">
