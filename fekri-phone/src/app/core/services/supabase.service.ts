@@ -379,4 +379,44 @@ export class SupabaseService {
       .eq('id', id);
     if (error) throw error;
   }
+
+  async updateCommande(id: string, data: any) {
+    const { error } = await this.supabase
+      .from('commandes')
+      .update(data)
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  async receiveCommande(commandeId: string, articles: { produit_id: string; quantite_recue: number; prix_achat_reel: number }[]) {
+    // Update stock for each article
+    for (const art of articles) {
+      if (art.quantite_recue <= 0) continue;
+      // Get current product
+      const { data: produit, error: fetchErr } = await this.supabase
+        .from('produits')
+        .select('quantite, prix_achat')
+        .eq('id', art.produit_id)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const newQte = (produit.quantite || 0) + art.quantite_recue;
+      const updateData: any = { quantite: newQte, updated_at: new Date().toISOString() };
+      // Update prix_achat if provided
+      if (art.prix_achat_reel > 0) {
+        updateData.prix_achat = art.prix_achat_reel;
+      }
+      const { error: updErr } = await this.supabase
+        .from('produits')
+        .update(updateData)
+        .eq('id', art.produit_id);
+      if (updErr) throw updErr;
+    }
+
+    // Mark commande as received
+    await this.updateCommande(commandeId, {
+      statut: 'recue',
+      date_reception: new Date().toISOString()
+    });
+  }
 }

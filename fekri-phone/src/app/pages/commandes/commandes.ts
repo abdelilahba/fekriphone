@@ -11,9 +11,18 @@ interface CommandeArticle {
   prix_achat_estime: number;
 }
 
+interface ReceptionArticle {
+  produit_id: string;
+  nom: string;
+  quantite_demandee: number;
+  quantite_recue: number;
+  prix_achat_reel: number;
+}
+
 interface Commande {
   id?: string;
   created_at?: string;
+  date_reception?: string;
   articles: CommandeArticle[];
   total_estime: number;
   statut: string;
@@ -33,6 +42,7 @@ export class Commandes implements OnInit {
 
   showModal = false;
   viewModal = false;
+  receiveModal = false;
   selectedCommande: Commande | null = null;
 
   // Create mode
@@ -46,6 +56,10 @@ export class Commandes implements OnInit {
     total_estime: 0,
     statut: 'brouillon'
   };
+
+  // Reception mode
+  receptionArticles: ReceptionArticle[] = [];
+  receptionTotal = 0;
 
   constructor(private supabase: SupabaseService) {}
 
@@ -196,6 +210,74 @@ export class Commandes implements OnInit {
   closeViewModal() {
     this.viewModal = false;
     this.selectedCommande = null;
+  }
+
+  // ========== RECEPTION ==========
+  openReceiveModal(commande: Commande) {
+    this.selectedCommande = commande;
+    this.receptionArticles = commande.articles.map(art => ({
+      produit_id: art.produit_id,
+      nom: art.nom,
+      quantite_demandee: art.quantite_demandee,
+      quantite_recue: art.quantite_demandee, // Default: same as ordered
+      prix_achat_reel: art.prix_achat_estime  // Default: same as estimated
+    }));
+    this.calculateReceptionTotal();
+    this.receiveModal = true;
+  }
+
+  closeReceiveModal() {
+    this.receiveModal = false;
+    this.selectedCommande = null;
+    this.receptionArticles = [];
+  }
+
+  calculateReceptionTotal() {
+    this.receptionTotal = this.receptionArticles.reduce(
+      (sum, art) => sum + (art.quantite_recue * art.prix_achat_reel), 0
+    );
+  }
+
+  async confirmReception() {
+    if (!this.selectedCommande?.id) return;
+
+    const hasItems = this.receptionArticles.some(a => a.quantite_recue > 0);
+    if (!hasItems) {
+      this.showToast('خصك تدخل كمية واحد على الأقل', 'error');
+      return;
+    }
+
+    try {
+      this.loading$.next(true);
+      await this.supabase.receiveCommande(
+        this.selectedCommande.id,
+        this.receptionArticles.map(a => ({
+          produit_id: a.produit_id,
+          quantite_recue: a.quantite_recue,
+          prix_achat_reel: a.prix_achat_reel
+        }))
+      );
+      this.showToast('تم استلام الطلبية و تحديث الستوك ✅', 'success');
+      this.closeReceiveModal();
+      this.allProduits = []; // Force reload products next time
+      this.loadCommandes();
+    } catch (err) {
+      console.error(err);
+      this.showToast('وقع مشكل فالاستلام', 'error');
+    } finally {
+      this.loading$.next(false);
+    }
+  }
+
+  getStatutBadge(statut: string): { label: string; class: string } {
+    switch (statut) {
+      case 'recue':
+        return { label: '✅ تم الاستلام', class: 'badge-success' };
+      case 'validee':
+        return { label: '📦 في الانتظار', class: 'badge-warning' };
+      default:
+        return { label: '📝 مسودة', class: 'badge-info' };
+    }
   }
 
   async deleteOrder(id: string) {

@@ -42,8 +42,13 @@
         </thead>
         <tbody>
           @for (c of commandes; track c.id) {
-          <tr>
-            <td>{{ c.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+          <tr [class.received-row]="c.statut === 'recue'">
+            <td>
+              <div>{{ c.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
+              @if (c.statut === 'recue' && c.date_reception) {
+              <small class="reception-date">استلام: {{ c.date_reception | date:'dd/MM/yyyy' }}</small>
+              }
+            </td>
             <td>
               <span class="badge badge-info">{{ c.articles.length }} منتج</span>
             </td>
@@ -51,10 +56,17 @@
               <strong>{{ c.total_estime | number:'1.2-2' }} د.م</strong>
             </td>
             <td>
-              <span class="badge badge-success">✅ مسجلة</span>
+              <span class="badge" [class]="getStatutBadge(c.statut).class">
+                {{ getStatutBadge(c.statut).label }}
+              </span>
             </td>
-            <td class="text-left">
+            <td class="text-left actions-cell">
               <button class="btn btn-ghost btn-icon" (click)="viewOrder(c)" title="عرض و طباعة">👁️</button>
+              @if (c.statut !== 'recue') {
+              <button class="btn btn-receive" (click)="openReceiveModal(c)" title="استلام الطلبية">
+                📥 استلام
+              </button>
+              }
               <button class="btn btn-ghost btn-icon" (click)="deleteOrder(c.id!)" title="حذف" style="color: var(--danger);">🗑️</button>
             </td>
           </tr>
@@ -177,6 +189,10 @@
           <div class="print-meta">
             <p><strong>التاريخ:</strong> {{ selectedCommande.created_at | date:'dd/MM/yyyy' }}</p>
             <p><strong>رقم:</strong> {{ selectedCommande.id | slice:0:8 }}</p>
+            <p><strong>الحالة:</strong> {{ getStatutBadge(selectedCommande.statut).label }}</p>
+            @if (selectedCommande.date_reception) {
+            <p><strong>تاريخ الاستلام:</strong> {{ selectedCommande.date_reception | date:'dd/MM/yyyy' }}</p>
+            }
           </div>
         </div>
 
@@ -208,7 +224,93 @@
       <!-- Actions (hidden when printing) -->
       <div class="cmd-modal-footer no-print">
         <button class="btn btn-success" (click)="printOrder()">🖨️ طباعة / تحميل PDF</button>
+        @if (selectedCommande.statut !== 'recue') {
+        <button class="btn btn-receive" (click)="closeViewModal(); openReceiveModal(selectedCommande)">📥 استلام الطلبية</button>
+        }
         <button class="btn btn-ghost" (click)="closeViewModal()">إغلاق</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ============ RECEIVE ORDER MODAL ============ -->
+  @if (receiveModal && selectedCommande) {
+  <div class="modal-backdrop no-print">
+    <div class="cmd-modal receive-modal">
+      <div class="cmd-modal-header receive-header">
+        <h2>📥 استلام الطلبية</h2>
+        <button class="close-btn" (click)="closeReceiveModal()">×</button>
+      </div>
+
+      <div class="receive-info">
+        <span>📋 طلبية رقم: <strong>{{ selectedCommande.id | slice:0:8 }}</strong></span>
+        <span>📅 {{ selectedCommande.created_at | date:'dd/MM/yyyy' }}</span>
+      </div>
+
+      <div class="cmd-modal-body">
+        <p class="receive-hint">✏️ عدّل الكمية المستلمة والثمن الحقيقي ديال كل منتج:</p>
+
+        <div class="order-table-scroll">
+          <table class="data-table receive-table">
+            <thead>
+              <tr>
+                <th>المنتج</th>
+                <th>الكمية المطلوبة</th>
+                <th>الكمية المستلمة</th>
+                <th>ثمن الشراء الحقيقي</th>
+                <th>المجموع</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (art of receptionArticles; track art.produit_id) {
+              <tr>
+                <td><strong>{{ art.nom }}</strong></td>
+                <td class="center dimmed">{{ art.quantite_demandee }}</td>
+                <td>
+                  <input type="number" class="form-control compact-input receive-input"
+                    [(ngModel)]="art.quantite_recue" (ngModelChange)="calculateReceptionTotal()" min="0" [max]="art.quantite_demandee * 2" />
+                </td>
+                <td>
+                  <input type="number" class="form-control compact-input receive-input"
+                    [(ngModel)]="art.prix_achat_reel" (ngModelChange)="calculateReceptionTotal()" min="0" />
+                </td>
+                <td class="subtotal">{{ art.quantite_recue * art.prix_achat_reel | number:'1.2-2' }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="reception-summary">
+          <div class="summary-row">
+            <span>💰 المبلغ التقديري:</span>
+            <span class="dimmed">{{ selectedCommande.total_estime | number:'1.2-2' }} د.م</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>💵 المبلغ الحقيقي:</span>
+            <span class="total-amount">{{ receptionTotal | number:'1.2-2' }} د.م</span>
+          </div>
+          @if (receptionTotal !== selectedCommande.total_estime) {
+          <div class="summary-row diff-row"
+            [class.diff-plus]="receptionTotal > selectedCommande.total_estime"
+            [class.diff-minus]="receptionTotal < selectedCommande.total_estime">
+            <span>📊 الفرق:</span>
+            <span>{{ (receptionTotal - selectedCommande.total_estime) | number:'1.2-2' }} د.م</span>
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="cmd-modal-footer">
+        <span class="footer-hint receive-warning">
+          ⚠️ هاد العملية غتزيد الكمية المستلمة للستوك و تحدث ثمن الشراء
+        </span>
+        <div class="footer-btns">
+          <button class="btn btn-success btn-confirm-receive" (click)="confirmReception()">
+            ✅ تأكيد الاستلام وتحديث الستوك
+          </button>
+          <button class="btn btn-ghost" (click)="closeReceiveModal()">إلغاء</button>
+        </div>
       </div>
     </div>
   </div>
