@@ -261,6 +261,15 @@
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .main-content.pos-fullscreen-mode .page-content {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+}
+
 /* Top Bar */
 .top-bar {
   padding: 12px 24px;
