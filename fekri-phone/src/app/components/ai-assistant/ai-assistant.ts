@@ -28,7 +28,7 @@ export class AIService {
 
     // Create a specific fast model for invoice parsing
     this.visionModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.1,
@@ -37,7 +37,7 @@ export class AIService {
 
     // Fallback model when primary quota is exceeded
     this.fallbackVisionModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash-8b',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.1,
