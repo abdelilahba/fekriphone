@@ -26,9 +26,9 @@ export class AIService {
         'Respond clearly and keep answers practical, and business-oriented.',
     });
 
-    // Create a specific fast model for invoice parsing (Pro is much better for handwritten receipts)
+    // Create a specific fast model for invoice parsing
     this.visionModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro-latest',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.1,
@@ -37,7 +37,7 @@ export class AIService {
 
     // Fallback model when primary quota is exceeded
     this.fallbackVisionModel = this.genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash-8b',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.1,
