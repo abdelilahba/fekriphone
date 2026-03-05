@@ -28,7 +28,7 @@ export class AIService {
 
     // Create a specific fast model for invoice parsing (Pro is much better for handwritten receipts)
     this.visionModel = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro',
+      model: 'gemini-1.5-pro-latest',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.1,
