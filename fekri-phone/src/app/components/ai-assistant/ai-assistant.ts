@@ -101,28 +101,28 @@ USER QUESTION: ${question}
           : `\nقدر الفئة ديال كل منتج (مثلا: هواتف، إكسسوارات، سماعات، شواحن، واقيات، باور بانك...) وديرها ف "categorie_nom".`;
 
       const prompt = `
-أنت نظام خبير وعالي الدقة متخصص حصريا في قراءة الفواتير المغربية المكتوبة بخط اليد الخاصة بمحلات الهواتف (Téléphones et Accessoires).
-عليك استخراج قائمة المنتجات من هذه الصورة بدقة متناهية جدا.
+Vous êtes un système expert d'extraction de données facturables. Voici une image capturée d'une facture marocaine (écrite à la main).
+Vous devez extraire la liste des articles avec une PRÉCISION ABSOLUE.
 ${catListStr}
 
-إليك الهيكل المعتاد للفواتير (من اليمين إلى اليسار):
-العمود 1 (أقصى اليمين): العدد / الكمية (Quantité)
-العمود 2: نوع البضاعة (Nom du produit)
-العمود 3: الثمن / ثمن الوحدة (Prix unitaire) - هذا هو الأهم!
-العمود 4 (أقصى اليسار): المجموع (Total)
+IMPORTANT : L'image de la facture contient 4 colonnes. Voici leur ordre STRICT de gauche à droite :
+[Colonne 1 - Gauche] "Total" (المجموع) : Le prix total de la ligne.
+[Colonne 2 - Milieu Gauche] "Prix unitaire" (الثمن) : CELUI-CI EST LE VRAI PRIX D'ACHAT (prix_achat) !
+[Colonne 3 - Milieu Droite] "Produit" (نوع البضاعة) : Le nom du produit.
+[Colonne 4 - Droite] "Quantité" (العدد) : La quantité achetée.
 
-خطواتك لاستخراج البيانات:
-1. اقرأ كل سطر. تجاهل الترويسة العليا وتجاهل المجموع الإجمالي في أسفل الفاتورة (الطوطال).
-2. حدد الكمية (رقم صحيح).
-3. حدد اسم المنتج (تذكر: "TC"=Type C, "Ta"=Tête chargeur, "N"=Nokia, "A12/A51"=Samsung).
-4. حدد 'ثمن الوحدة'. تأكد دائما أن: (الكمية × ثمن الوحدة = المجموع). إذا وجدت فقط المجموع، قم بقسمته على الكمية لتحصل على ثمن الوحدة.
-5. لا تقم أبدا بوضع المجموع مكان ثمن الوحدة إذا كانت الكمية أكبر من 1.
+Instructions d'extraction :
+1. Ignorez la somme totale figurant en bas de la facture (ex: 18315). Ne l'incluez jamais comme un produit.
+2. Déchiffrez soigneusement les noms des produits (ex: "TC" = Type C, "Ta" = Tête de chargeur, "N3310" = Nokia 3310, "A12" = Samsung A12).
+3. "prix_achat" : IL FAUT utiliser exclusivement la Colonne 2 (الثمن / Prix unitaire). JAMAIS la Colonne 1.
+   Vérification mathématique : (Colonne 4 "Quantité") x (Colonne 2 "Prix unitaire") = (Colonne 1 "Total").
+4. Si un produit est illisible, ignorez-le plutôt que d'inventer des données.
 
-رد الجواب **فقط وحصريا** بتنسيق JSON Array كالتالي:
+Retournez le résultat UNIQUEMENT sous forme de tableau JSON valide (Array of Objects), selon cette structure exacte :
 [
   {
-    "nom": "اسم المنتج المستخرج مقروء بوضوح",
-    "categorie_nom": "اسم الفئة الأقرب",
+    "nom": "Nom correct du produit",
+    "categorie_nom": "Nom_de_la_catégorie",
     "quantite": 2,
     "prix_achat": 1400.0,
     "prix_vente": 0,
@@ -130,7 +130,7 @@ ${catListStr}
   }
 ]
 
-تأكد من إرجاع JSON Array صالح 100% فقط، بدون أي شروحات أو نص إضافي.
+Renvoyez *exclusivement* le JSON. Pas de description, pas de bloc de code markdown.
 `;
 
       const imageParts = [
