@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
@@ -112,9 +112,11 @@ export class ProduitsComponent implements OnInit {
     this.showModal = true;
   }
 
+  @ViewChild('nomInput') nomInput!: ElementRef;
+
   closeModal() { this.showModal = false; }
 
-  async save() {
+  async save(keepOpen: boolean = false) {
     if (!this.form.nom || !this.form.categorie_id) {
       this.showToast('خصك تدخل الإسم والفئة', 'error');
       return;
@@ -134,8 +136,23 @@ export class ProduitsComponent implements OnInit {
         await this.supabase.addProduit(data);
         this.showToast('تزاد المنتج بنجاح ✅', 'success');
       }
-      this.closeModal();
+      
       await this.loadData();
+
+      if (keepOpen && !this.editMode) {
+        // Keep the modal open, preserve the category but clear the rest
+        const savedCatId = this.form.categorie_id;
+        this.form = { id: '', nom: '', categorie_id: savedCatId, prix_achat: 0, prix_vente: 0, quantite: 0, code_barre: '', description: '' };
+        
+        // Refocus the input for blazing fast entry
+        setTimeout(() => {
+          if (this.nomInput && this.nomInput.nativeElement) {
+            this.nomInput.nativeElement.focus();
+          }
+        }, 50);
+      } else {
+        this.closeModal();
+      }
     } catch (error) {
       this.showToast('وقع مشكل، عاود حاول', 'error');
     }

@@ -1,9 +1,9 @@
 <div class="produits-page">
   <!-- Toast -->
   @if (toastMessage$ | async; as toast) {
-  <div class="toast-container">
-    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
-  </div>
+    <div class="toast-container">
+      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+    </div>
   }
 
   <div class="page-header">
@@ -12,7 +12,13 @@
       <button class="btn btn-secondary scan-btn" (click)="fileInput.click()">
         📸 صور الفاتورة (IA)
       </button>
-      <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      <input
+        type="file"
+        #fileInput
+        (change)="onFileSelected($event)"
+        accept="image/*"
+        style="display: none"
+      />
       <button class="btn btn-primary" (click)="openAdd()">➕ زيد منتج</button>
     </div>
   </div>
@@ -22,13 +28,22 @@
     <div class="filter-row">
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="قلّب على منتج..."
-          class="form-control">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilter()"
+          placeholder="قلّب على منتج..."
+          class="form-control"
+        />
       </div>
-      <select [(ngModel)]="filterCategorie" (ngModelChange)="applyFilter()" class="form-control filter-select">
+      <select
+        [(ngModel)]="filterCategorie"
+        (ngModelChange)="applyFilter()"
+        class="form-control filter-select"
+      >
         <option value="">كل الفئات</option>
         @for (cat of categories$ | async; track cat.id) {
-        <option [value]="cat.id">{{ cat.nom }}</option>
+          <option [value]="cat.id">{{ cat.nom }}</option>
         }
       </select>
     </div>
@@ -36,330 +51,436 @@
 
   <!-- Loading -->
   @if (loading$ | async) {
-  <div class="skeleton-loader">
-    <div class="skeleton-row short"></div>
-    <div class="skeleton-row"></div>
-    <div class="skeleton-row tall"></div>
-    <div class="skeleton-row"></div>
-  </div>
+    <div class="skeleton-loader">
+      <div class="skeleton-row short"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row tall"></div>
+      <div class="skeleton-row"></div>
+    </div>
   } @else {
-  @if (filteredProduits$ | async; as allProduits) {
-  @if (allProduits.length > 0) {
-  <div class="card table-card">
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>المنتج</th>
-            <th>الفئة</th>
-            <th>ثمن الشراء</th>
-            <th>ثمن البيع</th>
-            <th>المخزن</th>
-            <th>الباركود</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of paginatedProduits$ | async; track p.id) {
-          <tr>
-            <td class="product-name">{{ p.nom }}</td>
-            <td>{{ getCategoryName(p.categorie_id) }}</td>
-            <td>{{ formatMAD(p.prix_achat) }}</td>
-            <td class="prix-vente">{{ formatMAD(p.prix_vente) }}</td>
-            <td>
-              <button class="stock-btn" (click)="openStockModal(p)" [class]="'stock-' + getStockBadge(p.quantite)">
-                {{ p.quantite }} {{ getStockLabel(p.quantite) }} ✏️
-              </button>
-            </td>
-            <td class="code-barre">{{ p.code_barre || '—' }}</td>
-            <td>
-              <div class="actions">
-                <button class="btn btn-ghost btn-sm" (click)="viewProduct(p)">👁️</button>
-                <button class="btn btn-ghost btn-sm" (click)="openEdit(p)">✏️</button>
-                <button class="btn btn-ghost btn-sm" (click)="delete(p)">🗑️</button>
-              </div>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    <!-- Pagination -->
-    <!-- Pagination -->
-    <div class="pagination">
-      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)"
-        [disabled]="currentPage === totalPages">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </button>
-      <div class="page-numbers">
-        @for (p of getPages(); track p) {
-        <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-        }
-      </div>
-      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      </button>
-      <div class="pagination-info">إجمالي: {{ allProduits.length }} منتج</div>
-    </div>
-  </div>
-  } @else {
-  <div class="card empty-state">
-    <div class="empty-icon">📦</div>
-    <h3>مازال ما كاينين منتجات</h3>
-    <p>كليكي على "زيد منتج" باش تبدا</p>
-  </div>
-  }
-  }
-  }
-
-  <!-- Modal -->
-  @if (showModal) {
-  <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ editMode ? '✏️ عدّل المنتج' : '➕ زيد منتج جديد' }}</h2>
-        <button class="close-btn" (click)="closeModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>إسم المنتج *</label>
-          <input type="text" [(ngModel)]="form.nom" class="form-control" placeholder="مثلا: iPhone 15 Pro">
-        </div>
-        <div class="form-group">
-          <label>الفئة *</label>
-          <select [(ngModel)]="form.categorie_id" class="form-control">
-            @for (cat of categories$ | async; track cat.id) {
-            <option [value]="cat.id">{{ cat.nom }}</option>
-            }
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>ثمن الشراء (د.م)</label>
-            <input type="number" [(ngModel)]="form.prix_achat" class="form-control" min="0">
-          </div>
-          <div class="form-group">
-            <label>ثمن البيع (د.م)</label>
-            <input type="number" [(ngModel)]="form.prix_vente" class="form-control" min="0">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>الكمية</label>
-            <input type="number" [(ngModel)]="form.quantite" class="form-control" min="0">
-          </div>
-          <div class="form-group">
-            <label>الباركود</label>
-            <input type="text" [(ngModel)]="form.code_barre" class="form-control" placeholder="إمسح بالسكانر...">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>الوصف</label>
-          <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="وصف إختياري...">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
-        <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
-      </div>
-    </div>
-  </div>
-  }
-
-  <!-- Product Detail Modal -->
-  @if (showDetailModal && selectedProduct) {
-  <div class="modal-overlay" (click)="closeDetailModal()">
-    <div class="modal-content detail-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>📋 تفاصيل المنتج</h2>
-        <button class="close-btn" (click)="closeDetailModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="detail-top">
-          <span class="detail-icon">{{ getCategoryIcon(selectedProduct.categorie_id) }}</span>
-          <div>
-            <h3 class="detail-name">{{ selectedProduct.nom }}</h3>
-            <span class="detail-cat">{{ getCategoryName(selectedProduct.categorie_id) }}</span>
-          </div>
-        </div>
-
-        <div class="detail-grid">
-          <div class="detail-item">
-            <span class="detail-label">ثمن الشراء</span>
-            <span class="detail-value">{{ formatMAD(selectedProduct.prix_achat) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">ثمن البيع</span>
-            <span class="detail-value prix-vente">{{ formatMAD(selectedProduct.prix_vente) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">الربح</span>
-            <span class="detail-value profit">{{ formatMAD(getProfit(selectedProduct)) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">الكمية</span>
-            <span class="detail-value">
-              <span class="badge" [class]="'badge-' + getStockBadge(selectedProduct.quantite)">
-                {{ selectedProduct.quantite }} - {{ getStockLabel(selectedProduct.quantite) }}
-              </span>
-            </span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">الباركود</span>
-            <span class="detail-value">{{ selectedProduct.code_barre || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">الوصف</span>
-            <span class="detail-value">{{ selectedProduct.description || '—' }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" (click)="closeDetailModal(); openEdit(selectedProduct!)">✏️ عدّل</button>
-        <button class="btn btn-ghost" (click)="closeDetailModal()">إغلاق</button>
-      </div>
-    </div>
-  </div>
-  }
-
-  <!-- Stock Adjustment Modal -->
-  @if (showStockModal && stockProduct) {
-  <div class="modal-overlay" (click)="closeStockModal()">
-    <div class="modal-content stock-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>📦 تعديل المخزن</h2>
-        <button class="close-btn" (click)="closeStockModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="stock-product-name">{{ stockProduct.nom }}</div>
-        <div class="stock-current">الكمية الحالية: <strong>{{ stockProduct.quantite }}</strong></div>
-
-        <div class="stock-adjuster">
-          <button class="stock-adj-btn minus" (click)="adjustStock(-10)">-10</button>
-          <button class="stock-adj-btn minus" (click)="adjustStock(-1)">-1</button>
-          <input type="number" [(ngModel)]="stockNewQty" min="0" class="stock-qty-input">
-          <button class="stock-adj-btn plus" (click)="adjustStock(1)">+1</button>
-          <button class="stock-adj-btn plus" (click)="adjustStock(10)">+10</button>
-        </div>
-
-        @if (stockNewQty !== stockProduct.quantite) {
-        <div class="stock-diff">
-          @if (stockNewQty > stockProduct.quantite) {
-          <span class="diff-plus">+{{ stockNewQty - stockProduct.quantite }} وحدة</span>
-          } @else {
-          <span class="diff-minus">-{{ stockProduct.quantite - stockNewQty }} وحدة</span>
-          }
-        </div>
-        }
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" (click)="saveStock()" [disabled]="stockNewQty === stockProduct.quantite">💾
-          حفظ</button>
-        <button class="btn btn-ghost" (click)="closeStockModal()">إلغاء</button>
-      </div>
-    </div>
-  </div>
-  }
-
-  <!-- AI Scan Confirmation Modal -->
-  @if (showScanModal || isScanning) {
-  <div class="modal-overlay">
-    <div class="modal-content scan-modal" [class.scanning]="isScanning">
-      <div class="modal-header">
-        <h2>📸 منتجات الفاتورة</h2>
-        @if (!isScanning) {
-        <button class="close-btn" (click)="closeScanModal()">✕</button>
-        }
-      </div>
-
-      <div class="modal-body scan-body">
-        @if (isScanning) {
-        <div class="scanning-state">
-          <div class="scanner-line"></div>
-          <div class="scanner-icon">🤖</div>
-          <h3>ذكاء اصطناعي خدام...</h3>
-          <p>كانقرا الفاتورة ونجبد المنتجات والأثمنة، تسنى شوية!</p>
-        </div>
-        } @else {
-        <div class="scanned-list">
-          <p class="scan-info">هادشي لي لقيت فالفاتورة، راجع الأثمنة وزيدهم للمخزن:</p>
+    @if (filteredProduits$ | async; as allProduits) {
+      @if (allProduits.length > 0) {
+        <div class="card table-card">
           <div class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th><input type="checkbox" checked disabled /></th>
-                  <th>السمية</th>
+                  <th>المنتج</th>
                   <th>الفئة</th>
-                  <th>الكمية</th>
-                  <th>الثمن (شراء)</th>
-                  <th>الثمن (بيع)</th>
-                  <th>الحالة</th>
+                  <th>ثمن الشراء</th>
+                  <th>ثمن البيع</th>
+                  <th>المخزن</th>
+                  <th>الباركود</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                @for (p of scannedProducts; track p.nom; let idx = $index) {
-                <tr [class.existing-row]="p.isExisting">
-                  <td><input type="checkbox" [(ngModel)]="p.selected" /></td>
-                  <td><input type="text" class="form-control" [(ngModel)]="p.nom" /></td>
-                  <td>
-                    <select class="form-control" [(ngModel)]="p.categorie_id">
-                      <option value="">-- فئة --</option>
-                      @for (cat of categories$ | async; track cat.id) {
-                      <option [value]="cat.id">{{ cat.nom }}</option>
-                      }
-                    </select>
-                  </td>
-                  <td><input type="number" class="form-control" [(ngModel)]="p.quantite" /></td>
-                  <td>
-                    <input type="number" class="form-control" [(ngModel)]="p.prix_achat" />
-                    @if (p.isExisting && p.existingPrixAchat > 0) {
-                    <small class="existing-price">📌 دابا: {{ p.existingPrixAchat }} د.م</small>
-                    }
-                  </td>
-                  <td>
-                    <input type="number" class="form-control" [(ngModel)]="p.prix_vente" />
-                    <div class="row-margin-btns">
-                      <button class="mini-margin" (click)="applyMarginToProduct(p, 20)">+20%</button>
-                      <button class="mini-margin" (click)="applyMarginToProduct(p, 30)">+30%</button>
-                      <button class="mini-margin" (click)="applyMarginToProduct(p, 50)">+50%</button>
-                    </div>
-                    @if (p.isExisting && p.existingPrixVente > 0) {
-                    <small class="existing-price">📌 دابا: {{ p.existingPrixVente }} د.م</small>
-                    }
-                  </td>
-                  <td>
-                    @if (p.isExisting) {
-                    <span class="badge badge-warning">📦 موجود</span>
-                    <small class="existing-info">ستوك: {{p.existingStock}} | +{{p.quantite}} جديد</small>
-                    } @else {
-                    <span class="badge badge-success">🆕 جديد</span>
-                    }
-                  </td>
-                </tr>
-                }
-                @if (scannedProducts.length === 0) {
-                <tr>
-                  <td colspan="7" style="text-align: center; color: red;">مالقيت حتى منتج، الصور مكلخة ولا ماشي فاتورة!</td>
-                </tr>
+                @for (p of paginatedProduits$ | async; track p.id) {
+                  <tr>
+                    <td class="product-name">{{ p.nom }}</td>
+                    <td>{{ getCategoryName(p.categorie_id) }}</td>
+                    <td>{{ formatMAD(p.prix_achat) }}</td>
+                    <td class="prix-vente">{{ formatMAD(p.prix_vente) }}</td>
+                    <td>
+                      <button
+                        class="stock-btn"
+                        (click)="openStockModal(p)"
+                        [class]="'stock-' + getStockBadge(p.quantite)"
+                      >
+                        {{ p.quantite }} {{ getStockLabel(p.quantite) }} ✏️
+                      </button>
+                    </td>
+                    <td class="code-barre">{{ p.code_barre || '—' }}</td>
+                    <td>
+                      <div class="actions">
+                        <button class="btn btn-ghost btn-sm" (click)="viewProduct(p)">👁️</button>
+                        <button class="btn btn-ghost btn-sm" (click)="openEdit(p)">✏️</button>
+                        <button class="btn btn-ghost btn-sm" (click)="delete(p)">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
           </div>
+          <!-- Pagination -->
+          <!-- Pagination -->
+          <div class="pagination">
+            <button
+              class="pagination-btn nav-btn"
+              (click)="goToPage(currentPage + 1)"
+              [disabled]="currentPage === totalPages"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+            <div class="page-numbers">
+              @for (p of getPages(); track p) {
+                <button
+                  class="pagination-btn"
+                  [class.active]="p === currentPage"
+                  (click)="goToPage(p)"
+                >
+                  {{ p }}
+                </button>
+              }
+            </div>
+            <button
+              class="pagination-btn nav-btn"
+              (click)="goToPage(currentPage - 1)"
+              [disabled]="currentPage === 1"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <div class="pagination-info">إجمالي: {{ allProduits.length }} منتج</div>
+          </div>
         </div>
+      } @else {
+        <div class="card empty-state">
+          <div class="empty-icon">📦</div>
+          <h3>مازال ما كاينين منتجات</h3>
+          <p>كليكي على "زيد منتج" باش تبدا</p>
+        </div>
+      }
+    }
+  }
+
+  <!-- Modal -->
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editMode ? '✏️ عدّل المنتج' : '➕ زيد منتج جديد' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>إسم المنتج *</label>
+            <input
+              #nomInput
+              type="text"
+              [(ngModel)]="form.nom"
+              (keyup.enter)="save(false)"
+              class="form-control"
+              placeholder="مثلا: iPhone 15 Pro"
+            />
+          </div>
+          <div class="form-group">
+            <label>الفئة *</label>
+            <select [(ngModel)]="form.categorie_id" class="form-control">
+              @for (cat of categories$ | async; track cat.id) {
+                <option [value]="cat.id">{{ cat.nom }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>ثمن الشراء (د.م)</label>
+              <input
+                type="number"
+                [(ngModel)]="form.prix_achat"
+                (keyup.enter)="save(false)"
+                class="form-control"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label>ثمن البيع (د.م)</label>
+              <input
+                type="number"
+                [(ngModel)]="form.prix_vente"
+                (keyup.enter)="save(false)"
+                class="form-control"
+                min="0"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>الكمية</label>
+              <input
+                type="number"
+                [(ngModel)]="form.quantite"
+                (keyup.enter)="save(false)"
+                class="form-control"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label>الباركود</label>
+              <input
+                type="text"
+                [(ngModel)]="form.code_barre"
+                (keyup.enter)="save(false)"
+                class="form-control"
+                placeholder="إمسح بالسكانر..."
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>الوصف</label>
+            <input
+              type="text"
+              [(ngModel)]="form.description"
+              (keyup.enter)="save(false)"
+              class="form-control"
+              placeholder="وصف إختياري..."
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          @if (!editMode) {
+            <button
+              class="btn"
+              style="background: var(--bg-hover, #f1f5f9); color: #333; border: 1px solid #ddd"
+              (click)="save(true)"
+            >
+              💾 حفظ وزيد آخر
+            </button>
+          }
+          <button class="btn btn-primary" (click)="save(false)">💾 حفظ وتسديد</button>
+          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Product Detail Modal -->
+  @if (showDetailModal && selectedProduct) {
+    <div class="modal-overlay" (click)="closeDetailModal()">
+      <div class="modal-content detail-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>📋 تفاصيل المنتج</h2>
+          <button class="close-btn" (click)="closeDetailModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-top">
+            <span class="detail-icon">{{ getCategoryIcon(selectedProduct.categorie_id) }}</span>
+            <div>
+              <h3 class="detail-name">{{ selectedProduct.nom }}</h3>
+              <span class="detail-cat">{{ getCategoryName(selectedProduct.categorie_id) }}</span>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">ثمن الشراء</span>
+              <span class="detail-value">{{ formatMAD(selectedProduct.prix_achat) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">ثمن البيع</span>
+              <span class="detail-value prix-vente">{{
+                formatMAD(selectedProduct.prix_vente)
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">الربح</span>
+              <span class="detail-value profit">{{ formatMAD(getProfit(selectedProduct)) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">الكمية</span>
+              <span class="detail-value">
+                <span class="badge" [class]="'badge-' + getStockBadge(selectedProduct.quantite)">
+                  {{ selectedProduct.quantite }} - {{ getStockLabel(selectedProduct.quantite) }}
+                </span>
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">الباركود</span>
+              <span class="detail-value">{{ selectedProduct.code_barre || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">الوصف</span>
+              <span class="detail-value">{{ selectedProduct.description || '—' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="closeDetailModal(); openEdit(selectedProduct!)">
+            ✏️ عدّل
+          </button>
+          <button class="btn btn-ghost" (click)="closeDetailModal()">إغلاق</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Stock Adjustment Modal -->
+  @if (showStockModal && stockProduct) {
+    <div class="modal-overlay" (click)="closeStockModal()">
+      <div class="modal-content stock-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>📦 تعديل المخزن</h2>
+          <button class="close-btn" (click)="closeStockModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="stock-product-name">{{ stockProduct.nom }}</div>
+          <div class="stock-current">
+            الكمية الحالية: <strong>{{ stockProduct.quantite }}</strong>
+          </div>
+
+          <div class="stock-adjuster">
+            <button class="stock-adj-btn minus" (click)="adjustStock(-10)">-10</button>
+            <button class="stock-adj-btn minus" (click)="adjustStock(-1)">-1</button>
+            <input type="number" [(ngModel)]="stockNewQty" min="0" class="stock-qty-input" />
+            <button class="stock-adj-btn plus" (click)="adjustStock(1)">+1</button>
+            <button class="stock-adj-btn plus" (click)="adjustStock(10)">+10</button>
+          </div>
+
+          @if (stockNewQty !== stockProduct.quantite) {
+            <div class="stock-diff">
+              @if (stockNewQty > stockProduct.quantite) {
+                <span class="diff-plus">+{{ stockNewQty - stockProduct.quantite }} وحدة</span>
+              } @else {
+                <span class="diff-minus">-{{ stockProduct.quantite - stockNewQty }} وحدة</span>
+              }
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-primary"
+            (click)="saveStock()"
+            [disabled]="stockNewQty === stockProduct.quantite"
+          >
+            💾 حفظ
+          </button>
+          <button class="btn btn-ghost" (click)="closeStockModal()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- AI Scan Confirmation Modal -->
+  @if (showScanModal || isScanning) {
+    <div class="modal-overlay">
+      <div class="modal-content scan-modal" [class.scanning]="isScanning">
+        <div class="modal-header">
+          <h2>📸 منتجات الفاتورة</h2>
+          @if (!isScanning) {
+            <button class="close-btn" (click)="closeScanModal()">✕</button>
+          }
+        </div>
+
+        <div class="modal-body scan-body">
+          @if (isScanning) {
+            <div class="scanning-state">
+              <div class="scanner-line"></div>
+              <div class="scanner-icon">🤖</div>
+              <h3>ذكاء اصطناعي خدام...</h3>
+              <p>كانقرا الفاتورة ونجبد المنتجات والأثمنة، تسنى شوية!</p>
+            </div>
+          } @else {
+            <div class="scanned-list">
+              <p class="scan-info">هادشي لي لقيت فالفاتورة، راجع الأثمنة وزيدهم للمخزن:</p>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" checked disabled /></th>
+                      <th>السمية</th>
+                      <th>الفئة</th>
+                      <th>الكمية</th>
+                      <th>الثمن (شراء)</th>
+                      <th>الثمن (بيع)</th>
+                      <th>الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of scannedProducts; track p.nom; let idx = $index) {
+                      <tr [class.existing-row]="p.isExisting">
+                        <td><input type="checkbox" [(ngModel)]="p.selected" /></td>
+                        <td><input type="text" class="form-control" [(ngModel)]="p.nom" /></td>
+                        <td>
+                          <select class="form-control" [(ngModel)]="p.categorie_id">
+                            <option value="">-- فئة --</option>
+                            @for (cat of categories$ | async; track cat.id) {
+                              <option [value]="cat.id">{{ cat.nom }}</option>
+                            }
+                          </select>
+                        </td>
+                        <td>
+                          <input type="number" class="form-control" [(ngModel)]="p.quantite" />
+                        </td>
+                        <td>
+                          <input type="number" class="form-control" [(ngModel)]="p.prix_achat" />
+                          @if (p.isExisting && p.existingPrixAchat > 0) {
+                            <small class="existing-price"
+                              >📌 دابا: {{ p.existingPrixAchat }} د.م</small
+                            >
+                          }
+                        </td>
+                        <td>
+                          <input type="number" class="form-control" [(ngModel)]="p.prix_vente" />
+                          <div class="row-margin-btns">
+                            <button class="mini-margin" (click)="applyMarginToProduct(p, 20)">
+                              +20%
+                            </button>
+                            <button class="mini-margin" (click)="applyMarginToProduct(p, 30)">
+                              +30%
+                            </button>
+                            <button class="mini-margin" (click)="applyMarginToProduct(p, 50)">
+                              +50%
+                            </button>
+                          </div>
+                          @if (p.isExisting && p.existingPrixVente > 0) {
+                            <small class="existing-price"
+                              >📌 دابا: {{ p.existingPrixVente }} د.م</small
+                            >
+                          }
+                        </td>
+                        <td>
+                          @if (p.isExisting) {
+                            <span class="badge badge-warning">📦 موجود</span>
+                            <small class="existing-info"
+                              >ستوك: {{ p.existingStock }} | +{{ p.quantite }} جديد</small
+                            >
+                          } @else {
+                            <span class="badge badge-success">🆕 جديد</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                    @if (scannedProducts.length === 0) {
+                      <tr>
+                        <td colspan="7" style="text-align: center; color: red">
+                          مالقيت حتى منتج، الصور مكلخة ولا ماشي فاتورة!
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (!isScanning) {
+          <div class="modal-footer">
+            <button class="btn btn-primary" (click)="saveScannedProducts()">
+              💾 تسجيل المنتجات المحددة
+            </button>
+            <button class="btn btn-ghost" (click)="closeScanModal()">إلغاء</button>
+          </div>
         }
       </div>
-
-      @if (!isScanning) {
-      <div class="modal-footer">
-        <button class="btn btn-primary" (click)="saveScannedProducts()">💾 تسجيل المنتجات المحددة</button>
-        <button class="btn btn-ghost" (click)="closeScanModal()">إلغاء</button>
-      </div>
-      }
     </div>
-  </div>
   }
 </div>
