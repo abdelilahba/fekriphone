@@ -17,58 +17,59 @@ export class AIService {
   constructor(private supabase: SupabaseService) {
     this.genAI = new GoogleGenerativeAI(this.API_KEY);
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: "You are an expert Moroccan AI assistant for a mobile phone store called 'Fekri Phone'. " +
-        "You always answer in Moroccan Darija (Arabic script). " +
-        "You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. " +
-        "When the user asks about their data (like products, sales, stock), formulate your answer using the data block provided in their prompt. " +
-        "Respond clearly and keep answers practical, and business-oriented.",
+      model: 'gemini-2.5-flash',
+      systemInstruction:
+        "You are an expert Moroccan AI assistant for a mobile phone store called 'Fekri Phone'. " +
+        'You always answer in Moroccan Darija (Arabic script). ' +
+        'You help the store owner improve sales, manage inventory, understand profit, and give tips on customer satisfaction. ' +
+        'When the user asks about their data (like products, sales, stock), formulate your answer using the data block provided in their prompt. ' +
+        'Respond clearly and keep answers practical, and business-oriented.',
     });
-    
+
     // Create a specific fast model for invoice parsing
     this.visionModel = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: 'gemini-2.5-flash',
       generationConfig: {
-        responseMimeType: "application/json",
+        responseMimeType: 'application/json',
         temperature: 0.1,
-      }
+      },
     });
 
     // Fallback model when primary quota is exceeded
     this.fallbackVisionModel = this.genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: 'gemini-2.0-flash',
       generationConfig: {
-        responseMimeType: "application/json",
+        responseMimeType: 'application/json',
         temperature: 0.1,
-      }
+      },
     });
   }
 
   async *askQuestionStream(question: string): AsyncGenerator<string, void, unknown> {
     if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
-      yield "عفواً، خاصك تحط API Key ديال Gemini فـ الكود باش نقد نجاوبك! (AIService)";
+      yield 'عفواً، خاصك تحط API Key ديال Gemini فـ الكود باش نقد نجاوبك! (AIService)';
       return;
     }
-    
+
     try {
       // Fetch live data as "Tools" / context for the LLM
       const [produits, ventes, credits, depenses] = await Promise.all([
         this.supabase.getProduits(),
         this.supabase.getVentes(),
         this.supabase.getCredits(),
-        this.supabase.getDepenses()
+        this.supabase.getDepenses(),
       ]);
 
       const totalSales = ventes.reduce((sum, v) => sum + Number(v.montant_total || 0), 0);
-      const lowStockProducts = produits.filter(p => p.quantite <= 3);
+      const lowStockProducts = produits.filter((p) => p.quantite <= 3);
 
-       const systemData = `
+      const systemData = `
 --- LIVE STORE DATA (DO NOT EXPOSE RAW JSON TO USER) ---
 Total Products in System: ${produits.length}
 Total Sales Count: ${ventes.length}
 Total Revenue So Far: ${totalSales} MAD
-Items with Low Stock (<=3): ${lowStockProducts.map(p => p.nom + ' (' + p.quantite + ' left)').join(', ')}
-Total Credits (Unpaid debts count): ${credits.filter(c => c.montant_restant > 0).length}
+Items with Low Stock (<=3): ${lowStockProducts.map((p) => p.nom + ' (' + p.quantite + ' left)').join(', ')}
+Total Credits (Unpaid debts count): ${credits.filter((c) => c.montant_restant > 0).length}
 Total Expense Records: ${depenses.length}
 ------------------------------------------------------
 USER QUESTION: ${question}
@@ -80,46 +81,59 @@ USER QUESTION: ${question}
       }
     } catch (e: any) {
       console.error(e);
-      yield "عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.";
+      yield 'عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.';
     }
   }
 
-  async parseInvoiceImage(base64Image: string, mimeType: string, categoriesList: string[] = []): Promise<any[]> {
+  async parseInvoiceImage(
+    base64Image: string,
+    mimeType: string,
+    categoriesList: string[] = [],
+  ): Promise<any[]> {
     if (!this.API_KEY || this.API_KEY === 'REPLACE_WITH_YOUR_GEMINI_API_KEY') {
-      throw new Error("API Key is missing.");
+      throw new Error('API Key is missing.');
     }
 
     try {
-      const catListStr = categoriesList.length > 0
-        ? `\nالفئات الموجودة فالمتجر: [${categoriesList.join(', ')}]. خاصك تختار واحدة من هاد الفئات لكل منتج وتديرها ف "categorie_nom".`
-        : `\nقدر الفئة ديال كل منتج (مثلا: هواتف، إكسسوارات، سماعات، شواحن، واقيات، باور بانك...) وديرها ف "categorie_nom".`;
+      const catListStr =
+        categoriesList.length > 0
+          ? `\nالفئات الموجودة فالمتجر: [${categoriesList.join(', ')}]. خاصك تختار واحدة من هاد الفئات لكل منتج وتديرها ف "categorie_nom".`
+          : `\nقدر الفئة ديال كل منتج (مثلا: هواتف، إكسسوارات، سماعات، شواحن، واقيات، باور بانك...) وديرها ف "categorie_nom".`;
 
       const prompt = `
-استخرج المنتجات من هاد الصورة ديال فاتورة/ورقة (سواء كانت مطبوعة أو مكتوبة باليد) ديال محل هواتف وإكسسوارات.
-ركز مزيان وقرا أي حاجة كتشبه لمنتج (تيليفون، كابل، بوشيطة، سماعات، الخ).
+أنت خبير في قراءة الفواتير المكتوبة بخط اليد (Handwritten Invoices) في المغرب، خصوصا الخاصة بمحلات الهواتف (Téléphones et Accessoires).
+استخرج المنتجات من هاد الصورة ديال فاتورة/ورقة. ركز مزيان وقرا أي حاجة كتشبه لمنتج.
 ${catListStr}
 
-رد الجواب **فقط** بتنسيق JSON (مصفوفة من العناصر Array of Objects). الحقول لي خاصك تجبد لكل منتج:
-- "nom": السمية ديال المنتج (بالتفصيل لي مكتوب).
-- "categorie_nom": الفئة ديال المنتج (String).
-- "quantite": الكمية (رقم فقط، إذا مالقيتيهاش دير 1).
-- "prix_achat": ثمن الشراء للوحدة (رقم فقط، إذا كان الثمن الإجمالي قسمو على الكمية).
-- "prix_vente": دير 0 ديما (صاحب المحل غادي يديرو بيدو).
-- "code_barre": الباركود (إذا مالقيتيش خليه فارغ "").
+قواعد هامة جدا للقراءة:
+1. الفاتورة غالبا فيها أعمدة: نوع البضاعة (المنتج)، العدد (الكمية)، الثمن (ثمن الوحدة)، والمجموع.
+2. انتبه للاختصارات المتداولة:
+   - "TC" تعني Type C (كابل).
+   - "Ta" أو "Tete" تعني رأس شاحن (Tête chargeur).
+   - "A12", "A51" هي هواتف سامسونج.
+   - "N" متبوعة برقم (مثل N3310 أو N105) تعني هواتف نوكيا (Nokia).
+   - أرقام مثل 64 أو 128 أو 256 تعني سعة التخزين (GB).
+3. ركز باش تقرا الثمن الفردي (الثمن) ماشي المجموع. وإذا كان غير المجموع موجود، قسمو على العدد.
+4. تجاهل الكلمات الفوقانية بحال "فاتورة رقم" أو "السيد(ة)" أو الطوطال لتحت (18315).
 
-ملاحظة هامة:
-- الفاتورة تقدر تكون مخربقة أو مكتوبة باليد، اجتهد باش تفهم الخط وتخرج المنتجات.
-- إذا كان شي منتج ماعندوش ثمن، دير فيه 0.
-- الإجابة خصها تكون JSON صحيح 100% بلا حتى شي كلمة أخرى قبل أو بعد.
+رد الجواب **فقط** بتنسيق JSON (مصفوفة من العناصر Array of Objects). الحقول لي خاصك تجبد لكل منتج:
+- "nom": السمية ديال المنتج (بالتفصيل لي مكتوب، حاول تصحح الاختصارات لأسماء واضحة إذا قدرتي).
+- "categorie_nom": الفئة ديال المنتج (String).
+- "quantite": الكمية (رقم Int فقط، إذا مالقيتيهاش دير 1).
+- "prix_achat": ثمن الشراء للوحدة (رقم Float فقط، ماشي String).
+- "prix_vente": دير 0 דיما.
+- "code_barre": خليه فارغ "".
+
+الإجابة خصها تكون JSON Array صحيح 100% بلا حتى شي كلمة أخرى قبل أو بعد.
 `;
 
       const imageParts = [
         {
           inlineData: {
             data: base64Image,
-            mimeType
-          }
-        }
+            mimeType,
+          },
+        },
       ];
 
       // Try primary model first, fallback on quota error
@@ -137,10 +151,13 @@ ${catListStr}
 
       const response = await result.response;
       let text = response.text();
-      
+
       // Clean the response if it contains markdown formatting
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      
+      text = text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
       return JSON.parse(text);
     } catch (error: any) {
       console.error('Error parsing invoice image:', error);
@@ -160,7 +177,7 @@ ${catListStr}
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './ai-assistant.html',
-  styleUrl: './ai-assistant.css'
+  styleUrl: './ai-assistant.css',
 })
 export class AiAssistant {
   @ViewChild('chatScroll') private scrollContainer!: ElementRef;
@@ -170,10 +187,16 @@ export class AiAssistant {
   isThinking = false;
 
   messages: { text: string; sender: 'user' | 'ai' }[] = [
-    { text: 'السلام عليكم صديقي! أنا المساعد الذكي ديال "فكري فون". كيفاش نقدر نعاونك باش نطوروا المحل اليوم؟', sender: 'ai' }
+    {
+      text: 'السلام عليكم صديقي! أنا المساعد الذكي ديال "فكري فون". كيفاش نقدر نعاونك باش نطوروا المحل اليوم؟',
+      sender: 'ai',
+    },
   ];
 
-  constructor(private aiService: AIService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private aiService: AIService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   toggleChat() {
     this.isOpen = !this.isOpen;
@@ -195,7 +218,7 @@ export class AiAssistant {
     try {
       // Call AI with stream
       const stream = this.aiService.askQuestionStream(text);
-      
+
       let firstChunkReceived = false;
       let aiMessageIndex = -1;
 
@@ -211,13 +234,16 @@ export class AiAssistant {
         this.scrollToBottom();
         this.cdr.detectChanges();
       }
-      
+
       if (!firstChunkReceived) {
         this.isThinking = false;
       }
-    } catch(err) {
+    } catch (err) {
       this.isThinking = false;
-      this.messages.push({ text: "عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.", sender: 'ai' });
+      this.messages.push({
+        text: 'عفواً، وقع شي مشكل فالإتصال بـ الذكاء الاصطناعي. جرب مرة أخرى.',
+        sender: 'ai',
+      });
       this.cdr.detectChanges();
     }
   }
@@ -225,7 +251,8 @@ export class AiAssistant {
   private scrollToBottom() {
     try {
       if (this.scrollContainer) {
-        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+        this.scrollContainer.nativeElement.scrollTop =
+          this.scrollContainer.nativeElement.scrollHeight;
       }
     } catch (err) {}
   }
