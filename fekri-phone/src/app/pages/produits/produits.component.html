@@ -172,7 +172,15 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>إسم المنتج *</label>
+            <div class="nom-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px;">
+              <label style="margin: 0;">إسم المنتج *</label>
+              <div class="quick-caps" style="display: flex; gap: 4px;">
+                <button class="cap-btn" (click)="appendCap(' 64GB')">64GB</button>
+                <button class="cap-btn" (click)="appendCap(' 128GB')">128GB</button>
+                <button class="cap-btn" (click)="appendCap(' 256GB')">256GB</button>
+                <button class="cap-btn" (click)="appendCap(' 512GB')">512GB</button>
+              </div>
+            </div>
             <input
               #nomInput
               type="text"

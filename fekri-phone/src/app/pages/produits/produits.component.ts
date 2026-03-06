@@ -102,6 +102,17 @@ export class ProduitsComponent implements OnInit {
     this.showModal = true;
   }
 
+  appendCap(cap: string) {
+    if (!this.form.nom) this.form.nom = '';
+    this.form.nom += cap;
+    // Keep focus back on input
+    setTimeout(() => {
+      if (this.nomInput && this.nomInput.nativeElement) {
+        this.nomInput.nativeElement.focus();
+      }
+    }, 10);
+  }
+
   openEdit(p: Produit) {
     this.editMode = true;
     this.form = {
