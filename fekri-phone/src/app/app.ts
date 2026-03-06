@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, NgZone, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +15,7 @@ import { AiAssistant } from './components/ai-assistant/ai-assistant';
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   sidebarOpen = true;
   isFullscreen = false;
   mobileMenuOpen = false;
@@ -49,6 +49,11 @@ export class AppComponent implements OnInit {
     { path: '/rapport', icon: '📈', label: 'التقرير اليومي', exact: false },
   ];
 
+  // --- Global Top Bar Stats ---
+  dailyCaisse = 0;
+  dailyRib7 = 0;
+  private statsInterval: any;
+
   constructor(
     public auth: AuthService,
     private router: Router,
@@ -63,6 +68,14 @@ export class AppComponent implements OnInit {
       if (user) {
         this.checkLowStock();
         this.loadSearchCache();
+        this.loadQuickStats();
+
+        if (this.statsInterval) clearInterval(this.statsInterval);
+        this.statsInterval = setInterval(() => {
+          this.loadQuickStats();
+        }, 30000); // refresh every 30 seconds
+      } else {
+        if (this.statsInterval) clearInterval(this.statsInterval);
       }
     });
 
@@ -78,6 +91,19 @@ export class AppComponent implements OnInit {
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       this.toggleDarkMode(true);
     }
+  }
+
+  ngOnDestroy() {
+    if (this.statsInterval) clearInterval(this.statsInterval);
+  }
+
+  async loadQuickStats() {
+    try {
+      const stats = await this.supabase.getDailyQuickStats();
+      this.dailyCaisse = stats.caisse;
+      this.dailyRib7 = stats.rib7;
+      this.cdr.detectChanges();
+    } catch {}
   }
 
   toggleDarkMode(forceDark?: boolean) {

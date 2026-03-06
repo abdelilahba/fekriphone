@@ -352,6 +352,27 @@ export class SupabaseService {
     };
   }
 
+  // ==================== Daily Quick Stats (Header) ====================
+  async getDailyQuickStats() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const [ventes, revenus, depenses] = await Promise.all([
+      this.supabase.from('ventes').select('montant_total, profit_total').eq('date', today),
+      this.supabase.from('revenus_reparation').select('montant').eq('date', today),
+      this.supabase.from('depenses').select('montant').eq('date', today)
+    ]);
+
+    const ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+    const ventesProfitTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
+    const reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
+    const depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+
+    return {
+      caisse: ventesTotal + reparationsTotal - depensesTotal,
+      rib7: ventesProfitTotal + reparationsTotal - depensesTotal
+    };
+  }
+
   // ==================== Commandes Fournisseur ====================
   async getCommandes() {
     const { data, error } = await this.supabase

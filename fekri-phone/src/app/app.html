@@ -69,6 +69,19 @@
       </button>
       <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
     </div>
+    
+    <div class="top-bar-center">
+      <div class="quick-stat rib7">
+        <span class="stat-icon">📈</span>
+        <span class="stat-label">ربح اليوم:</span>
+        <span class="stat-val">{{ dailyRib7 }} د.م</span>
+      </div>
+      <div class="quick-stat caisse">
+        <span class="stat-icon">💵</span>
+        <span class="stat-label">صندوق اليوم:</span>
+        <span class="stat-val">{{ dailyCaisse }} د.م</span>
+      </div>
+    </div>
     <div class="top-bar-right">
       <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
         <span>🔍</span>
