@@ -233,4 +233,56 @@ export class AppComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
   }
+
+  // --- Quick Withdraw (Expense) from Caisse ---
+  showQuickWithdrawModal = false;
+  withdrawAmount: number | null = null;
+  withdrawReason = '';
+  withdrawLoading = false;
+  withdrawError = '';
+
+  openQuickWithdraw() {
+    this.withdrawAmount = null;
+    this.withdrawReason = '';
+    this.withdrawError = '';
+    this.showQuickWithdrawModal = true;
+  }
+
+  closeQuickWithdraw() {
+    this.showQuickWithdrawModal = false;
+  }
+
+  async submitQuickWithdraw() {
+    if (!this.withdrawAmount || this.withdrawAmount <= 0) {
+      this.withdrawError = 'خصك تدخل شحال خديتي! (أكبر من 0)';
+      return;
+    }
+    if (!this.withdrawReason || this.withdrawReason.trim() === '') {
+      this.withdrawError = 'خصك تكتب السبب (مثال: ماكلة، سلعة...)';
+      return;
+    }
+
+    this.withdrawLoading = true;
+    this.withdrawError = '';
+
+    try {
+      const depense = {
+        date: new Date().toISOString().split('T')[0],
+        description: this.withdrawReason.trim(),
+        montant: this.withdrawAmount,
+        categorie: 'سحب سريع ⚡'
+      };
+
+      await this.supabase.addDepense(depense);
+      await this.loadQuickStats(); // Refresh header immediately
+      
+      this.withdrawLoading = false;
+      this.closeQuickWithdraw();
+      
+      // Optional: show a toast using Swal or simple alert if preferred, but updating header is enough
+    } catch (e: any) {
+      this.withdrawLoading = false;
+      this.withdrawError = e.message || 'وقع شي مشكل، عاود حاول';
+    }
+  }
 }

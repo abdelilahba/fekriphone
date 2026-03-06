@@ -76,10 +76,11 @@
         <span class="stat-label">ربح اليوم:</span>
         <span class="stat-val">{{ dailyRib7 }} د.م</span>
       </div>
-      <div class="quick-stat caisse">
+      <div class="quick-stat caisse with-action" (click)="openQuickWithdraw()" title="إسحب أو قيد مصروف من الصندوق">
         <span class="stat-icon">💵</span>
         <span class="stat-label">صندوق اليوم:</span>
         <span class="stat-val">{{ dailyCaisse }} د.م</span>
+        <span class="quick-act-btn">➖</span>
       </div>
     </div>
     <div class="top-bar-right">
@@ -179,5 +180,36 @@
 
 <!-- AI Assistant Floating Widget -->
 <app-ai-assistant></app-ai-assistant>
+
+<!-- Quick Withdraw Modal -->
+@if (showQuickWithdrawModal) {
+<div class="modal-overlay" (click)="closeQuickWithdraw()">
+  <div class="modal-content password-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>➖ سحب من الصندوق (مصروف)</h2>
+      <button class="close-btn" (click)="closeQuickWithdraw()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>شحال خديتي؟ (د.م) *</label>
+        <input type="number" [(ngModel)]="withdrawAmount" class="form-control" placeholder="مثال: 50" min="1">
+      </div>
+      <div class="form-group">
+        <label>علاش خديتيهم؟ (السبب) *</label>
+        <input type="text" [(ngModel)]="withdrawReason" class="form-control" placeholder="مثال: قهوة، شارجور رجع، ماكلة...">
+      </div>
+      @if (withdrawError) {
+      <div class="error-msg" style="margin-top: 10px; padding: 10px; background: rgba(239, 68, 68, 0.1); color: var(--danger); border-radius: 6px;">❌ {{ withdrawError }}</div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="background-color: var(--danger)" (click)="submitQuickWithdraw()" [disabled]="withdrawLoading">
+        {{ withdrawLoading ? '⏳ صبر...' : '💾 سحب' }}
+      </button>
+      <button class="btn btn-ghost" (click)="closeQuickWithdraw()">إلغاء</button>
+    </div>
+  </div>
+</div>
+}
 
 }

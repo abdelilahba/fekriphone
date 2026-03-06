@@ -340,6 +340,31 @@
   background: rgba(34, 197, 94, 0.05);
 }
 
+.quick-stat.caisse.with-action {
+  cursor: pointer;
+  transition: all 0.2s;
+  padding-right: 8px; /* Room for minus btn */
+}
+
+.quick-stat.caisse.with-action:hover {
+  background: rgba(34, 197, 94, 0.15);
+  transform: translateY(-1px);
+}
+
+.quick-act-btn {
+  background: var(--danger);
+  color: white;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  margin-right: 4px; /* RTL Margin */
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
 .stat-icon {
   font-size: 16px;
 }
