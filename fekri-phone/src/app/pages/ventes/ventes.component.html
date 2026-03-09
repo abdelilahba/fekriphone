@@ -115,7 +115,7 @@
         <span class="pos-date">{{ currentDate() }}</span>
       </div>
       <div class="pos-search">
-        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"
+        <input #searchInput type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"
           class="form-control pos-search-input" placeholder="🔍 قلّب على منتج أو إمسح بالسكانر..." autofocus>
       </div>
       <button class="pos-close-btn" (click)="closeVenteModal()">غادر نقطة البيع ✕</button>
