@@ -312,11 +312,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       </head>
       <body>
         <div class="header">
-          <!-- Placeholder logo SVG (a smartphone icon) -->
-          <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-          </svg>
+          <img class="logo" src="${window.location.origin}/assets/logo.jpg" alt="Fekri Phone Logo">
           <div class="title">FEKRI PHONE</div>
           <div class="subtitle">بيع وتسويق الهواتف الذكية ولوازمها</div>
           <div class="date">${new Intl.DateTimeFormat('ar-MA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date())}</div>
