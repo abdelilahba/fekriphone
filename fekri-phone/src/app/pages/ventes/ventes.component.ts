@@ -214,6 +214,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       item.stock_restant++;
       this.cart$.next([...this.cart]);
       this.updateCartTotal();
+      this.focusSearchNeedsTrigger = true;
     } else {
       const index = this.cart.findIndex(c => c.produit_id === item.produit_id);
       if (index > -1) this.removeFromCart(index);
@@ -244,6 +245,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.cart.splice(index, 1);
     this.cart$.next([...this.cart]);
     this.updateCartTotal();
+    this.focusSearchNeedsTrigger = true;
   }
 
   updateCartItem(item: CartItem) {
