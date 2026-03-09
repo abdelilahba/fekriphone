@@ -127,9 +127,10 @@ export class ProduitsComponent implements OnInit {
       this.showToast('هاد المنتج ماعندوش باركود، دير ليه تعديل وزيد الرقم', 'error');
       return;
     }
-
-    const copies = 1; // Always print 1 label automatically now
-
+    const qtyStr = prompt("شحال من لصقة (Étiquette) بغيتي تطبع؟", "1");
+    if (!qtyStr) return;
+    const copies = parseInt(qtyStr, 10);
+    if (isNaN(copies) || copies <= 0) return;
     // Create printable canvas on the fly
     const canvas = document.createElement('canvas');
     try {
