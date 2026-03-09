@@ -128,10 +128,7 @@ export class ProduitsComponent implements OnInit {
       return;
     }
 
-    const qtyStr = prompt("شحال من لصقة (Étiquette) بغيتي تطبع؟", "1");
-    if (!qtyStr) return;
-    const copies = parseInt(qtyStr, 10);
-    if (isNaN(copies) || copies <= 0) return;
+    const copies = 1; // Always print 1 label automatically now
 
     // Create printable canvas on the fly
     const canvas = document.createElement('canvas');
@@ -190,11 +187,28 @@ export class ProduitsComponent implements OnInit {
     
     html += `</body></html>`;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      setTimeout(() => { printWindow.print(); }, 500);
+    // Create an invisible iframe for printing to avoid opening full blank tabs
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '-1000px';
+    iframe.style.bottom = '-1000px';
+    iframe.style.width = '40mm';
+    iframe.style.height = '30mm';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => { document.body.removeChild(iframe); }, 1000);
+        }, 300);
+      };
     }
   }
 

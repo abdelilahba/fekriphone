@@ -265,6 +265,9 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       const total = this.cart.reduce((s, i) => s + i.sous_total, 0);
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
       await this.supabase.addVente(total, profitTotal, this.cart);
+      
+      this.printTicket(this.cart, total);
+
       this.ngZone.run(() => {
         this.showToast('تسجلت البيعة بنجاح ✅', 'success');
         this.closeVenteModal();
@@ -272,6 +275,96 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       });
     } catch (error) {
       this.showToast('وقع مشكل', 'error');
+    }
+  }
+
+  printTicket(cartItems: CartItem[], total: number) {
+    let html = `
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <title>توصيل البيع</title>
+        <style>
+          @page { margin: 0; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; padding: 10px; width: 80mm; font-size: 12px; color: #000;
+          }
+          .header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
+          .title { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+          .date { font-size: 10px; color: #333; }
+          .table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+          .table th { border-bottom: 1px solid #000; text-align: right; padding: 4px 0; font-size: 11px;}
+          .table td { padding: 4px 0; border-bottom: 1px dotted #ccc; font-size: 11px;}
+          .col-qty { width: 15%; text-align: center; }
+          .col-name { width: 55%; }
+          .col-price { width: 30%; text-align: left; }
+          .total-section { border-top: 1px dashed #000; padding-top: 5px; margin-top: 5px; text-align: left; font-size: 14px; font-weight: bold; }
+          .footer { text-align: center; font-size: 10px; margin-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">FEKRI PHONE</div>
+          <div class="date">${new Intl.DateTimeFormat('ar-MA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date())}</div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="col-name">المنتج</th>
+              <th class="col-qty">الكمية</th>
+              <th class="col-price">الثمن</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    cartItems.forEach(item => {
+      html += `
+        <tr>
+          <td class="col-name">${item.nom}</td>
+          <td class="col-qty">${item.quantite}</td>
+          <td class="col-price">${item.sous_total} د.م</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+        <div class="total-section">
+          المجموع: ${total} د.م
+        </div>
+        <div class="footer">
+          شكراً على زيارتكم!<br>
+          مرحباً بكم دائماً
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create an invisible iframe for printing to avoid opening full blank tabs
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '-1000px';
+    iframe.style.bottom = '-1000px';
+    iframe.style.width = '80mm';
+    iframe.style.height = '100mm';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => { document.body.removeChild(iframe); }, 1000);
+        }, 300);
+      };
     }
   }
 
