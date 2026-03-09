@@ -6,6 +6,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AIService } from '../../components/ai-assistant/ai-assistant';
 import { Produit, Categorie } from '../../core/models/models';
 import Swal from 'sweetalert2';
+declare var require: any;
+const JsBarcode = require('jsbarcode');
 
 @Component({
   selector: 'app-produits',
@@ -111,6 +113,89 @@ export class ProduitsComponent implements OnInit {
         this.nomInput.nativeElement.focus();
       }
     }, 10);
+  }
+
+  generateRandomBarcode() {
+    const min = 1000000000000;
+    const max = 9999999999999;
+    const randomEAN13 = Math.floor(Math.random() * (max - min + 1)) + min;
+    this.form.code_barre = randomEAN13.toString();
+  }
+
+  printBarcode(p: Produit) {
+    if (!p.code_barre) {
+      this.showToast('هاد المنتج ماعندوش باركود، دير ليه تعديل وزيد الرقم', 'error');
+      return;
+    }
+
+    const qtyStr = prompt("شحال من لصقة (Étiquette) بغيتي تطبع؟", "1");
+    if (!qtyStr) return;
+    const copies = parseInt(qtyStr, 10);
+    if (isNaN(copies) || copies <= 0) return;
+
+    // Create printable canvas on the fly
+    const canvas = document.createElement('canvas');
+    try {
+      JsBarcode(canvas, p.code_barre, {
+        format: "CODE128",
+        width: 1.5,
+        height: 40,
+        displayValue: true,
+        fontSize: 14,
+        margin: 5
+      });
+    } catch(err) {
+      this.showToast('الكود بار لي دخلتي ما خدامش، خصو يكون عادي (أرقام وحروف بدون مسافات)', 'error');
+      return;
+    }
+
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    // Generate HTML for labels
+    let html = `
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <title>طباعة لصقات</title>
+        <style>
+          body { 
+            margin: 0; padding: 0; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+          }
+          @page { margin: 0; }
+          .label {
+            width: 40mm; height: 30mm;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; text-align: center; font-family: sans-serif;
+            page-break-after: always;
+          }
+          .store-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
+          .prod-name { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; max-width: 95%; text-overflow: ellipsis; margin-bottom: 2px;}
+          .barcode-img { max-width: 95%; max-height: 18mm; object-fit: contain; }
+          .price { font-size: 12px; font-weight: 900; margin-top: 2px;}
+        </style>
+      </head>
+      <body>
+    `;
+
+    for (let i = 0; i < copies; i++) {
+        html += `
+        <div class="label">
+          <div class="store-name">FEKRI PHONE</div>
+          <div class="prod-name">${p.nom}</div>
+          <img class="barcode-img" src="${dataUrl}" />
+          <div class="price">${p.prix_vente} DHS</div>
+        </div>`;
+    }
+    
+    html += `</body></html>`;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => { printWindow.print(); }, 500);
+    }
   }
 
   openEdit(p: Produit) {

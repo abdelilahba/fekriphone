@@ -93,9 +93,10 @@
                     <td class="code-barre">{{ p.code_barre || '—' }}</td>
                     <td>
                       <div class="actions">
-                        <button class="btn btn-ghost btn-sm" (click)="viewProduct(p)">👁️</button>
-                        <button class="btn btn-ghost btn-sm" (click)="openEdit(p)">✏️</button>
-                        <button class="btn btn-ghost btn-sm" (click)="delete(p)">🗑️</button>
+                        <button class="btn btn-ghost btn-sm" (click)="viewProduct(p)" title="معلومات">👁️</button>
+                        <button class="btn btn-ghost btn-sm" (click)="printBarcode(p)" title="طبع لصقات الكودبار">🖨️</button>
+                        <button class="btn btn-ghost btn-sm" (click)="openEdit(p)" title="تعديل">✏️</button>
+                        <button class="btn btn-ghost btn-sm" (click)="delete(p)" title="حذف">🗑️</button>
                       </div>
                     </td>
                   </tr>
@@ -233,13 +234,17 @@
             </div>
             <div class="form-group">
               <label>الباركود</label>
-              <input
-                type="text"
-                [(ngModel)]="form.code_barre"
-                (keyup.enter)="save(false)"
-                class="form-control"
-                placeholder="إمسح بالسكانر..."
-              />
+              <div style="display: flex; gap: 4px;">
+                <input
+                  type="text"
+                  [(ngModel)]="form.code_barre"
+                  (keyup.enter)="save(false)"
+                  class="form-control"
+                  placeholder="إمسح بالسكانر..."
+                  style="flex: 1;"
+                />
+                <button type="button" class="btn btn-ghost" (click)="generateRandomBarcode()" title="توليد كودبار عشوائي" style="padding: 0 10px; border: 1px solid var(--border);">✨</button>
+              </div>
             </div>
           </div>
           <div class="form-group">
