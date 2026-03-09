@@ -6,8 +6,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AIService } from '../../components/ai-assistant/ai-assistant';
 import { Produit, Categorie } from '../../core/models/models';
 import Swal from 'sweetalert2';
-declare var require: any;
-const JsBarcode = require('jsbarcode');
+import * as JsBarcodeModule from 'jsbarcode';
+const JsBarcode = (JsBarcodeModule as any).default || JsBarcodeModule;
 
 @Component({
   selector: 'app-produits',
