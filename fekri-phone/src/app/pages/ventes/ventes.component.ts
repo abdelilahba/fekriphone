@@ -287,25 +287,38 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         <style>
           @page { margin: 0; }
           body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; padding: 10px; width: 80mm; font-size: 12px; color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 10px; width: 80mm; font-size: 11px; color: #000;
+            line-height: 1.4;
           }
-          .header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
-          .title { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
-          .date { font-size: 10px; color: #333; }
-          .table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-          .table th { border-bottom: 1px solid #000; text-align: right; padding: 4px 0; font-size: 11px;}
-          .table td { padding: 4px 0; border-bottom: 1px dotted #ccc; font-size: 11px;}
-          .col-qty { width: 15%; text-align: center; }
-          .col-name { width: 55%; }
-          .col-price { width: 30%; text-align: left; }
-          .total-section { border-top: 1px dashed #000; padding-top: 5px; margin-top: 5px; text-align: left; font-size: 14px; font-weight: bold; }
-          .footer { text-align: center; font-size: 10px; margin-top: 15px; }
+          .header { text-align: center; margin-bottom: 12px; border-bottom: 2px dashed #000; padding-bottom: 8px; }
+          .logo { width: 40px; height: 40px; margin-bottom: 4px; }
+          .title { font-size: 18px; font-weight: 900; letter-spacing: 1px; margin-bottom: 2px; }
+          .subtitle { font-size: 10px; color: #555; margin-bottom: 4px; }
+          .date { font-size: 10px; color: #000; font-weight: bold; background: #eee; padding: 2px; display: inline-block; border-radius: 4px;}
+          .table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+          .table th { border-bottom: 1px solid #000; text-align: right; padding: 6px 0; font-size: 11px; text-transform: uppercase; color: #555;}
+          .table td { padding: 6px 0; border-bottom: 1px dotted #aaa; font-size: 12px; font-weight: 500;}
+          .col-qty { width: 15%; text-align: center; font-weight: bold;}
+          .col-name { width: 55%; padding-left: 5px;}
+          .col-price { width: 30%; text-align: left; font-weight: bold;}
+          .total-section { border-top: 2px dashed #000; padding-top: 8px; margin-top: 5px; display: flex; justify-content: space-between; align-items: center;}
+          .total-label { font-size: 14px; font-weight: bold; }
+          .total-amount { font-size: 18px; font-weight: 900; }
+          .footer { text-align: center; font-size: 10px; margin-top: 20px; font-weight: bold; }
+          .barcode-container { text-align: center; margin-top: 15px; }
+          .barcode-line { height: 25px; width: 80%; background: repeating-linear-gradient(90deg, #000, #000 2px, transparent 2px, transparent 4px); margin: 0 auto; margin-bottom: 3px;}
         </style>
       </head>
       <body>
         <div class="header">
+          <!-- Placeholder logo SVG (a smartphone icon) -->
+          <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
           <div class="title">FEKRI PHONE</div>
+          <div class="subtitle">بيع وتسويق الهواتف الذكية ولوازمها</div>
           <div class="date">${new Intl.DateTimeFormat('ar-MA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date())}</div>
         </div>
         <table class="table">
@@ -333,10 +346,15 @@ export class VentesComponent implements OnInit, AfterViewChecked {
           </tbody>
         </table>
         <div class="total-section">
-          المجموع: ${total} د.م
+          <span class="total-label">المجموع الإجمالي:</span>
+          <span class="total-amount">${total} د.م</span>
+        </div>
+        
+        <div class="barcode-container">
+          <div class="barcode-line"></div>
+          <div>شكراً على زيارتكم!</div>
         </div>
         <div class="footer">
-          شكراً على زيارتكم!<br>
           مرحباً بكم دائماً
         </div>
       </body>
