@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
@@ -27,7 +27,7 @@ interface CartItem {
   templateUrl: './ventes.component.html',
   styleUrl: './ventes.component.css'
 })
-export class VentesComponent implements OnInit {
+export class VentesComponent implements OnInit, AfterViewChecked {
   private allProduits: Produit[] = [];
   private categories: Categorie[] = [];
   ventes$ = new BehaviorSubject<Vente[]>([]);
@@ -48,6 +48,9 @@ export class VentesComponent implements OnInit {
 
   private cart: CartItem[] = [];
 
+  @ViewChild('searchInput') searchInput!: ElementRef;
+  private focusSearchNeedsTrigger = false;
+
   constructor(
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef,
@@ -56,6 +59,13 @@ export class VentesComponent implements OnInit {
   ) { }
 
   ngOnInit() { this.loadData(); }
+
+  ngAfterViewChecked() {
+    if (this.focusSearchNeedsTrigger && this.searchInput) {
+      this.searchInput.nativeElement.focus();
+      this.focusSearchNeedsTrigger = false;
+    }
+  }
 
   async loadData() {
     try {
@@ -118,6 +128,7 @@ export class VentesComponent implements OnInit {
     this.filteredProduits$.next([...this.allProduits]);
     this.showVenteModal = true;
     this.layout.enterFullscreen();
+    this.focusSearchNeedsTrigger = true;
     this.cdr.detectChanges();
   }
 
@@ -131,6 +142,7 @@ export class VentesComponent implements OnInit {
     this.activeCategory = catId;
     this.searchTerm = '';
     this.applyProductFilter();
+    this.focusSearchNeedsTrigger = true;
   }
 
   searchProduits() {
@@ -154,6 +166,7 @@ export class VentesComponent implements OnInit {
         this.addToCart(result[0]);
         this.searchTerm = '';
         this.applyProductFilter();
+        this.focusSearchNeedsTrigger = true;
         return;
       }
     }
@@ -190,6 +203,7 @@ export class VentesComponent implements OnInit {
     }
     this.cart$.next([...this.cart]);
     this.updateCartTotal();
+    this.focusSearchNeedsTrigger = true;
   }
 
   decrementCartItem(item: CartItem) {
