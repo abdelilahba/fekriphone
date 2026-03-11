@@ -9,6 +9,9 @@
   <div class="page-header">
     <h1>📦 المنتجات</h1>
     <div class="header-actions">
+      <button class="btn btn-secondary scan-btn" (click)="toggleQuickInventory()" [class.active-mode]="isQuickInventoryMode">
+        {{ isQuickInventoryMode ? '✅ سد الجرد' : '⚡ جرد سريع' }}
+      </button>
       <button class="btn btn-secondary scan-btn" (click)="fileInput.click()">
         📸 صور الفاتورة (IA)
       </button>
@@ -82,13 +85,25 @@
                     <td>{{ formatMAD(p.prix_achat) }}</td>
                     <td class="prix-vente">{{ formatMAD(p.prix_vente) }}</td>
                     <td>
-                      <button
-                        class="stock-btn"
-                        (click)="openStockModal(p)"
-                        [class]="'stock-' + getStockBadge(p.quantite)"
-                      >
-                        {{ p.quantite }} {{ getStockLabel(p.quantite) }} ✏️
-                      </button>
+                      @if (isQuickInventoryMode) {
+                        <div class="quick-stock-wrapper">
+                          <input 
+                            type="number" 
+                            class="form-control quick-stock-input" 
+                            [value]="p.quantite"
+                            (change)="updateStockDirectly(p, $any($event.target).value)"
+                            min="0"
+                          />
+                        </div>
+                      } @else {
+                        <button
+                          class="stock-btn"
+                          (click)="openStockModal(p)"
+                          [class]="'stock-' + getStockBadge(p.quantite)"
+                        >
+                          {{ p.quantite }} {{ getStockLabel(p.quantite) }} ✏️
+                        </button>
+                      }
                     </td>
                     <td class="code-barre">{{ p.code_barre || '—' }}</td>
                     <td>

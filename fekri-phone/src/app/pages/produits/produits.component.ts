@@ -43,6 +43,30 @@ export class ProduitsComponent implements OnInit {
   isScanning = false;
   scannedProducts: any[] = [];
 
+  // Fast Inventory Sync
+  isQuickInventoryMode = false;
+
+  toggleQuickInventory() {
+    this.isQuickInventoryMode = !this.isQuickInventoryMode;
+    if (this.isQuickInventoryMode) {
+      this.showToast('تم تفعيل الـ جرد السريع ⚡', 'info');
+    }
+  }
+
+  async updateStockDirectly(p: Produit, newQtyString: string) {
+    const newQty = parseInt(newQtyString, 10);
+    if (isNaN(newQty) || newQty < 0) return;
+    if (newQty === p.quantite) return;
+    
+    try {
+      // Just update it silently and fast, no logs required by user request for stock sync
+      await this.supabase.updateProduit(p.id, { quantite: newQty });
+      p.quantite = newQty;
+    } catch (e) {
+      this.showToast('وقع مشكل في تعديل المخزون', 'error');
+    }
+  }
+
   constructor(private supabase: SupabaseService, private aiService: AIService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.loadData(); }

@@ -24,8 +24,77 @@ export class SupabaseService {
         action,
         details
       });
+
+      // --- SEND TELEGRAM NOTIFICATION ---
+      // If it's an employee (not admin) and Telegram is configured
+      const adminId = '370b5904-a1be-4cf2-a6b4-c2e93211cf74';
+      if (userId && userId !== adminId && environment.telegramBotToken && environment.telegramChatId) {
+        // Fetch employee name
+        const { data: profile } = await this.supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', userId)
+          .single();
+        
+        const userName = profile?.name || 'موظف';
+        this.sendTelegramNotification(userName, action, details);
+      }
+
     } catch (e) {
       console.error('Logging error:', e);
+    }
+  }
+
+  private async sendTelegramNotification(userName: string, action: string, details: any) {
+    try {
+      let actionText = action;
+      let emoji = '🚨';
+      
+      switch(action) {
+        case 'BI3A_JADIDA': 
+          actionText = `سجل مبيعة جديدة بمبلغ <b>${details.montant} د.م</b>`; 
+          emoji = '💰'; 
+          break;
+        case 'MS7_BI3A': 
+          actionText = `قام بإلغاء مبيعة! ❌`; 
+          emoji = '⚠️'; 
+          break;
+        case 'ZID_ISLAH': 
+          actionText = `أضاف إصلاح: <i>${details.description}</i> بـ <b>${details.montant} د.م</b>`; 
+          emoji = '🔧'; 
+          break;
+        case 'ZID_MASROUF': 
+          actionText = `أضاف مصروف: <i>${details.description}</i> بـ <b>${details.montant} د.م</b>`; 
+          emoji = '💸'; 
+          break;
+        case 'MS7_MASROUF': 
+          actionText = `قام بإلغاء مصروف! ❌`; 
+          emoji = '⚠️'; 
+          break;
+        case 'MS7_ISLAH': 
+          actionText = `قام بإلغاء إصلاح! ❌`; 
+          emoji = '⚠️'; 
+          break;
+        case 'LOGIN':
+          actionText = `سجل الدخول للمحل`;
+          emoji = '🔑';
+          break;
+      }
+
+      const message = `${emoji} <b>إشعار من المحل</b>\n\n👤 الموظف: <b>${userName}</b>\n📝 الحدث: ${actionText}`;
+      
+      const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: environment.telegramChatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+    } catch (e) {
+      console.error('Failed to send telegram notification:', e);
     }
   }
 
