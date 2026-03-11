@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -43,6 +44,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   });
   loading$ = new BehaviorSubject<boolean>(true);
   chartReady = false;
+  userRole = 'admin';
 
   // Computed values for display
   ventesCount = 0;
@@ -72,27 +74,35 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     status: 'danger' | 'warning' | 'safe';
     statusLabel: string;
   }[] = [];
+  activityLogs: any[] = [];
 
   private charts: Chart[] = [];
 
-  constructor(private supabase: SupabaseService) { }
+  constructor(private supabase: SupabaseService, private auth: AuthService) { }
 
-  ngOnInit() { this.loadStats(); }
+  ngOnInit() { 
+    this.auth.userRole$.subscribe(role => {
+      this.userRole = role;
+    });
+    this.loadStats(); 
+  }
   ngAfterViewInit() { this.chartReady = true; }
 
   async loadStats() {
     try {
       this.loading$.next(true);
-      const [stats, ventes, depenses, revenus, produits, pertes, credits] = await Promise.all([
+      const [stats, ventes, depenses, revenus, produits, pertes, credits, logs] = await Promise.all([
         this.supabase.getDashboardStats(),
         this.supabase.getVentes(),
         this.supabase.getDepenses(),
         this.supabase.getRevenus(),
         this.supabase.getProduits(),
         this.supabase.getPertes(),
-        this.supabase.getCredits()
+        this.supabase.getCredits(),
+        this.supabase.getActivityLogs()
       ]);
       this.stats$.next(stats);
+      this.activityLogs = logs;
 
       this.ventesCount = ventes.length;
       this.reparationsCount = revenus.length;

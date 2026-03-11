@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, loginGuard } from './core/guards/auth.guard';
+import { authGuard, loginGuard, adminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -10,17 +10,17 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'produits',
     loadComponent: () => import('./pages/produits/produits.component').then(m => m.ProduitsComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'commandes',
     loadComponent: () => import('./pages/commandes/commandes').then(m => m.Commandes),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'ventes',
@@ -35,32 +35,37 @@ export const routes: Routes = [
   {
     path: 'depenses',
     loadComponent: () => import('./pages/depenses/depenses.component').then(m => m.DepensesComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'credits',
     loadComponent: () => import('./pages/credits/credits.component').then(m => m.CreditsComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'categories',
     loadComponent: () => import('./pages/categories/categories.component').then(m => m.CategoriesComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'pieces',
     loadComponent: () => import('./pages/pieces/pieces.component').then(m => m.PiecesComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'rapport',
     loadComponent: () => import('./pages/rapport/rapport.component').then(m => m.RapportComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
+  },
+  {
+    path: 'suivi',
+    loadComponent: () => import('./pages/suivi/suivi.component').then(m => m.SuiviComponent),
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: 'pertes',
     loadComponent: () => import('./pages/pertes/pertes.component').then(m => m.PertesComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, adminGuard]
   },
   {
     path: '**',

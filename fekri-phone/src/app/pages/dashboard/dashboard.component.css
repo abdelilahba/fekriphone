@@ -214,3 +214,137 @@
   .prediction-table { font-size: 12px; }
   .prediction-table thead th, .prediction-table tbody td { padding: 8px 10px; }
 }
+
+/* ========== Activity Logs ========== */
+.logs-card {
+  margin-top: 24px;
+}
+
+.card-header-logs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.view-all-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  margin-right: auto;
+  margin-left: 15px;
+  transition: var(--transition);
+}
+
+.view-all-link:hover {
+  text-decoration: underline;
+  transform: translateX(-3px);
+}
+
+.badge-live {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  animation: pulse-live 2s infinite;
+}
+
+@keyframes pulse-live {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.log-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.log-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.log-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.log-content {
+  flex: 1;
+}
+
+.log-desc {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.action-tag {
+  display: inline-block;
+  font-weight: 700;
+  margin-right: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.action-tag.success { background: var(--success-light); color: var(--success); }
+.action-tag.danger { background: var(--danger-light); color: var(--danger); }
+.action-tag.info { background: var(--info-light); color: var(--info); }
+
+.log-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.log-details {
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+
+.log-time {
+  font-weight: 600;
+}
+
+.empty-logs {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-light);
+}
+
+.empty-logs-icon {
+  font-size: 40px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.empty-logs p {
+  font-size: 14px;
+}

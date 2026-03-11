@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Depense } from '../../core/models/models';
 
@@ -28,7 +29,7 @@ export class DepensesComponent implements OnInit {
   categoriesDepense = ['كراء', 'فواتير', 'نقل', 'مشتريات', 'صيانة', 'أخرى'];
   form = { id: '', description: '', montant: 0, categorie: '', date: '' };
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
   ngOnInit() { this.loadData(); }
 
@@ -85,7 +86,8 @@ export class DepensesComponent implements OnInit {
         await this.supabase.updateDepense(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
-        await this.supabase.addDepense(data);
+        const uid = this.auth.currentUser?.id;
+        await this.supabase.addDepense(data, uid);
         this.showToast('تزاد بنجاح ✅', 'success');
       }
       this.closeModal();
@@ -108,7 +110,8 @@ export class DepensesComponent implements OnInit {
     });
     if (!result.isConfirmed) return;
     try {
-      await this.supabase.deleteDepense(d.id);
+      const uid = this.auth.currentUser?.id;
+      await this.supabase.deleteDepense(d.id, uid);
       this.showToast('تمسح ✅', 'success');
       await this.loadData();
     } catch (error) {

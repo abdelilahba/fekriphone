@@ -25,9 +25,11 @@ export interface Vente {
   montant_total: number;
   profit_total: number;
   date: string;
+  user_id?: string;
   created_at: string;
   // Joined
   vente_items?: VenteItem[];
+  profiles?: { name: string };
 }
 
 export interface VenteItem {
@@ -49,7 +51,9 @@ export interface RevenuReparation {
   description: string;
   montant: number;
   date: string;
+  user_id?: string;
   created_at: string;
+  profiles?: { name: string };
 }
 
 export interface Depense {

@@ -6,6 +6,7 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.c
 import { AuthService } from './core/services/auth.service';
 import { SupabaseService } from './core/services/supabase.service';
 import { LayoutService } from './core/services/layout.service';
+import { RefreshService } from './core/services/refresh.service';
 import { AiAssistant } from './components/ai-assistant/ai-assistant';
 
 @Component({
@@ -35,19 +36,36 @@ export class AppComponent implements OnInit, OnDestroy {
   searchResults: any[] = [];
   searchCache: any[] = [];
 
-  menuItems = [
-    { path: '/', icon: '📊', label: 'لوحة التحكم', exact: true },
-    { path: '/produits', icon: '📦', label: 'المنتجات', exact: false },
-    { path: '/commandes', icon: '📋', label: 'طلبيات المورد', exact: false },
-    { path: '/pieces', icon: '⚙️', label: 'قطع الغيار', exact: false },
-    { path: '/ventes', icon: '🛒', label: 'المبيعات', exact: false },
-    { path: '/reparations', icon: '🔧', label: 'مداخيل الإصلاح', exact: false },
-    { path: '/depenses', icon: '💸', label: 'المصاريف', exact: false },
-    { path: '/pertes', icon: '💔', label: 'المنتجات التالفة', exact: false },
-    { path: '/credits', icon: '📋', label: 'الديون', exact: false },
-    { path: '/categories', icon: '🏷️', label: 'الفئات', exact: false },
-    { path: '/rapport', icon: '📈', label: 'التقرير اليومي', exact: false },
+  userRole = 'admin';
+  welcomeMessage = '';
+  showHelpModal = false;
+  helpTitle = '';
+  guideSteps: { icon: string, title: string, desc: string }[] = [];
+  isPosModalActive = false;
+
+  // --- Guided Tour (Zoom) ---
+  tourActive = false;
+  currentTourStep = 0;
+  tourSteps: { target: string, title: string, desc: string, side?: 'top' | 'bottom' | 'left' | 'right' }[] = [];
+  tourPosition = { top: 0, left: 0, width: 0, height: 0 };
+  tourTooltipStyle = {};
+
+  allMenuItems = [
+    { path: '/', icon: '📊', label: 'لوحة التحكم', exact: true, roles: ['admin'] },
+    { path: '/produits', icon: '📦', label: 'المنتجات', exact: false, roles: ['admin'] },
+    { path: '/commandes', icon: '📋', label: 'طلبيات المورد', exact: false, roles: ['admin'] },
+    { path: '/pieces', icon: '⚙️', label: 'قطع الغيار', exact: false, roles: ['admin'] },
+    { path: '/ventes', icon: '🛒', label: 'المبيعات', exact: false, roles: ['admin', 'employee'] },
+    { path: '/reparations', icon: '🔧', label: 'مداخيل الإصلاح', exact: false, roles: ['admin', 'employee'] },
+    { path: '/depenses', icon: '💸', label: 'المصاريف', exact: false, roles: ['admin'] },
+    { path: '/pertes', icon: '💔', label: 'المنتجات التالفة', exact: false, roles: ['admin'] },
+    { path: '/credits', icon: '📋', label: 'الديون', exact: false, roles: ['admin'] },
+    { path: '/categories', icon: '🏷️', label: 'الفئات', exact: false, roles: ['admin'] },
+    { path: '/suivi', icon: '📡', label: 'مراقبة الموظفين', exact: false, roles: ['admin'] },
+    { path: '/rapport', icon: '📈', label: 'التقرير اليومي', exact: false, roles: ['admin'] },
   ];
+
+  menuItems: any[] = [];
 
   // --- Global Top Bar Stats ---
   dailyCaisse = 0;
@@ -60,7 +78,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private supabase: SupabaseService,
-    private layoutService: LayoutService
+    private layoutService: LayoutService,
+    private refreshService: RefreshService
   ) { }
 
   ngOnInit() {
@@ -79,10 +98,82 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     });
 
+    this.refreshService.refreshStats$.subscribe(() => {
+      this.loadQuickStats();
+    });
+
+    // Listen to real-time activity logs to keep everything live!
+    this.supabase.client.channel('public:activity_logs')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_logs' }, payload => {
+        this.ngZone.run(() => {
+          this.refreshService.triggerRefresh();
+        });
+      })
+      .subscribe();
+
+    this.auth.userRole$.subscribe(role => {
+      this.userRole = role;
+      this.menuItems = this.allMenuItems.filter(item => item.roles.includes(role));
+      
+      if (role !== 'admin') {
+        this.lowStockCount = 0;
+      }
+
+      // Auto redirect employee to sales page if they try to access root
+      if (role === 'employee' && (this.router.url === '/' || this.router.url === '')) {
+        this.router.navigate(['/ventes']);
+      }
+      this.cdr.detectChanges();
+    });
+
+    this.auth.userMetadata$.subscribe(meta => {
+      if (meta) {
+        let name = meta['full_name'] || meta['name'] || 'المعلّم';
+        // Force generic names from DB to a nice Darija fallback
+        if (['Employé', 'employee', 'khadam', 'خدّام'].includes(name)) {
+          name = 'المعلّم';
+        }
+        
+        if (this.userRole === 'employee') {
+          this.welcomeMessage = `مرحبا بيك أ سي ${name}! خدمة ميسرة إن شاء الله ✨`;
+        } else {
+          this.welcomeMessage = `تبارك الله عليك أ سي ${name}! نهارك مبروك 🏁`;
+        }
+      } else {
+        this.welcomeMessage = '';
+      }
+      this.cdr.detectChanges();
+    });
+
     // Listen for fullscreen mode (POS)
     this.layoutService.fullscreenMode$.subscribe(fs => {
       this.isFullscreen = fs;
       this.cdr.detectChanges();
+    });
+
+    this.layoutService.posModalActive$.subscribe(active => {
+      this.isPosModalActive = active;
+      if (active) {
+        const storageKey = `tour_seen_${this.userRole}_pos`;
+        if (!localStorage.getItem(storageKey)) {
+          setTimeout(() => this.startTour(), 800);
+          localStorage.setItem(storageKey, 'true');
+        }
+      }
+      this.cdr.detectChanges();
+    });
+
+    // Auto-Tour logic on first visit
+    this.router.events.subscribe(event => {
+      if (this.tourActive) return; 
+      setTimeout(() => {
+        const path = this.router.url === '/' ? 'dashboard' : this.router.url.replace('/', '');
+        const storageKey = `tour_seen_${this.userRole}_${path}`;
+        if (!localStorage.getItem(storageKey)) {
+          this.startTour();
+          localStorage.setItem(storageKey, 'true');
+        }
+      }, 1500);
     });
 
     // Dark Mode Init
@@ -93,11 +184,20 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  getRoleLabel(role: string): string {
+    return role === 'admin' ? 'معلم 👑' : 'موظف 👤';
+  }
+
   ngOnDestroy() {
     if (this.statsInterval) clearInterval(this.statsInterval);
   }
 
   async loadQuickStats() {
+    if (this.userRole !== 'admin') {
+      this.dailyCaisse = 0;
+      this.dailyRib7 = 0;
+      return;
+    }
     try {
       const stats = await this.supabase.getDailyQuickStats();
       this.dailyCaisse = stats.caisse;
@@ -120,6 +220,178 @@ export class AppComponent implements OnInit, OnDestroy {
       document.body.classList.remove('dark-theme');
       localStorage.setItem('theme', 'light');
     }
+  }
+
+  // --- Help Guide ---
+  openGuide() {
+    const url = this.router.url;
+    this.helpTitle = "دليل الإستخدام 💡";
+    this.guideSteps = [];
+    
+    if (url === '/' || url === '') {
+      this.helpTitle = "لوحة التحكم 📊";
+      this.guideSteps = [
+        { icon: '📈', title: 'الإحصائيات', desc: 'هنا كتشوف شحال بعتي وشحال ربحتي كولشي مجموع ومقاد.' },
+        { icon: '🔔', title: 'التنبيهات', desc: 'السيستيم كيعلمك إذا شي حاجة تقادات من المخزن ولا شي كريدي قديم.' },
+        { icon: '🗺️', title: 'الرؤية العامة', desc: 'جداول ورسومات بيانية كيبينو ليك الحركة ديال المحل كولا شهر.' }
+      ];
+    } else if (url.includes('/ventes')) {
+      this.helpTitle = "نقطة البيع (لاكيس) 🛒";
+      this.guideSteps = [
+        { icon: '🔍', title: 'البحث عن منتج', desc: 'كتب غير السمية ولا سكاني الكودبار باش السلعة طيح فالسلة.' },
+        { icon: '✏️', title: 'تعديل البيعة', desc: 'تقدر تبدل الثمن ولا دير تخفيض للكليان قبل ما تفاليدي.' },
+        { icon: '📠', title: 'طبع التوصيل', desc: 'فاش كتكليكي على بيع، السيستيم كيطبع Ticket أوتوماتيكيا.' }
+      ];
+    } else if (url.includes('/produits')) {
+      this.helpTitle = "إدارة السلعة 📦";
+      this.guideSteps = [
+        { icon: '➕', title: 'إضافة منتج', desc: 'دخل السلعة الجديدة، ثمن الشرا والبيع، وديك الساعة سكاني الكودبار.' },
+        { icon: '📊', title: 'المخزون', desc: 'مراقبة شحال بقى من كولا حاجة باش ما تخواش من السلعة.' },
+        { icon: '🏷️', title: 'طبع الباركود', desc: 'إلى السلعة ما فيهاش باركود، تقدر تخرجو وتلصقو عليها بيدك.' }
+      ];
+    } else if (url.includes('/reparations')) {
+      this.helpTitle = "مداخيل الإصلاح 🔧";
+      this.guideSteps = [
+        { icon: '🛠️', title: 'تقييد إصلاح', desc: 'سجل أي تليفون صاوبتيه وشحال خلص فيه الكليان.' },
+        { icon: '💰', title: 'حساب الصاكا', desc: 'السيستيم كيفرق ثمن القطعة على الثمن ديال يديك باش تعرف الربح.' }
+      ];
+    } else {
+      this.guideSteps = [{ icon: '🙌', title: 'مساعدة', desc: "هاد الصفحة باينة، كادير داكشي لي مكتوب فالعنوان ديالها. إلا حتياجيتي مساعدة كتر تواصل مع المطور." }];
+    }
+
+    this.showHelpModal = true;
+  }
+
+  // --- Guided Tour (Zoom/Focus) Methods ---
+  startTour() {
+    this.showHelpModal = false;
+    this.currentTourStep = 0;
+    this.tourActive = true;
+    
+    const url = this.router.url;
+    this.tourSteps = [];
+
+    // 1. Common Global Steps (only on first tour or dashboard)
+    if (url === '/' || url === '') {
+      if (this.userRole === 'admin') {
+        this.tourSteps = [
+          { target: 'tour-sidebar', title: 'القائمة الجانبية 🗺️', desc: 'من هنا كدخل لكاع الأقسام ديال السيستيم (سلعة، حسابات، ديون...).', side: 'right' },
+          { target: 'tour-stats', title: 'الصندوق والربح 💰', desc: 'هنا كتشوف "الربح" (لي دخلتي فجيبك) و"الصندوق" (لفلوس لي كاينة فالمجير).', side: 'bottom' },
+        ];
+      } else {
+        this.tourSteps = [
+          { target: 'tour-sidebar', title: 'القائمة 📜', desc: 'عندك الحق غير تدخل المبيعات والإصلاحات باش تحافظ على خصوصية المحل.', side: 'right' },
+          { target: 'tour-welcome', title: 'الترحيب 👋', desc: 'كلمة زوينة باش تبدا نهارك بالنشاط إن شاء الله.', side: 'bottom' },
+        ];
+      }
+    }
+
+    // 2. Page Specific Steps
+    if (url.includes('/ventes')) {
+      if (this.isPosModalActive) {
+        this.tourSteps = [
+          { target: 'tour-pos-search', title: 'قلب على السلعة 🔍', desc: 'كتب السمية ولا سكاني الكودبار باش تزيد السلعة للسلة.', side: 'bottom' },
+          { target: 'tour-pos-products', title: 'اختار من الليستة 📦', desc: 'تقدر تبرك على أي منتج هنا باش تزيده نيشان.', side: 'top' },
+          { target: 'tour-pos-checkout', title: 'سالي البيعة ✅', desc: 'فاش تسالي، برك هنا باش تخرج التيكيت وتنقص السلعة من المخزن.', side: 'top' }
+        ];
+      } else {
+        this.tourSteps.push(
+          { target: 'tour-ventes-btn', title: 'بيعة جديدة 🛒', desc: 'كليكي هنا باش تفتح واجهة البيع (POS).', side: 'bottom' },
+          { target: 'tour-ventes-total', title: 'شحال بعتي 📈', desc: 'هنا كيبان ليك المجموع ديال المبيعات لي درتي هاد الشهر.', side: 'bottom' }
+        );
+      }
+    } else if (url.includes('/produits') && this.userRole === 'admin') {
+      this.tourSteps.push(
+        { target: 'tour-prod-add', title: 'دخل سلعة جديدة ➕', desc: 'هنا فين كتزيد المنتجات جداد فالمحل.', side: 'bottom' },
+        { target: 'tour-prod-list', title: 'قائمة السلعة 📦', desc: 'هنا كتشوف كاع السلعة لي عندك، الأثمنة، وشحال بقى فالمخزون.', side: 'top' }
+      );
+    } else if (url.includes('/reparations')) {
+      this.tourSteps.push(
+        { target: 'tour-rep-add', title: 'قيد إصلاح 🔧', desc: 'سجل أي تليفون صاوبتيه وثمن الخدمة.', side: 'bottom' }
+      );
+    }
+
+    // Always add help and search at the end
+    this.tourSteps.push(
+      { target: 'tour-search', title: 'البحث السريع 🔍', desc: 'إلى بغيتي تعرف الثمن ديال شي حاجة بلا ما تبدل الصفحة.', side: 'bottom' },
+      { target: 'tour-help', title: 'المساعدة ❓', desc: 'فينما توحل، كليكي هنا السيستيم يشرح ليك كولشي.', side: 'bottom' }
+    );
+
+    setTimeout(() => this.updateTourPosition(), 100);
+  }
+
+  nextTourStep() {
+    if (this.currentTourStep < this.tourSteps.length - 1) {
+      this.currentTourStep++;
+      this.updateTourPosition();
+    } else {
+      this.closeTour();
+    }
+  }
+
+  prevTourStep() {
+    if (this.currentTourStep > 0) {
+      this.currentTourStep--;
+      this.updateTourPosition();
+    }
+  }
+
+  closeTour() {
+    this.tourActive = false;
+  }
+
+  resetTours() {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('tour_seen_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    window.location.reload();
+  }
+
+  updateTourPosition() {
+    const step = this.tourSteps[this.currentTourStep];
+    const el = document.getElementById(step.target);
+    
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      this.tourPosition = {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      };
+
+      // Calculate Tooltip Position
+      let tTop = rect.bottom + 15;
+      let tLeft = rect.left + (rect.width / 2) - 130;
+
+      if (step.side === 'right') {
+        tTop = rect.top + (rect.height / 2) - 50;
+        tLeft = rect.right + 20;
+      } else if (step.side === 'top') {
+        tTop = rect.top - 150;
+      }
+
+      // Keep inside window
+      if (tLeft < 10) tLeft = 10;
+      if (tLeft + 260 > window.innerWidth) tLeft = window.innerWidth - 270;
+
+      this.tourTooltipStyle = {
+        top: tTop + 'px',
+        left: tLeft + 'px'
+      };
+      
+      this.cdr.detectChanges();
+    } else {
+      // If element not found, skip it
+      this.nextTourStep();
+    }
+  }
+
+
+  closeHelpModal() {
+    this.showHelpModal = false;
   }
 
   // --- Search ---
@@ -164,6 +436,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async checkLowStock() {
+    if (this.userRole !== 'admin') return;
     try {
       const produits = await this.supabase.getProduits();
       const lowStock = produits.filter((p: any) => p.quantite <= 5);
@@ -242,6 +515,7 @@ export class AppComponent implements OnInit, OnDestroy {
   withdrawError = '';
 
   openQuickWithdraw() {
+    if (this.userRole !== 'admin') return;
     this.withdrawAmount = null;
     this.withdrawReason = '';
     this.withdrawError = '';

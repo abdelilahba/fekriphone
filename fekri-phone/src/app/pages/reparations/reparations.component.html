@@ -7,7 +7,7 @@
 
   <div class="page-header">
     <h1>🔧 مداخيل الإصلاح</h1>
-    <button class="btn btn-primary" (click)="openAdd()">➕ زيد إصلاح</button>
+    <button id="tour-rep-add" class="btn btn-primary" (click)="openAdd()">➕ زيد إصلاح</button>
   </div>
 
   <div class="stat-card total-card">
@@ -33,6 +33,9 @@
       <thead>
         <tr>
           <th>الوصف</th>
+          @if (userRole === 'admin') {
+            <th>المسجل</th>
+          }
           <th>المبلغ</th>
           <th>التاريخ</th>
           <th></th>
@@ -42,6 +45,9 @@
         @for (r of paginatedRevenus$ | async; track r.id) {
         <tr>
           <td class="desc-cell">{{ r.description }}</td>
+          @if (userRole === 'admin') {
+            <td><span class="user-badge">{{ r.profiles?.name || '---' }}</span></td>
+          }
           <td class="montant-cell">{{ formatMAD(r.montant) }}</td>
           <td>{{ r.date }}</td>
           <td>

@@ -9,11 +9,15 @@ import { environment } from '../../../environments/environment';
 })
 export class AuthService {
   private supabase: SupabaseClient;
-  private currentUser$ = new BehaviorSubject<User | null>(null);
-  private loading$ = new BehaviorSubject<boolean>(true);
+  private _currentUser$ = new BehaviorSubject<User | null>(null);
+  private _userRole$ = new BehaviorSubject<string>('admin');
+  private _userMetadata$ = new BehaviorSubject<any>(null);
+  private _loading$ = new BehaviorSubject<boolean>(true);
 
-  user$ = this.currentUser$.asObservable();
-  isLoading$ = this.loading$.asObservable();
+  user$ = this._currentUser$.asObservable();
+  userRole$ = this._userRole$.asObservable();
+  userMetadata$ = this._userMetadata$.asObservable();
+  isLoading$ = this._loading$.asObservable();
 
   constructor(private router: Router, private ngZone: NgZone) {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
@@ -23,33 +27,43 @@ export class AuthService {
   private async initAuth() {
     try {
       const { data: { session } } = await this.supabase.auth.getSession();
-      this.ngZone.run(() => {
-        this.currentUser$.next(session?.user ?? null);
-      });
+      this.handleUserChange(session?.user ?? null);
 
       this.supabase.auth.onAuthStateChange((_event, session) => {
-        this.ngZone.run(() => {
-          this.currentUser$.next(session?.user ?? null);
-          if (!session?.user && this.router.url !== '/login') {
-            this.router.navigate(['/login']);
-          }
-        });
+        this.handleUserChange(session?.user ?? null);
+        if (!session?.user && this.router.url !== '/login') {
+          this.router.navigate(['/login']);
+        }
       });
     } catch (error) {
       console.error('Auth init error:', error);
     } finally {
       this.ngZone.run(() => {
-        this.loading$.next(false);
+        this._loading$.next(false);
       });
     }
   }
 
+  private handleUserChange(user: User | null) {
+    this.ngZone.run(() => {
+      this._currentUser$.next(user);
+      if (user) {
+        const role = user.user_metadata?.['role'] || 'admin';
+        this._userRole$.next(role);
+        this._userMetadata$.next(user.user_metadata);
+      } else {
+        this._userRole$.next('admin');
+        this._userMetadata$.next(null);
+      }
+    });
+  }
+
   get currentUser(): User | null {
-    return this.currentUser$.value;
+    return this._currentUser$.value;
   }
 
   get isAuthenticated(): boolean {
-    return !!this.currentUser$.value;
+    return !!this._currentUser$.value;
   }
 
   async signIn(email: string, password: string): Promise<{ error: any }> {
@@ -60,7 +74,7 @@ export class AuthService {
   async signOut() {
     await this.supabase.auth.signOut();
     this.ngZone.run(() => {
-      this.currentUser$.next(null);
+      this._currentUser$.next(null);
       this.router.navigate(['/login']);
     });
   }

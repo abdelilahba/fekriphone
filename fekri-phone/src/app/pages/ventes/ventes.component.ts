@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { LayoutService } from '../../core/services/layout.service';
+import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Produit, Vente, Categorie } from '../../core/models/models';
 
@@ -45,6 +46,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   pageSize = 5;
   totalPages = 1;
   paginatedVentes$ = new BehaviorSubject<Vente[]>([]);
+  userRole = 'admin';
 
   private cart: CartItem[] = [];
 
@@ -53,12 +55,19 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   constructor(
     private supabase: SupabaseService,
+    private auth: AuthService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private layout: LayoutService
   ) { }
 
-  ngOnInit() { this.loadData(); }
+  ngOnInit() { 
+    this.auth.userRole$.subscribe((role: string) => {
+      this.userRole = role;
+      this.cdr.detectChanges();
+    });
+    this.loadData(); 
+  }
 
   ngAfterViewChecked() {
     if (this.focusSearchNeedsTrigger && this.searchInput) {
@@ -93,13 +102,25 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
       this.allProduits = produits;
       this.categories = categories;
-      this.ventes$.next(ventes);
+
+      let finalVentes = ventes;
+      if (this.userRole !== 'admin') {
+        const uid = this.auth.currentUser?.id;
+        finalVentes = ventes.filter((v: any) => v.user_id === uid);
+      }
+
+      this.ventes$.next(finalVentes);
       this.categories$.next(categories);
       this.filteredProduits$.next([...produits]);
+      
       const now = new Date();
-      const total = ventes
-        .filter((v: any) => { const d = new Date(v.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); })
+      const total = finalVentes
+        .filter((v: any) => { 
+          const d = new Date(v.date); 
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); 
+        })
         .reduce((s: number, v: any) => s + Number(v.montant_total), 0);
+      
       this.totalMois$.next(total);
       this.currentPage = 1;
       this.paginateVentes();
@@ -127,6 +148,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.activeCategory = '';
     this.filteredProduits$.next([...this.allProduits]);
     this.showVenteModal = true;
+    this.layout.setPosModalState(true);
     this.layout.enterFullscreen();
     this.focusSearchNeedsTrigger = true;
     this.cdr.detectChanges();
@@ -134,6 +156,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   closeVenteModal() {
     this.showVenteModal = false;
+    this.layout.setPosModalState(false);
     this.layout.exitFullscreen();
     this.cdr.detectChanges();
   }
@@ -264,7 +287,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     try {
       const total = this.cart.reduce((s, i) => s + i.sous_total, 0);
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
-      await this.supabase.addVente(total, profitTotal, this.cart);
+      const uid = this.auth.currentUser?.id;
+      await this.supabase.addVente(total, profitTotal, this.cart, uid);
       
       this.printTicket(this.cart, total);
 
@@ -395,7 +419,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     });
     if (!result.isConfirmed) return;
     try {
-      await this.supabase.deleteVente(v.id);
+      const uid = this.auth.currentUser?.id;
+      await this.supabase.deleteVente(v.id, uid);
       this.showToast('تمسحت ✅', 'success');
       await this.loadData();
     } catch (error) { this.showToast('وقع مشكل', 'error'); }

@@ -8,10 +8,10 @@
   @if (!showVenteModal) {
   <div class="page-header">
     <h1>🛒 المبيعات</h1>
-    <button class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
+    <button id="tour-ventes-btn" class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
   </div>
 
-  <div class="stat-card total-card">
+  <div class="stat-card total-card" id="tour-ventes-total">
     <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
     <div class="stat-info">
       <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
@@ -55,6 +55,9 @@
       </div>
 
       <div class="mvr-summary">
+        @if (userRole === 'admin') {
+          <div class="mvr-creator" title="مول البيعة">👤 {{ v.profiles?.name || '---' }}</div>
+        }
         <div class="mvr-price">{{ formatMAD(v.montant_total) }}</div>
         <div class="mvr-profit">الربح: {{ formatMAD(v.profit_total) }}</div>
         <div class="mvr-items-count">{{ v.vente_items?.length || 0 }} منتجات</div>
@@ -114,7 +117,7 @@
         <h2>مرحبا بك في نقطة البيع</h2>
         <span class="pos-date">{{ currentDate() }}</span>
       </div>
-      <div class="pos-search">
+      <div class="pos-search" id="tour-pos-search">
         <input #searchInput type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"
           class="form-control pos-search-input" placeholder="🔍 قلّب على منتج أو إمسح بالسكانر..." autofocus>
       </div>
@@ -137,7 +140,7 @@
         </div>
 
         <!-- منتجات -->
-        <div class="pos-grid">
+        <div class="pos-grid" id="tour-pos-products">
           @if (filteredProduits$ | async; as prods) {
           @for (p of prods; track p.id) {
           <div class="product-card" (click)="incrementCartByProductId(p.id)" [class.selected]="getCartQty(p.id) > 0"
@@ -221,7 +224,7 @@
             <span>المجموع الكلي (Total)</span>
             <strong>{{ formatMAD((cartTotal$ | async) || 0) }}</strong>
           </div>
-          <button class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
+          <button id="tour-pos-checkout" class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
             دفع وحفظ الفاتورة
           </button>
         </div>

@@ -24,7 +24,7 @@
       class="nav-item" (click)="closeMobileMenu()">
       <span class="nav-icon">{{ item.icon }}</span>
       <span class="nav-label" *ngIf="sidebarOpen">{{ item.label }}</span>
-      @if (item.path === '/produits' && lowStockCount > 0 && sidebarOpen) {
+      @if (item.path === '/produits' && lowStockCount > 0 && sidebarOpen && userRole === 'admin') {
       <span class="stock-badge pulse">{{ lowStockCount }}</span>
       }
     </a>
@@ -37,6 +37,7 @@
       <div class="user-avatar">{{ user.email?.charAt(0)?.toUpperCase() }}</div>
       <div class="user-details">
         <span class="user-email">{{ user.email }}</span>
+        <span class="user-role">{{ getRoleLabel(userRole) }}</span>
       </div>
     </div>
     }
@@ -70,7 +71,7 @@
       <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
     </div>
     
-    <div class="top-bar-center">
+    <div class="top-bar-center" *ngIf="userRole === 'admin'" id="tour-stats">
       <div class="quick-stat rib7">
         <span class="stat-icon">📈</span>
         <span class="stat-label">ربح اليوم:</span>
@@ -83,11 +84,20 @@
         <span class="quick-act-btn">➖</span>
       </div>
     </div>
+
+    <!-- Personalized Welcome for Employee/Admin -->
+    <div class="welcome-msg-top" *ngIf="welcomeMessage && userRole !== 'admin'" id="tour-welcome">
+      {{ welcomeMessage }}
+    </div>
+
     <div class="top-bar-right">
+      <button id="tour-help" class="action-btn circle-btn help-btn" (click)="openGuide()" title="تحتاج مساعدة؟">
+        <span>❓</span>
+      </button>
       <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
         <span>🔍</span>
       </button>
-      <button class="action-btn circle-btn" (click)="toggleDarkMode()" title="Mode Sombre/Clair">
+      <button id="tour-theme" class="action-btn circle-btn" (click)="toggleDarkMode()" title="Mode Sombre/Clair">
         <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
       </button>
     </div>
@@ -102,8 +112,71 @@
 <!-- Global Confirm Dialog -->
 <app-confirm-dialog></app-confirm-dialog>
 
+<!-- Help/Guide Modal -->
+@if (showHelpModal) {
+<div class="modal-overlay help-overlay" (click)="closeHelpModal()">
+  <div class="modal-content help-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ helpTitle }}</h2>
+      <button class="close-btn" (click)="closeHelpModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="guide-container">
+        @for (step of guideSteps; track step.title) {
+        <div class="guide-step-card">
+          <div class="step-icon">{{ step.icon }}</div>
+          <div class="step-content">
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.desc }}</p>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="startTour()">جولة سريعة 🚀</button>
+      <button class="btn btn-ghost" (click)="resetTours()" style="margin-right: auto; font-size: 11px; opacity: 0.6;">إعادة ضبط الجولات 🔄</button>
+      <button class="btn btn-primary" (click)="closeHelpModal()">فهمت، شكراً!</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Guided Tour Overlay (The Zoom/Spotlight Effect) -->
+@if (tourActive) {
+<div class="tour-overlay-v2" (click)="closeTour()">
+  <!-- The SVG Spotlight -->
+  <svg class="tour-svg">
+    <defs>
+      <mask id="tour-mask">
+        <rect width="100%" height="100%" fill="white" />
+        <rect [attr.x]="tourPosition.left - 5" [attr.y]="tourPosition.top - 5" [attr.width]="tourPosition.width + 10"
+          [attr.height]="tourPosition.height + 10" rx="10" fill="black" />
+      </mask>
+    </defs>
+    <rect width="100%" height="100%" fill="rgba(0,0,0,0.7)" mask="url(#tour-mask)" />
+  </svg>
+
+  <!-- The Floating Tooltip -->
+  <div class="tour-tooltip" [ngStyle]="tourTooltipStyle" (click)="$event.stopPropagation()">
+    <div class="tour-step-info">
+      <span class="step-num">{{ currentTourStep + 1 }} / {{ tourSteps.length }}</span>
+      <h3>{{ tourSteps[currentTourStep].title }}</h3>
+      <p>{{ tourSteps[currentTourStep].desc }}</p>
+    </div>
+    <div class="tour-actions">
+      <button class="tour-btn back" (click)="prevTourStep()" [disabled]="currentTourStep === 0">السابق</button>
+      <button class="tour-btn next" (click)="nextTourStep()">
+        {{ currentTourStep === tourSteps.length - 1 ? 'سالينا 🎉' : 'التالي' }}
+      </button>
+    </div>
+    <button class="tour-close-top" (click)="closeTour()">✕</button>
+  </div>
+</div>
+}
+
 <!-- Stock Alert Toast -->
-@if (showStockToast) {
+@if (showStockToast && userRole === 'admin') {
 <div class="stock-toast" (click)="showStockToast = false">
   <div class="stock-toast-inner">
     <span>{{ stockToastMessage }}</span>

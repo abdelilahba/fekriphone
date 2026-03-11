@@ -1,0 +1,88 @@
+<div class="suivi-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>📡 سجل الأنشطة (Audit Trail)</h1>
+      <p>تتبع مفصل ودقيق لجميع حركات الموظفين والمبيعات والمصاريف.</p>
+    </div>
+    <div class="header-actions">
+      <span class="badge-live"><span class="live-dot"></span> مباشر</span>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+    </div>
+  } @else {
+    <div class="table-card">
+      @if (logs.length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <h3>السجل فارغ حالياً</h3>
+          <p>أول عملية بيع أو إضافة سيتم تسجيلها هنا فوراً.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="saas-table">
+            <thead>
+              <tr>
+                <th>التاريخ والوقت</th>
+                <th>الموظف</th>
+                <th>نوع العملية</th>
+                <th>التفاصيل والوصف</th>
+                <th class="text-left">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of logs; track log.id) {
+                <tr>
+                  <td class="col-time">
+                    <span class="main-time">{{ log.created_at | date:'HH:mm' }}</span>
+                    <span class="sub-date">{{ log.created_at | date:'dd MMM yyyy' }}</span>
+                  </td>
+                  <td class="col-user">
+                    <div class="user-pill">
+                      <div class="avatar">{{ log.profiles?.name?.charAt(0) || '؟' }}</div>
+                      <span class="name">{{ log.profiles?.name || 'مستخدم' }}</span>
+                    </div>
+                  </td>
+                  <td class="col-action">
+                    <span class="badge" [class]="getActionClass(log.action)">
+                      {{ getActionLabel(log.action) }}
+                    </span>
+                  </td>
+                  <td class="col-details">
+                    @if (log.action === 'BI3A_JADIDA') {
+                      تسجيل مبيعة جديدة (طلب #{{ log.details?.vente_id?.slice(0,6) }})
+                    } @else if (log.action === 'MS7_BI3A') {
+                      إلغاء مبيعة (طلب #{{ log.details?.vente_id?.slice(0,6) }})
+                    } @else if (log.action === 'ZID_ISLAH') {
+                      إضافة إصلاح: {{ log.details?.description }}
+                    } @else if (log.action === 'ZID_MASROUF') {
+                      تسجيل مصروف: {{ log.details?.description }}
+                    } @else if (log.action === 'MS7_MASROUF') {
+                      إلغاء مصروف (رقم المرجع #{{ log.details?.depense_id?.slice(0,6) }})
+                    } @else if (log.action === 'MS7_ISLAH') {
+                      إلغاء إصلاح (رقم المرجع #{{ log.details?.revenu_id?.slice(0,6) }})
+                    } @else {
+                      عملية غير معروفة
+                    }
+                  </td>
+                  <td class="col-amount text-left">
+                    @if (log.details?.montant) {
+                      <span class="amount-value" [class.is-deleted]="log.action.startsWith('MS7_')">
+                        {{ log.details.montant }} د.م
+                      </span>
+                    } @else {
+                      <span class="no-amount">--</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

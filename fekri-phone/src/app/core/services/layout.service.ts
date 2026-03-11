@@ -5,7 +5,11 @@ import { BehaviorSubject } from 'rxjs';
 export class LayoutService {
     /** When true, sidebar and topbar should be hidden (e.g. POS fullscreen mode) */
     fullscreenMode$ = new BehaviorSubject<boolean>(false);
+    /** When true, the POS modal is open in Ventes page */
+    posModalActive$ = new BehaviorSubject<boolean>(false);
 
     enterFullscreen() { this.fullscreenMode$.next(true); }
     exitFullscreen() { this.fullscreenMode$.next(false); }
+
+    setPosModalState(active: boolean) { this.posModalActive$.next(active); }
 }

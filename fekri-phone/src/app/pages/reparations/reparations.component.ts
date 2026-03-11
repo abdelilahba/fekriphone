@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { RevenuReparation } from '../../core/models/models';
 
@@ -24,22 +25,38 @@ export class ReparationsComponent implements OnInit {
   pageSize = 10;
   totalPages = 1;
   paginatedRevenus$ = new BehaviorSubject<RevenuReparation[]>([]);
+  userRole = 'admin';
 
   form = { id: '', description: '', montant: 0, date: '' };
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
-  ngOnInit() { this.loadData(); }
+  ngOnInit() { 
+    this.auth.userRole$.subscribe(role => {
+      this.userRole = role;
+    });
+    this.loadData(); 
+  }
 
   async loadData() {
     try {
       this.loading$.next(true);
       const revenus = await this.supabase.getRevenus();
-      this.revenus$.next(revenus);
+      
+      let finalRevenus = revenus;
+      if (this.userRole !== 'admin') {
+        const uid = this.auth.currentUser?.id;
+        finalRevenus = revenus.filter((r: any) => r.user_id === uid);
+      }
+
+      this.revenus$.next(finalRevenus);
 
       const now = new Date();
-      const total = revenus
-        .filter((r: any) => { const d = new Date(r.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); })
+      const total = finalRevenus
+        .filter((r: any) => { 
+          const d = new Date(r.date); 
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); 
+        })
         .reduce((s: number, r: any) => s + Number(r.montant), 0);
       this.totalMois$.next(total);
       this.currentPage = 1;
@@ -81,11 +98,12 @@ export class ReparationsComponent implements OnInit {
     }
     try {
       const data = { description: this.form.description, montant: this.form.montant, date: this.form.date };
+      const uid = this.auth.currentUser?.id;
       if (this.editMode) {
         await this.supabase.updateRevenu(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
-        await this.supabase.addRevenu(data);
+        await this.supabase.addRevenu(data, uid);
         this.showToast('تزاد بنجاح ✅', 'success');
       }
       this.closeModal();
@@ -108,7 +126,8 @@ export class ReparationsComponent implements OnInit {
     });
     if (!result.isConfirmed) return;
     try {
-      await this.supabase.deleteRevenu(r.id);
+      const uid = this.auth.currentUser?.id;
+      await this.supabase.deleteRevenu(r.id, uid);
       this.showToast('تمسح ✅', 'success');
       await this.loadData();
     } catch (error) {

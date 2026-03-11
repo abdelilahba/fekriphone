@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { RefreshService } from './refresh.service';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -8,12 +9,34 @@ import { environment } from '../../../environments/environment';
 export class SupabaseService {
   private supabase: SupabaseClient;
 
-  constructor() {
+  constructor(private refreshService: RefreshService) {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
   }
 
   get client(): SupabaseClient {
     return this.supabase;
+  }
+
+  async logActivity(action: string, details: any, userId?: string) {
+    try {
+      await this.supabase.from('activity_logs').insert({
+        user_id: userId,
+        action,
+        details
+      });
+    } catch (e) {
+      console.error('Logging error:', e);
+    }
+  }
+
+  async getActivityLogs() {
+    const { data, error } = await this.supabase
+      .from('activity_logs')
+      .select('*, profiles(name)')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    return data;
   }
 
   // ==================== Categories ====================
@@ -108,16 +131,16 @@ export class SupabaseService {
   async getVentes() {
     const { data, error } = await this.supabase
       .from('ventes')
-      .select('*, vente_items(*, produits(nom))')
+      .select('*, profiles!user_id(name), vente_items(*, produits(nom))')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
   }
 
-  async addVente(montantTotal: number, profitTotal: number, items: any[]) {
+  async addVente(montantTotal: number, profitTotal: number, items: any[], userId?: string) {
     const { data: vente, error: venteError } = await this.supabase
       .from('ventes')
-      .insert({ montant_total: montantTotal, profit_total: profitTotal })
+      .insert({ montant_total: montantTotal, profit_total: profitTotal, user_id: userId })
       .select()
       .single();
     if (venteError) throw venteError;
@@ -137,6 +160,13 @@ export class SupabaseService {
       .insert(venteItems);
     if (itemsError) throw itemsError;
 
+    // Log the activity
+    await this.logActivity('BI3A_JADIDA', { 
+      vente_id: vente.id, 
+      montant: montantTotal, 
+      items_count: items.length 
+    }, userId);
+
     // Update stock
     for (const item of items) {
       const { error } = await this.supabase.rpc('decrement_stock', {
@@ -152,34 +182,45 @@ export class SupabaseService {
       }
     }
 
+    this.refreshService.triggerRefresh();
     return vente;
   }
 
-  async deleteVente(id: string) {
+  async deleteVente(id: string, userId?: string) {
     const { error } = await this.supabase
       .from('ventes')
       .delete()
       .eq('id', id);
     if (error) throw error;
+
+    await this.logActivity('MS7_BI3A', { vente_id: id }, userId);
+    this.refreshService.triggerRefresh();
   }
 
   // ==================== Revenus Réparation ====================
   async getRevenus() {
     const { data, error } = await this.supabase
       .from('revenus_reparation')
-      .select('*')
+      .select('*, profiles!user_id(name)')
       .order('date', { ascending: false });
     if (error) throw error;
     return data;
   }
 
-  async addRevenu(revenu: any) {
+  async addRevenu(revenu: any, userId?: string) {
     const { data, error } = await this.supabase
       .from('revenus_reparation')
-      .insert(revenu)
+      .insert({ ...revenu, user_id: userId })
       .select()
       .single();
     if (error) throw error;
+
+    await this.logActivity('ZID_ISLAH', { 
+      description: revenu.description, 
+      montant: revenu.montant 
+    }, userId);
+
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -194,12 +235,15 @@ export class SupabaseService {
     return data;
   }
 
-  async deleteRevenu(id: string) {
+  async deleteRevenu(id: string, userId?: string) {
     const { error } = await this.supabase
       .from('revenus_reparation')
       .delete()
       .eq('id', id);
     if (error) throw error;
+
+    await this.logActivity('MS7_ISLAH', { revenu_id: id }, userId);
+    this.refreshService.triggerRefresh();
   }
 
   // ==================== Dépenses ====================
@@ -212,13 +256,20 @@ export class SupabaseService {
     return data;
   }
 
-  async addDepense(depense: any) {
+  async addDepense(depense: any, userId?: string) {
     const { data, error } = await this.supabase
       .from('depenses')
-      .insert(depense)
+      .insert({ ...depense, user_id: userId })
       .select()
       .single();
     if (error) throw error;
+
+    await this.logActivity('ZID_MASROUF', { 
+      description: depense.description, 
+      montant: depense.montant 
+    }, userId);
+
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -233,12 +284,15 @@ export class SupabaseService {
     return data;
   }
 
-  async deleteDepense(id: string) {
+  async deleteDepense(id: string, userId?: string) {
     const { error } = await this.supabase
       .from('depenses')
       .delete()
       .eq('id', id);
     if (error) throw error;
+
+    await this.logActivity('MS7_MASROUF', { depense_id: id }, userId);
+    this.refreshService.triggerRefresh();
   }
 
   // ==================== Credits ====================
