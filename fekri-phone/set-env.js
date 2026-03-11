@@ -26,11 +26,16 @@ if (!geminiKey) {
   geminiKey = 'MISSING_KEY';
 }
 
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN || '8617507388:AAHPju-Tsz6fWRIhUjCi-dpFjQgGfuAr1lg';
+const telegramChatId = process.env.TELEGRAM_CHAT_ID || '5185943955';
+
 const envFileContent = `export const environment = {
   production: true,
   supabaseUrl: '${supabaseUrl}',
   supabaseKey: '${supabaseKey}',
-  geminiKey: '${geminiKey}'
+  geminiKey: '${geminiKey}',
+  telegramBotToken: '${telegramBotToken}',
+  telegramChatId: '${telegramChatId}'
 };
 `;
 
@@ -38,7 +43,9 @@ const envDevFileContent = `export const environment = {
   production: false,
   supabaseUrl: '${supabaseUrl}',
   supabaseKey: '${supabaseKey}',
-  geminiKey: '${geminiKey}'
+  geminiKey: '${geminiKey}',
+  telegramBotToken: '${telegramBotToken}',
+  telegramChatId: '${telegramChatId}'
 };
 `;
 
