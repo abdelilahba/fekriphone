@@ -952,4 +952,16 @@
   }
 }
 
+/* PWA Install Button */
+.install-btn {
+  background: var(--primary);
+  color: white;
+  animation: pulse-install 2s infinite;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
 
+@keyframes pulse-install {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}

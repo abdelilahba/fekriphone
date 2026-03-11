@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, NgZone, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -42,6 +42,37 @@ export class AppComponent implements OnInit, OnDestroy {
   helpTitle = '';
   guideSteps: { icon: string, title: string, desc: string }[] = [];
   isPosModalActive = false;
+
+  // --- PWA Installation ---
+  deferredPrompt: any;
+  showInstallButton = false;
+
+  @HostListener('window:beforeinstallprompt', ['$event'])
+  onbeforeinstallprompt(e: Event) {
+    // Prevent Chrome 67 and earlier from automatically showing the prompt
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    this.deferredPrompt = e;
+    // Update UI to notify the user they can add to home screen
+    this.showInstallButton = true;
+  }
+
+  installApp() {
+    if (this.deferredPrompt) {
+      // Show the install prompt
+      this.deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      this.deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+          this.showInstallButton = false;
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        this.deferredPrompt = null;
+      });
+    }
+  }
 
   // --- Guided Tour (Zoom) ---
   tourActive = false;

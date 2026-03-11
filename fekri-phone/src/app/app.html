@@ -91,6 +91,13 @@
     </div>
 
     <div class="top-bar-right">
+      <!-- PWA Install Button -->
+      @if (showInstallButton) {
+        <button class="action-btn circle-btn install-btn" (click)="installApp()" title="تثبيت التطبيق على الجهاز">
+          <span>📲</span>
+        </button>
+      }
+      
       <button id="tour-help" class="action-btn circle-btn help-btn" (click)="openGuide()" title="تحتاج مساعدة؟">
         <span>❓</span>
       </button>
