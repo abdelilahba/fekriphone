@@ -282,6 +282,23 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.cartTotal$.next(this.cart.reduce((s, i) => s + i.sous_total, 0));
   }
 
+  // --- Smart Calculator (Caisse) ---
+  montantRecu: number | null = null;
+
+  get monnaie(): number {
+    const total = this.cart.reduce((s, i) => s + i.sous_total, 0);
+    if (!this.montantRecu || this.montantRecu < total) return 0;
+    return this.montantRecu - total;
+  }
+
+  setMontantRecu(amount: number) {
+    this.montantRecu = amount;
+  }
+
+  addMontantRecu(amount: number) {
+    this.montantRecu = (this.montantRecu || 0) + amount;
+  }
+
   async confirmVente() {
     if (this.cart.length === 0) { this.showToast('السلة فارغة!', 'error'); return; }
     try {
@@ -294,6 +311,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
       this.ngZone.run(() => {
         this.showToast('تسجلت البيعة بنجاح ✅', 'success');
+        this.cart = [];
+        this.cart$.next([]);
+        this.updateCartTotal();
+        this.montantRecu = null; // Reset calculator
         this.closeVenteModal();
         this.loadData();
       });

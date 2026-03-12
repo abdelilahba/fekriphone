@@ -224,6 +224,29 @@
             <span>المجموع الكلي (Total)</span>
             <strong>{{ formatMAD((cartTotal$ | async) || 0) }}</strong>
           </div>
+
+          <!-- Smart Calculator -->
+          @if ((cart$ | async)?.length) {
+            <div class="smart-calculator">
+              <div class="calc-header">
+                <label>تسلّمت (Espèce) :</label>
+                <input type="number" [(ngModel)]="montantRecu" placeholder="0" class="form-control" />
+              </div>
+              <div class="quick-bills">
+                <button (click)="addMontantRecu(20)">+20</button>
+                <button (click)="addMontantRecu(50)">+50</button>
+                <button (click)="addMontantRecu(100)">+100</button>
+                <button (click)="addMontantRecu(200)">+200</button>
+              </div>
+              @if (montantRecu !== null) {
+                <div class="change-display">
+                  <span>الصرف (Monnaie) :</span>
+                  <strong [class.success]="monnaie > 0">{{ formatMAD(monnaie) }}</strong>
+                </div>
+              }
+            </div>
+          }
+
           <button id="tour-pos-checkout" class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
             دفع وحفظ الفاتورة
           </button>
