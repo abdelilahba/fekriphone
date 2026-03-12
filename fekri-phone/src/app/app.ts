@@ -8,6 +8,7 @@ import { SupabaseService } from './core/services/supabase.service';
 import { LayoutService } from './core/services/layout.service';
 import { RefreshService } from './core/services/refresh.service';
 import { AiAssistant } from './components/ai-assistant/ai-assistant';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-root',
@@ -46,6 +47,8 @@ export class AppComponent implements OnInit, OnDestroy {
   // --- PWA Installation ---
   deferredPrompt: any;
   showInstallButton = false;
+  isIos = false;
+  isInStandaloneMode = false;
 
   @HostListener('window:beforeinstallprompt', ['$event'])
   onbeforeinstallprompt(e: Event) {
@@ -55,15 +58,42 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   checkDeferredPrompt() {
-    // Check if the event was already fired before Angular booted
-    if ((window as any).deferredPromptEvent) {
+    // Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    this.isIos = /iphone|ipad|ipod/.test(userAgent);
+    this.isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+
+    // Show button if on iOS and not installed
+    if (this.isIos && !this.isInStandaloneMode) {
+      this.showInstallButton = true;
+    } 
+    // Android / Chrome logic
+    else if ((window as any).deferredPromptEvent) {
       this.deferredPrompt = (window as any).deferredPromptEvent;
       this.showInstallButton = true;
     }
   }
 
   installApp() {
-    if (this.deferredPrompt) {
+    if (this.isIos && !this.isInStandaloneMode) {
+      // iOS doesn't support automatic prompts, so we guide the user manually
+      Swal.fire({
+        title: 'تثبيت في الآيفون (iOS)',
+        html: `
+          <div style="font-size: 1.1rem; text-align: right; line-height: 1.8;">
+            لتثبيت التطبيق على هاتفك، اتبع هاد الخطوات:
+            <br><br>
+            1. اضغط على زر <strong>المشاركة (Share)</strong> لتحت <strong><span style="font-size: 24px; color: #007aff;">⍗</span></strong>
+            <br>
+            2. هبط لتحت واختار <strong>"Sur l'écran d'accueil"</strong> أو <br><strong>"Add to Home Screen"</strong> 📱
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'فهمت',
+        confirmButtonColor: 'var(--primary)',
+        customClass: { popup: 'swal-ios-pwa' }
+      });
+    } else if (this.deferredPrompt) {
       this.deferredPrompt.prompt();
       this.deferredPrompt.userChoice.then((choiceResult: any) => {
         if (choiceResult.outcome === 'accepted') {
