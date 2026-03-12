@@ -50,13 +50,24 @@ export class SupabaseService {
       let actionText = action;
       let emoji = '🚨';
       
+      // Fetch latest Caisse info to attach to the notification
+      let caisseInfo = '';
+      try {
+        const stats = await this.getDailyQuickStats();
+        caisseInfo = `\n\n💵 <b>الصندوق دابا:</b> ${stats.caisse} د.م`;
+      } catch (err) {}
+      
       switch(action) {
         case 'BI3A_JADIDA': 
-          actionText = `سجل مبيعة جديدة بمبلغ <b>${details.montant} د.م</b>`; 
-          emoji = '💰'; 
+          let productsList = details.items_count + ' منتجات';
+          if (details.items && Array.isArray(details.items)) {
+            productsList = details.items.map((i: any) => `▪️ ${i.quantite}x ${i.nom} (${i.prix_unitaire} د.م)`).join('\n');
+          }
+          actionText = `سجل مبيعة جديدة! 💰\n\n<b>المنتجات:</b>\n${productsList}\n\n💸 <b>المجموع: ${details.montant} د.م</b>`; 
+          emoji = '🛒'; 
           break;
         case 'MS7_BI3A': 
-          actionText = `قام بإلغاء مبيعة! ❌`; 
+          actionText = `قام بإلغاء مبيعة! ❌ (إرجاع فلوس)`; 
           emoji = '⚠️'; 
           break;
         case 'ZID_ISLAH': 
@@ -78,10 +89,11 @@ export class SupabaseService {
         case 'LOGIN':
           actionText = `سجل الدخول للمحل`;
           emoji = '🔑';
+          caisseInfo = ''; // Don't show caisse on just login
           break;
       }
 
-      const message = `${emoji} <b>إشعار من المحل</b>\n\n👤 الموظف: <b>${userName}</b>\n📝 الحدث: ${actionText}`;
+      const message = `${emoji} <b>إشعار من المحل</b>\n\n👤 الموظف: <b>${userName}</b>\n📝 الحدث: ${actionText}${caisseInfo}`;
       
       const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
       await fetch(url, {
@@ -229,11 +241,16 @@ export class SupabaseService {
       .insert(venteItems);
     if (itemsError) throw itemsError;
 
-    // Log the activity
+    // Log the activity with full item details to show in telegram
     await this.logActivity('BI3A_JADIDA', { 
       vente_id: vente.id, 
       montant: montantTotal, 
-      items_count: items.length 
+      items_count: items.length,
+      items: items.map((i: any) => ({
+        nom: i.nom,
+        quantite: i.quantite,
+        prix_unitaire: i.prix_unitaire
+      }))
     }, userId);
 
     // Update stock
