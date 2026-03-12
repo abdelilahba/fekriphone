@@ -8,6 +8,8 @@ import { SupabaseService } from './core/services/supabase.service';
 import { LayoutService } from './core/services/layout.service';
 import { RefreshService } from './core/services/refresh.service';
 import { AiAssistant } from './components/ai-assistant/ai-assistant';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { filter } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -144,10 +146,36 @@ export class AppComponent implements OnInit, OnDestroy {
     private ngZone: NgZone,
     private supabase: SupabaseService,
     private layoutService: LayoutService,
-    private refreshService: RefreshService
+    private refreshService: RefreshService,
+    private swUpdate: SwUpdate
   ) { }
 
   ngOnInit() {
+    // --- Auto Update PWA ---
+    if (this.swUpdate.isEnabled) {
+      // 1. Listen for new available versions
+      this.swUpdate.versionUpdates.pipe(
+        filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
+      ).subscribe(() => {
+        Swal.fire({
+          title: 'تحديث جديد 🚀',
+          text: 'كاين تحديث جديد للتطبيق. غادي يتم تحديث الصفحة باش تخدم بآخر نسخة.',
+          icon: 'info',
+          confirmButtonText: 'تحديث دابا 🔄',
+          confirmButtonColor: 'var(--primary)',
+          allowOutsideClick: false,
+          allowEscapeKey: false
+        }).then(() => {
+          window.location.reload();
+        });
+      });
+
+      // 2. Check for updates every 15 minutes
+      setInterval(() => {
+        this.swUpdate.checkForUpdate();
+      }, 15 * 60 * 1000); // 15 minutes
+    }
+
     this.auth.user$.subscribe(user => {
       if (user) {
         this.checkLowStock();
