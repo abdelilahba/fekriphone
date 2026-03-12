@@ -58,6 +58,10 @@ export class SupabaseService {
       } catch (err) {}
       
       switch(action) {
+        case 'ALERTE_ANOMALIE':
+          actionText = `<b>${details.alerte_message}</b>\n\n👀 <i>المرجو مراجعة الفاتورة.</i>`;
+          emoji = '🚨';
+          break;
         case 'BI3A_JADIDA': 
           let productsList = details.items_count + ' منتجات';
           if (details.items && Array.isArray(details.items)) {
@@ -252,6 +256,36 @@ export class SupabaseService {
         prix_unitaire: i.prix_unitaire
       }))
     }, userId);
+
+    // --- AGENT DE DÉTECTION D'ANOMALIE ---
+    // Runs quietly in background without stopping the sale
+    try {
+      if (userId !== '370b5904-a1be-4cf2-a6b4-c2e93211cf74') {
+        const anomalies: string[] = [];
+        items.forEach(item => {
+          // 1. Vente à perte (Sold at a loss)
+          if (item.prix_achat_unitaire > 0 && item.prix_unitaire < item.prix_achat_unitaire) {
+            anomalies.push(`📉 <b>خسارة مالية:</b> باع "${item.nom}" بـ ${item.prix_unitaire} د.م (أقل من ثمن الشراء ${item.prix_achat_unitaire} د.م)`);
+          }
+          // 2. Grosse remise (Discount > 30%)
+          else if (item.prix_original > 0 && item.prix_unitaire <= item.prix_original * 0.7 && item.prix_unitaire > 0) {
+            anomalies.push(`✂️ <b>تخفيض كبير:</b> دار تخفيض أكثر من 30% على "${item.nom}" (كان بـ ${item.prix_original} د.م وباعو بـ ${item.prix_unitaire} د.م)`);
+          }
+          // 3. Vente anormale (Quantité suspecte pour un objet cher)
+          if (item.quantite >= 5 && item.prix_unitaire >= 150) {
+            anomalies.push(`📦 <b>كمية غير طبيعية:</b> باع ${item.quantite} حبات من "${item.nom}" دقة وحدة!`);
+          }
+        });
+
+        if (anomalies.length > 0) {
+          const combinedMessage = anomalies.join('\n\n');
+          // Dispatch anomaly alert without waiting
+          this.logActivity('ALERTE_ANOMALIE', { alerte_message: combinedMessage, vente_id: vente.id }, userId).catch(e => console.error(e));
+        }
+      }
+    } catch(err) {
+      console.error('Anomaly Detection Agent Failed:', err);
+    }
 
     // Update stock
     for (const item of items) {
