@@ -74,8 +74,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     status: 'danger' | 'warning' | 'safe';
     statusLabel: string;
   }[] = [];
-  activityLogs: any[] = [];
-
   private charts: Chart[] = [];
 
   constructor(private supabase: SupabaseService, private auth: AuthService) { }
@@ -91,18 +89,16 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   async loadStats() {
     try {
       this.loading$.next(true);
-      const [stats, ventes, depenses, revenus, produits, pertes, credits, logs] = await Promise.all([
+      const [stats, ventes, depenses, revenus, produits, pertes, credits] = await Promise.all([
         this.supabase.getDashboardStats(),
         this.supabase.getVentes(),
         this.supabase.getDepenses(),
         this.supabase.getRevenus(),
         this.supabase.getProduits(),
         this.supabase.getPertes(),
-        this.supabase.getCredits(),
-        this.supabase.getActivityLogs()
+        this.supabase.getCredits()
       ]);
       this.stats$.next(stats);
-      this.activityLogs = logs;
 
       this.ventesCount = ventes.length;
       this.reparationsCount = revenus.length;

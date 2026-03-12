@@ -205,48 +205,6 @@
           </div>
         </div>
       }
-
-      <!-- Activity Logs Section (NEW) -->
-      @if (userRole === 'admin') {
-        <div class="card logs-card">
-          <div class="card-header-logs">
-            <h2>📜 سجل العمليات (آخر التحركات)</h2>
-            <a routerLink="/suivi" class="view-all-link">مشاهدة الكل ←</a>
-            <span class="badge-live">LIVE</span>
-          </div>
-          <div class="logs-list">
-            @for (log of activityLogs; track log.id) {
-              <div class="log-item">
-                <div class="log-avatar">{{ log.profiles?.name?.charAt(0) || '👤' }}</div>
-                <div class="log-content">
-                  <div class="log-desc">
-                    <strong>{{ log.profiles?.name || '---' }}</strong>
-                    @if (log.action === 'BI3A_JADIDA') {
-                      <span class="action-tag success">زادت بيعة جديدة 🛒</span>
-                    } @else if (log.action === 'MS7_BI3A') {
-                      <span class="action-tag danger">مسحت بيعة 🗑️</span>
-                    } @else if (log.action === 'ZID_ISLAH') {
-                      <span class="action-tag info">قيدت إصلاح 🔧</span>
-                    } @else {
-                      <span class="action-tag">{{ log.action }}</span>
-                    }
-                  </div>
-                  <div class="log-meta">
-                    <span class="log-details" *ngIf="log.details?.montant">{{ log.details.montant }} د.م</span>
-                    <span class="log-time">{{ log.created_at | date:'HH:mm' }} — {{ log.created_at | date:'dd/MM' }}</span>
-                  </div>
-                </div>
-              </div>
-            }
-            @if (activityLogs.length === 0) {
-              <div class="empty-logs">
-                <div class="empty-logs-icon">📊</div>
-                <p>مازال ما كاين حتا عملية. المعلومات غتبدا تبان هنا فاش يبداو الموطفين الخدمة.</p>
-              </div>
-            }
-          </div>
-        </div>
-      }
     }
   }
 </div>
