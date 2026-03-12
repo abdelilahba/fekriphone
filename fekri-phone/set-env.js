@@ -27,7 +27,7 @@ if (!geminiKey) {
 }
 
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN || '8617507388:AAHPju-Tsz6fWRIhUjCi-dpFjQgGfuAr1lg';
-const telegramChatId = process.env.TELEGRAM_CHAT_ID || '8671566136';
+const telegramChatId = '8671566136'; // Forced instead of checking process.env.TELEGRAM_CHAT_ID which Vercel might be using
 
 const envFileContent = `export const environment = {
   production: true,
