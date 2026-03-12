@@ -474,19 +474,21 @@ export class SupabaseService {
   }
 
   // ==================== Credits ====================
-  async getCredits() {
-    const { data, error } = await this.supabase
-      .from('credits')
-      .select('*')
-      .order('created_at', { ascending: false });
+  async getCredits(userId?: string) {
+    let query = this.supabase.from('credits').select('*').order('created_at', { ascending: false });
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   }
 
-  async addCredit(credit: any) {
+  async addCredit(credit: any, userId?: string) {
+    const dataToInsert = userId ? { ...credit, user_id: userId } : credit;
     const { data, error } = await this.supabase
       .from('credits')
-      .insert(credit)
+      .insert(dataToInsert)
       .select()
       .single();
     if (error) throw error;

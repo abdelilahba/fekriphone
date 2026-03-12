@@ -40,7 +40,7 @@ export const routes: Routes = [
   {
     path: 'credits',
     loadComponent: () => import('./pages/credits/credits.component').then(m => m.CreditsComponent),
-    canActivate: [authGuard, adminGuard]
+    canActivate: [authGuard]
   },
   {
     path: 'categories',

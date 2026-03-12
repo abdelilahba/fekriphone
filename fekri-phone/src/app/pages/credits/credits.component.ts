@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Credit } from '../../core/models/models';
 
@@ -30,15 +31,28 @@ export class CreditsComponent implements OnInit {
 
   form = { id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: '' };
   payForm = { id: '', montant_a_payer: 0, reste: 0 };
+  
+  private currentUserId: string | null = null;
+  private userRole: string = 'employee';
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
-  ngOnInit() { this.loadData(); }
+  ngOnInit() { 
+    this.auth.user$.subscribe(user => {
+      this.currentUserId = user ? user.id : null;
+    });
+    this.auth.userRole$.subscribe(role => {
+      this.userRole = role;
+      this.loadData(); 
+    });
+  }
 
   async loadData() {
     try {
       this.loading$.next(true);
-      this.allCredits = await this.supabase.getCredits();
+      // Admin gets all credits, employee gets only theirs
+      const userIdToFetch = this.userRole === 'admin' ? undefined : (this.currentUserId || undefined);
+      this.allCredits = await this.supabase.getCredits(userIdToFetch);
       const total = this.allCredits.filter(c => !c.est_paye).reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
       this.totalNonPaye$.next(total);
       this.applyFilter();
@@ -104,7 +118,7 @@ export class CreditsComponent implements OnInit {
         await this.supabase.updateCredit(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
-        await this.supabase.addCredit(data);
+        await this.supabase.addCredit(data, this.currentUserId || undefined);
         this.showToast('تزاد بنجاح ✅', 'success');
       }
       this.closeModal();
