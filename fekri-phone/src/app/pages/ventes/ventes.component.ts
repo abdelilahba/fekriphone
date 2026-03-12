@@ -280,6 +280,83 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   private updateCartTotal() {
     this.cartTotal$.next(this.cart.reduce((s, i) => s + i.sous_total, 0));
+    this.checkUpsell();
+  }
+
+  // --- Agent Up-sell (Le Vendeur IA) ---
+  upsellSuggestion: { message: string; products: Produit[]; discount: number } | null = null;
+
+  checkUpsell() {
+    this.upsellSuggestion = null;
+
+    // We only trigger upsell if cart has items, but not too many to avoid annoying the user
+    if (this.cart.length === 0 || this.cart.length > 4) return;
+
+    const hasPhone = this.cart.some(item => 
+      item.prix_unitaire >= 800 || 
+      item.nom.toLowerCase().includes('iphone') || 
+      item.nom.toLowerCase().includes('samsung') || 
+      item.nom.toLowerCase().includes('redmi')
+    );
+
+    const hasAntiChoc = this.cart.some(item => item.nom.toLowerCase().includes('anti') || item.nom.toLowerCase().includes('incassable'));
+    const hasPochette = this.cart.some(item => item.nom.toLowerCase().includes('pochette') || item.nom.toLowerCase().includes('silicone') || item.nom.toLowerCase().includes('etui'));
+
+    // Scenario 1: Phone = Suggest Anti-choc + Pochette
+    if (hasPhone && (!hasAntiChoc || !hasPochette)) {
+      const antiChocs = this.allProduits.filter(p => (p.nom.toLowerCase().includes('anti') || p.nom.toLowerCase().includes('incassable')) && p.quantite > 0);
+      const pochettes = this.allProduits.filter(p => (p.nom.toLowerCase().includes('pochette') || p.nom.toLowerCase().includes('silicone') || p.nom.toLowerCase().includes('etui')) && p.quantite > 0);
+
+      const toSuggest: Produit[] = [];
+      if (!hasAntiChoc && antiChocs.length > 0) toSuggest.push(antiChocs[0]);
+      if (!hasPochette && pochettes.length > 0) toSuggest.push(pochettes[0]);
+
+      if (toSuggest.length > 0) {
+        const productNames = toSuggest.map(p => p.nom).join(' و ');
+        this.upsellSuggestion = {
+          message: `💡 <strong>اقتراح حماية (Agent IA):</strong> اقترح على الزبون <b>${productNames}</b> لحماية هاتفه الجديد! بيعهم مع التلفون واعمل ليه تخفيض 20 د.م 🎁`,
+          products: toSuggest,
+          discount: 20
+        };
+        return; // Don't check other scenarios
+      }
+    } 
+    
+    // Scenario 2: Charger = Suggest Cable
+    const hasChargeur = this.cart.some(item => item.nom.toLowerCase().includes('chargeur') || item.nom.toLowerCase().includes('شاحن'));
+    if (hasChargeur) {
+       const hasCable = this.cart.some(item => item.nom.toLowerCase().includes('cable') || item.nom.toLowerCase().includes('كابل'));
+       if (!hasCable) {
+          const cables = this.allProduits.filter(p => (p.nom.toLowerCase().includes('cable') || p.nom.toLowerCase().includes('كابل')) && p.quantite > 0);
+          if (cables.length > 0) {
+            this.upsellSuggestion = {
+              message: `💡 <strong>اقتراح ذكي (Agent IA):</strong> الزبون خذا شاحن، واش ما يحتاجش كابل معاه؟ زيدلو <b>${cables[0].nom}</b> بتخفيض 10 د.م ⚡`,
+              products: [cables[0]],
+              discount: 10
+            };
+          }
+       }
+    }
+  }
+
+  applyUpsell() {
+    if (!this.upsellSuggestion) return;
+    for (const p of this.upsellSuggestion.products) {
+      this.addToCart(p);
+      // Give the discount to the newly added item
+      setTimeout(() => {
+        const item = this.cart.find(c => c.produit_id === p.id);
+        if (item) {
+          // split discount across suggested items
+          const discountPerItem = this.upsellSuggestion!.discount / this.upsellSuggestion!.products.length;
+          // Ensure we don't sell below buy price if possible
+          item.prix_unitaire = Math.max(item.prix_achat_unitaire, item.prix_unitaire - discountPerItem);
+          this.updateCartItem(item);
+        }
+      }, 50);
+    }
+    this.upsellSuggestion = null;
+    this.showToast('تمت إضافة العرض بنجاح! 🚀', 'success');
   }
 
   // --- Smart Calculator (Caisse) ---

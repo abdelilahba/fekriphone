@@ -926,6 +926,87 @@
   color: var(--success);
 }
 
+/* --- Upsell Agent Banner --- */
+.upsell-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.08));
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  animation: upsellSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes upsellSlideIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.upsell-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+  animation: robotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes robotPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15) rotate(3deg); }
+}
+
+.upsell-body { flex: 1; }
+
+.upsell-body p {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.upsell-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.upsell-yes-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+}
+
+.upsell-yes-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.5);
+}
+
+.upsell-no-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upsell-no-btn:hover {
+  background: var(--bg-hover);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
 /* ========== Tablet ========== */
 
 @media (max-width: 1100px) {

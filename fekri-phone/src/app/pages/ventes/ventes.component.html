@@ -247,6 +247,20 @@
             </div>
           }
 
+          <!-- Upsell Agent Banner -->
+          @if (upsellSuggestion) {
+            <div class="upsell-banner">
+              <div class="upsell-icon">🤖</div>
+              <div class="upsell-body">
+                <p [innerHTML]="upsellSuggestion.message"></p>
+                <div class="upsell-actions">
+                  <button class="upsell-yes-btn" (click)="applyUpsell()">➕ أضف العرض</button>
+                  <button class="upsell-no-btn" (click)="upsellSuggestion = null">لا، شكراً</button>
+                </div>
+              </div>
+            </div>
+          }
+
           <button id="tour-pos-checkout" class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
             دفع وحفظ الفاتورة
           </button>
