@@ -47,58 +47,116 @@ export class SupabaseService {
 
   private async sendTelegramNotification(userName: string, action: string, details: any) {
     try {
-      let actionText = action;
-      let emoji = '🚨';
-      
-      // Fetch latest Caisse info to attach to the notification
-      let caisseInfo = '';
+      // ─── Timestamp ───
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      // ─── Caisse ───
+      let caisseTotal = '';
       try {
         const stats = await this.getDailyQuickStats();
-        caisseInfo = `\n\n💵 <b>الصندوق دابا:</b> ${stats.caisse} د.م`;
-      } catch (err) {}
-      
-      switch(action) {
-        case 'ALERTE_ANOMALIE':
-          actionText = `<b>${details.alerte_message}</b>\n\n👀 <i>المرجو مراجعة الفاتورة.</i>`;
-          emoji = '🚨';
-          break;
-        case 'BI3A_JADIDA': 
-          let productsList = details.items_count + ' منتجات';
-          if (details.items && Array.isArray(details.items)) {
-            productsList = details.items.map((i: any) => `▪️ ${i.quantite}x ${i.nom} (${i.prix_unitaire} د.م)`).join('\n');
+        caisseTotal = `\n━━━━━━━━━━━━━━━━━━\n💵 <b>الصندوق دابا:</b>  <code>${stats.caisse} د.م</code>`;
+      } catch (_) {}
+
+      let body = '';
+      let emoji = '📣';
+      let title = 'إشعار جديد';
+
+      switch (action) {
+
+        /* ═══ NEW SALE ═══ */
+        case 'BI3A_JADIDA': {
+          emoji = '🛒';
+          title = 'بيعة جديدة!';
+          let lines = '';
+          if (details.items && Array.isArray(details.items) && details.items.length > 0) {
+            lines = details.items
+              .map((i: any, idx: number) =>
+                `${idx + 1}. <b>${i.nom}</b>\n   ${i.quantite} × ${i.prix_unitaire} د.م = <code>${i.quantite * i.prix_unitaire} د.م</code>`)
+              .join('\n');
           }
-          actionText = `سجل مبيعة جديدة! 💰\n\n<b>المنتجات:</b>\n${productsList}\n\n💸 <b>المجموع: ${details.montant} د.م</b>`; 
-          emoji = '🛒'; 
+          body = `📋 <b>تفاصيل الفاتورة:</b>\n${lines}\n\n` +
+                 `━━━━━━━━━━━━━━━━━━\n` +
+                 `💰 <b>المجموع الإجمالي:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
           break;
-        case 'MS7_BI3A': 
-          actionText = `قام بإلغاء مبيعة! ❌ (إرجاع فلوس)`; 
-          emoji = '⚠️'; 
+        }
+
+        /* ═══ CANCEL SALE ═══ */
+        case 'MS7_BI3A': {
+          emoji = '🔄';
+          title = 'إلغاء مبيعة';
+          body = `⚠️ قام بإلغاء / مسح بيعة سابقة.\n<i>(إرجاع فلوس للزبون)</i>${caisseTotal}`;
           break;
-        case 'ZID_ISLAH': 
-          actionText = `أضاف إصلاح: <i>${details.description}</i> بـ <b>${details.montant} د.م</b>`; 
-          emoji = '🔧'; 
+        }
+
+        /* ═══ NEW REPAIR ═══ */
+        case 'ZID_ISLAH': {
+          emoji = '🔧';
+          title = 'إصلاح مُقيَّد';
+          body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
+                 `━━━━━━━━━━━━━━━━━━\n` +
+                 `💰 <b>المبلغ:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
           break;
-        case 'ZID_MASROUF': 
-          actionText = `أضاف مصروف: <i>${details.description}</i> بـ <b>${details.montant} د.م</b>`; 
-          emoji = '💸'; 
+        }
+
+        /* ═══ CANCEL REPAIR ═══ */
+        case 'MS7_ISLAH': {
+          emoji = '🔄';
+          title = 'إلغاء إصلاح';
+          body = `⚠️ قام بإلغاء / مسح إصلاح مسجل.${caisseTotal}`;
           break;
-        case 'MS7_MASROUF': 
-          actionText = `قام بإلغاء مصروف! ❌`; 
-          emoji = '⚠️'; 
+        }
+
+        /* ═══ NEW EXPENSE ═══ */
+        case 'ZID_MASROUF': {
+          emoji = '💸';
+          title = 'مصروف مُسجَّل';
+          body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
+                 `━━━━━━━━━━━━━━━━━━\n` +
+                 `💰 <b>المبلغ:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
           break;
-        case 'MS7_ISLAH': 
-          actionText = `قام بإلغاء إصلاح! ❌`; 
-          emoji = '⚠️'; 
+        }
+
+        /* ═══ CANCEL EXPENSE ═══ */
+        case 'MS7_MASROUF': {
+          emoji = '🔄';
+          title = 'إلغاء مصروف';
+          body = `⚠️ قام بإلغاء / مسح مصروف مسجل.${caisseTotal}`;
           break;
-        case 'LOGIN':
-          actionText = `سجل الدخول للمحل`;
+        }
+
+        /* ═══ ANOMALY ALERT ═══ */
+        case 'ALERTE_ANOMALIE': {
+          emoji = '🚨';
+          title = 'تنبيه ANOMALIE';
+          body = `${details.alerte_message}\n\n` +
+                 `━━━━━━━━━━━━━━━━━━\n` +
+                 `👀 <i>المرجو مراجعة الفاتورة مباشرة.</i>`;
+          break;
+        }
+
+        /* ═══ LOGIN ═══ */
+        case 'LOGIN': {
           emoji = '🔑';
-          caisseInfo = ''; // Don't show caisse on just login
+          title = 'دخول للنظام';
+          body = `سجّل الدخول للمحل.`;
           break;
+        }
+
+        default: {
+          body = `الحدث: <code>${action}</code>${caisseTotal}`;
+        }
       }
 
-      const message = `${emoji} <b>إشعار من المحل</b>\n\n👤 الموظف: <b>${userName}</b>\n📝 الحدث: ${actionText}${caisseInfo}`;
-      
+      // ─── Compose final message ───
+      const message =
+        `${emoji} <b>${title}</b>\n` +
+        `📅 <i>${dateStr} — ${timeStr}</i>\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `👤 الموظف: <b>${userName}</b>\n\n` +
+        `${body}`;
+
       const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
       await fetch(url, {
         method: 'POST',
