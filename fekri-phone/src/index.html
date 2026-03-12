@@ -13,6 +13,13 @@
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#7c3aed">
     <link rel="apple-touch-icon" href="assets/logo.jpg">
+    <script>
+      window.deferredPromptEvent = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredPromptEvent = e;
+      });
+    </script>
 </head>
   <body>
     <app-root></app-root>

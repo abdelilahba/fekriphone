@@ -49,19 +49,22 @@ export class AppComponent implements OnInit, OnDestroy {
 
   @HostListener('window:beforeinstallprompt', ['$event'])
   onbeforeinstallprompt(e: Event) {
-    // Prevent Chrome 67 and earlier from automatically showing the prompt
     e.preventDefault();
-    // Stash the event so it can be triggered later.
     this.deferredPrompt = e;
-    // Update UI to notify the user they can add to home screen
     this.showInstallButton = true;
+  }
+
+  checkDeferredPrompt() {
+    // Check if the event was already fired before Angular booted
+    if ((window as any).deferredPromptEvent) {
+      this.deferredPrompt = (window as any).deferredPromptEvent;
+      this.showInstallButton = true;
+    }
   }
 
   installApp() {
     if (this.deferredPrompt) {
-      // Show the install prompt
       this.deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
       this.deferredPrompt.userChoice.then((choiceResult: any) => {
         if (choiceResult.outcome === 'accepted') {
           console.log('User accepted the install prompt');
@@ -70,6 +73,7 @@ export class AppComponent implements OnInit, OnDestroy {
           console.log('User dismissed the install prompt');
         }
         this.deferredPrompt = null;
+        (window as any).deferredPromptEvent = null;
       });
     }
   }
