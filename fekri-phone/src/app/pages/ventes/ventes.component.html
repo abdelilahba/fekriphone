@@ -131,11 +131,14 @@
       <div class="pos-products-side">
         <!-- فئات -->
         <div class="pos-categories">
-          <button class="cat-btn" [class.active]="activeCategory === ''" (click)="filterByCategory('')">
+          <button class="cat-btn" [class.active]="activeCategory === '' && !showLowStock" (click)="filterByCategory('')">
             📋 الكل
           </button>
+          <button class="cat-btn low-stock-btn" [class.active]="showLowStock" (click)="filterLowStock()">
+            ⚠️ قلّ الستوك
+          </button>
           @for (cat of categories$ | async; track cat.id) {
-          <button class="cat-btn" [class.active]="activeCategory === cat.id" (click)="filterByCategory(cat.id)">
+          <button class="cat-btn" [class.active]="activeCategory === cat.id && !showLowStock" (click)="filterByCategory(cat.id)">
             {{ cat.icone }} {{ cat.nom }}
           </button>
           }

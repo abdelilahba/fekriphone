@@ -42,6 +42,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   showVenteModal = false;
   searchTerm = '';
   activeCategory = '';
+  showLowStock = false;
   currentPage = 1;
   pageSize = 5;
   totalPages = 1;
@@ -164,17 +165,30 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   filterByCategory(catId: string) {
     this.activeCategory = catId;
     this.searchTerm = '';
+    this.showLowStock = false;
     this.applyProductFilter();
     this.focusSearchNeedsTrigger = true;
   }
 
   searchProduits() {
     this.activeCategory = '';
+    this.showLowStock = false;
     this.applyProductFilter();
+  }
+
+  filterLowStock() {
+    this.showLowStock = !this.showLowStock;
+    this.activeCategory = '';
+    this.searchTerm = '';
+    this.applyProductFilter();
+    this.focusSearchNeedsTrigger = true;
   }
 
   private applyProductFilter() {
     let result = [...this.allProduits];
+    if (this.showLowStock) {
+      result = result.filter(p => p.quantite <= 3).sort((a, b) => a.quantite - b.quantite);
+    }
     if (this.activeCategory) {
       result = result.filter(p => p.categorie_id === this.activeCategory);
     }
