@@ -151,29 +151,23 @@ export class AppComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    // --- Auto Update PWA ---
+    // --- Auto Update PWA (Aggressive) ---
     if (this.swUpdate.isEnabled) {
-      // 1. Listen for new available versions
+      // 1. Auto-reload immediately when new version is ready
       this.swUpdate.versionUpdates.pipe(
         filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
       ).subscribe(() => {
-        Swal.fire({
-          title: 'تحديث جديد 🚀',
-          text: 'كاين تحديث جديد للتطبيق. غادي يتم تحديث الصفحة باش تخدم بآخر نسخة.',
-          icon: 'info',
-          confirmButtonText: 'تحديث دابا 🔄',
-          confirmButtonColor: 'var(--primary)',
-          allowOutsideClick: false,
-          allowEscapeKey: false
-        }).then(() => {
-          window.location.reload();
-        });
+        console.log('🔄 New version detected, reloading...');
+        window.location.reload();
       });
 
-      // 2. Check for updates every 15 minutes
+      // 2. Check immediately on load
+      this.swUpdate.checkForUpdate();
+
+      // 3. Check every 30 seconds
       setInterval(() => {
         this.swUpdate.checkForUpdate();
-      }, 15 * 60 * 1000); // 15 minutes
+      }, 30 * 1000);
     }
 
     this.auth.user$.subscribe(user => {
