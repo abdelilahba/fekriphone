@@ -365,10 +365,31 @@ export class SupabaseService {
   }
 
   async deleteVente(id: string, userId?: string) {
+    // 1. Fetch the items for this vente to restore stock
+    const { data: items, error: itemsError } = await this.supabase
+      .from('vente_items')
+      .select('produit_id, quantite, produits(quantite)')
+      .eq('vente_id', id);
+
+    if (!itemsError && items) {
+      // 2. Restore stock for each product
+      for (const item of items) {
+        if (item.produit_id && item.produits) {
+          const currentStock = (item.produits as any).quantite || 0;
+          await this.supabase
+            .from('produits')
+            .update({ quantite: currentStock + item.quantite })
+            .eq('id', item.produit_id);
+        }
+      }
+    }
+
+    // 3. Delete the sale (this will also delete vente_items through cascade if set, otherwise delete them first)
     const { error } = await this.supabase
       .from('ventes')
       .delete()
       .eq('id', id);
+      
     if (error) throw error;
 
     await this.logActivity('MS7_BI3A', { vente_id: id }, userId);
