@@ -25,6 +25,7 @@ export class ProduitsComponent implements OnInit {
   editMode = false;
   searchTerm = '';
   filterCategorie = '';
+  stockFilter: 'all' | 'low' | 'out' = 'all';
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
   currentPage = 1;
   pageSize = 10;
@@ -101,9 +102,20 @@ export class ProduitsComponent implements OnInit {
     if (this.filterCategorie) {
       result = result.filter(p => p.categorie_id === this.filterCategorie);
     }
+    // Stock filter
+    if (this.stockFilter === 'out') {
+      result = result.filter(p => p.quantite === 0).sort((a, b) => a.nom.localeCompare(b.nom));
+    } else if (this.stockFilter === 'low') {
+      result = result.filter(p => p.quantite > 0 && p.quantite <= 3).sort((a, b) => a.quantite - b.quantite);
+    }
     this.filteredProduits$.next(result);
     this.currentPage = 1;
     this.paginate(result);
+  }
+
+  setStockFilter(f: 'all' | 'low' | 'out') {
+    this.stockFilter = f;
+    this.applyFilter();
   }
 
   paginate(items?: Produit[]) {

@@ -50,6 +50,17 @@
         }
       </select>
     </div>
+    <div class="stock-filters">
+      <button class="stock-filter-btn" [class.active]="stockFilter === 'all'" (click)="setStockFilter('all')">
+        📋 الكل
+      </button>
+      <button class="stock-filter-btn warning" [class.active]="stockFilter === 'low'" (click)="setStockFilter('low')">
+        ⚠️ بقى شوية
+      </button>
+      <button class="stock-filter-btn danger" [class.active]="stockFilter === 'out'" (click)="setStockFilter('out')">
+        🔴 سالات
+      </button>
+    </div>
   </div>
 
   <!-- Loading -->

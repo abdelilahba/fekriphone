@@ -25,6 +25,48 @@
 .filter-select {
   width: 200px;
 }
+
+/* --- Stock Filters --- */
+.stock-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.stock-filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stock-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.stock-filter-btn.active {
+  border-color: var(--primary);
+  color: white;
+  background: var(--primary);
+}
+
+.stock-filter-btn.warning.active {
+  border-color: #f59e0b;
+  background: #f59e0b;
+  color: white;
+}
+
+.stock-filter-btn.danger.active {
+  border-color: #ef4444;
+  background: #ef4444;
+  color: white;
+}
 .table-card {
   padding: 0;
   overflow: hidden;
