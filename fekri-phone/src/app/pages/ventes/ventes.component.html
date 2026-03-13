@@ -59,7 +59,9 @@
           <div class="mvr-creator" title="مول البيعة">👤 {{ v.profiles?.name || '---' }}</div>
         }
         <div class="mvr-price">{{ formatMAD(v.montant_total) }}</div>
-        <div class="mvr-profit">الربح: {{ formatMAD(v.profit_total) }}</div>
+        @if (userRole === 'admin') {
+          <div class="mvr-profit">الربح: {{ formatMAD(v.profit_total) }}</div>
+        }
         <div class="mvr-items-count">{{ v.vente_items?.length || 0 }} منتجات</div>
       </div>
 
