@@ -24,6 +24,7 @@ export class CreditsComponent implements OnInit {
   showPayModal = false;
   editMode = false;
   filterPaye = 'non_paye';
+  selectedDate: string = new Date().toISOString().split('T')[0];
   currentPage = 1;
   pageSize = 10;
   totalPages = 1;
@@ -68,6 +69,11 @@ export class CreditsComponent implements OnInit {
     if (this.filterPaye === 'non_paye') result = this.allCredits.filter(c => !c.est_paye);
     else if (this.filterPaye === 'paye') result = this.allCredits.filter(c => c.est_paye);
     else result = [...this.allCredits];
+
+    if (this.selectedDate) {
+      result = result.filter(c => (c.date.split(' ')[0] || c.date) === this.selectedDate);
+    }
+
     this.filteredCredits$.next(result);
     this.currentPage = 1;
     this.paginate(result);

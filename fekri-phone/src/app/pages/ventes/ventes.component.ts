@@ -48,6 +48,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   totalPages = 1;
   paginatedVentes$ = new BehaviorSubject<Vente[]>([]);
   userRole = 'admin';
+  selectedDate: string = new Date().toISOString().split('T')[0];
+  allVentesData: Vente[] = [];
 
   private cart: CartItem[] = [];
 
@@ -110,26 +112,31 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         finalVentes = ventes.filter((v: any) => v.user_id === uid);
       }
 
-      this.ventes$.next(finalVentes);
+      this.allVentesData = finalVentes;
       this.categories$.next(categories);
       this.filteredProduits$.next([...produits]);
       
-      const now = new Date();
-      const total = finalVentes
-        .filter((v: any) => { 
-          const d = new Date(v.date); 
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); 
-        })
-        .reduce((s: number, v: any) => s + Number(v.montant_total), 0);
-      
-      this.totalMois$.next(total);
-      this.currentPage = 1;
-      this.paginateVentes();
+      this.filterByDate();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
       this.loading$.next(false);
     }
+  }
+
+  filterByDate() {
+    let filtered = this.allVentesData;
+    if (this.selectedDate) {
+      filtered = filtered.filter(v => (v.date.split(' ')[0] || v.date) === this.selectedDate);
+    }
+    this.ventes$.next(filtered);
+    
+    // Total for filtered items
+    const total = filtered.reduce((s: number, v: any) => s + Number(v.montant_total), 0);
+    this.totalMois$.next(total);
+    
+    this.currentPage = 1;
+    this.paginateVentes();
   }
 
   paginateVentes() {

@@ -8,14 +8,17 @@
   @if (!showVenteModal) {
   <div class="page-header">
     <h1>🛒 المبيعات</h1>
-    <button id="tour-ventes-btn" class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <input type="date" [(ngModel)]="selectedDate" (ngModelChange)="filterByDate()" class="form-control" style="width: 150px;">
+      <button id="tour-ventes-btn" class="btn btn-primary btn-lg" (click)="openVente()">➕ بيعة جديدة</button>
+    </div>
   </div>
 
   <div class="stat-card total-card" id="tour-ventes-total">
     <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
     <div class="stat-info">
       <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
-      <p>مجموع المبيعات هاد الشهر</p>
+      <p>المجموع {{ selectedDate ? ('ليوم ' + selectedDate) : 'الكامل' }}</p>
     </div>
   </div>
 

@@ -26,6 +26,8 @@ export class ReparationsComponent implements OnInit {
   totalPages = 1;
   paginatedRevenus$ = new BehaviorSubject<RevenuReparation[]>([]);
   userRole = 'admin';
+  selectedDate: string = new Date().toISOString().split('T')[0];
+  allRevenusData: RevenuReparation[] = [];
 
   form = { id: '', description: '', montant: 0, date: '' };
 
@@ -49,23 +51,26 @@ export class ReparationsComponent implements OnInit {
         finalRevenus = revenus.filter((r: any) => r.user_id === uid);
       }
 
-      this.revenus$.next(finalRevenus);
-
-      const now = new Date();
-      const total = finalRevenus
-        .filter((r: any) => { 
-          const d = new Date(r.date); 
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); 
-        })
-        .reduce((s: number, r: any) => s + Number(r.montant), 0);
-      this.totalMois$.next(total);
-      this.currentPage = 1;
-      this.paginate();
+      this.allRevenusData = finalRevenus;
+      this.filterByDate();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
       this.loading$.next(false);
     }
+  }
+
+  filterByDate() {
+    let filtered = this.allRevenusData;
+    if (this.selectedDate) {
+      filtered = filtered.filter(r => (r.date.split(' ')[0] || r.date) === this.selectedDate);
+    }
+    this.revenus$.next(filtered);
+
+    const total = filtered.reduce((s: number, r: any) => s + Number(r.montant), 0);
+    this.totalMois$.next(total);
+    this.currentPage = 1;
+    this.paginate();
   }
 
   paginate() {

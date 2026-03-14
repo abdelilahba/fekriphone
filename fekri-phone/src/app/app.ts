@@ -280,15 +280,19 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async loadQuickStats() {
-    if (this.userRole !== 'admin') {
-      this.dailyCaisse = 0;
-      this.dailyRib7 = 0;
-      return;
-    }
     try {
-      const stats = await this.supabase.getDailyQuickStats();
-      this.dailyCaisse = stats.caisse;
-      this.dailyRib7 = stats.rib7;
+      if (this.userRole === 'admin') {
+        const stats = await this.supabase.getDailyQuickStats();
+        this.dailyCaisse = stats.caisse;
+        this.dailyRib7 = stats.rib7;
+      } else {
+        const uid = this.auth.currentUser?.id;
+        if (uid) {
+          const stats = await this.supabase.getDailyQuickStats(uid);
+          this.dailyCaisse = stats.caisse;
+          this.dailyRib7 = 0; // Employees don't see profit
+        }
+      }
       this.cdr.detectChanges();
     } catch {}
   }

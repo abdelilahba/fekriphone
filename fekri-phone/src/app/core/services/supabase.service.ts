@@ -8,14 +8,96 @@ import { environment } from '../../../environments/environment';
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
+  private readonly TELEGRAM_QUEUE_KEY = 'telegram_notification_queue';
+  private isFlushing = false;
 
   constructor(private refreshService: RefreshService) {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+
+    // ─── Offline Queue: flush pending notifications when back online ───
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        console.log('📶 Back online! Flushing queued Telegram notifications...');
+        this.flushTelegramQueue();
+      });
+      // Also try to flush on startup (in case app was closed while offline)
+      setTimeout(() => this.flushTelegramQueue(), 5000);
+    }
   }
 
   get client(): SupabaseClient {
     return this.supabase;
   }
+
+  // ══════════════════════════════════════════════════
+  //  TELEGRAM OFFLINE QUEUE HELPERS
+  // ══════════════════════════════════════════════════
+  private getTelegramQueue(): { message: string; timestamp: string }[] {
+    try {
+      const raw = localStorage.getItem(this.TELEGRAM_QUEUE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }
+
+  private saveTelegramQueue(queue: { message: string; timestamp: string }[]) {
+    try {
+      localStorage.setItem(this.TELEGRAM_QUEUE_KEY, JSON.stringify(queue));
+    } catch (e) {
+      console.error('Failed to save Telegram queue:', e);
+    }
+  }
+
+  private addToTelegramQueue(message: string) {
+    const queue = this.getTelegramQueue();
+    queue.push({ message, timestamp: new Date().toISOString() });
+    this.saveTelegramQueue(queue);
+    console.log(`📥 Notification queued for later (${queue.length} pending)`);
+  }
+
+  private async flushTelegramQueue() {
+    if (this.isFlushing) return;
+    if (!navigator.onLine) return;
+
+    const queue = this.getTelegramQueue();
+    if (queue.length === 0) return;
+
+    this.isFlushing = true;
+    console.log(`📤 Flushing ${queue.length} queued Telegram notification(s)...`);
+
+    const failed: { message: string; timestamp: string }[] = [];
+
+    for (const item of queue) {
+      try {
+        const delayedLabel = `\n\n⏰ <i>(إشعار متأخر من ${new Date(item.timestamp).toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' })})</i>`;
+        const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: environment.telegramChatId,
+            text: item.message + delayedLabel,
+            parse_mode: 'HTML'
+          })
+        });
+        if (!resp.ok) {
+          failed.push(item);
+        }
+      } catch {
+        failed.push(item);
+      }
+    }
+
+    this.saveTelegramQueue(failed);
+    this.isFlushing = false;
+
+    if (failed.length > 0) {
+      console.warn(`⚠️ ${failed.length} notification(s) still pending.`);
+    } else {
+      console.log('✅ All queued notifications sent successfully!');
+    }
+  }
+
+  // ══════════════════════════════════════════════════
 
   async logActivity(action: string, details: any, userId?: string) {
     try {
@@ -46,119 +128,123 @@ export class SupabaseService {
   }
 
   private async sendTelegramNotification(userName: string, action: string, details: any) {
+    // ─── Timestamp ───
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    // ─── Caisse ───
+    let caisseTotal = '';
     try {
-      // ─── Timestamp ───
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' });
-      const dateStr = now.toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const stats = await this.getDailyQuickStats();
+      caisseTotal = `\n━━━━━━━━━━━━━━━━━━\n💵 <b>الصندوق دابا:</b>  <code>${stats.caisse} د.م</code>`;
+    } catch (_) {}
 
-      // ─── Caisse ───
-      let caisseTotal = '';
-      try {
-        const stats = await this.getDailyQuickStats();
-        caisseTotal = `\n━━━━━━━━━━━━━━━━━━\n💵 <b>الصندوق دابا:</b>  <code>${stats.caisse} د.م</code>`;
-      } catch (_) {}
+    let body = '';
+    let emoji = '📣';
+    let title = 'إشعار جديد';
 
-      let body = '';
-      let emoji = '📣';
-      let title = 'إشعار جديد';
+    switch (action) {
 
-      switch (action) {
-
-        /* ═══ NEW SALE ═══ */
-        case 'BI3A_JADIDA': {
-          emoji = '🛒';
-          title = 'بيعة جديدة!';
-          let lines = '';
-          if (details.items && Array.isArray(details.items) && details.items.length > 0) {
-            lines = details.items
-              .map((i: any, idx: number) =>
-                `${idx + 1}. <b>${i.nom}</b>\n   ${i.quantite} × ${i.prix_unitaire} د.م = <code>${i.quantite * i.prix_unitaire} د.م</code>`)
-              .join('\n');
-          }
-          body = `📋 <b>تفاصيل الفاتورة:</b>\n${lines}\n\n` +
-                 `━━━━━━━━━━━━━━━━━━\n` +
-                 `💰 <b>المجموع الإجمالي:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
-          break;
+      /* ═══ NEW SALE ═══ */
+      case 'BI3A_JADIDA': {
+        emoji = '🛒';
+        title = 'بيعة جديدة!';
+        let lines = '';
+        if (details.items && Array.isArray(details.items) && details.items.length > 0) {
+          lines = details.items
+            .map((i: any, idx: number) =>
+              `${idx + 1}. <b>${i.nom}</b>\n   ${i.quantite} × ${i.prix_unitaire} د.م = <code>${i.quantite * i.prix_unitaire} د.م</code>`)
+            .join('\n');
         }
-
-        /* ═══ CANCEL SALE ═══ */
-        case 'MS7_BI3A': {
-          emoji = '🔄';
-          title = 'إلغاء مبيعة';
-          body = `⚠️ قام بإلغاء / مسح بيعة سابقة.\n<i>(إرجاع فلوس للزبون)</i>${caisseTotal}`;
-          break;
-        }
-
-        /* ═══ NEW REPAIR ═══ */
-        case 'ZID_ISLAH': {
-          emoji = '🔧';
-          title = 'إصلاح مُقيَّد';
-          body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
-                 `━━━━━━━━━━━━━━━━━━\n` +
-                 `💰 <b>المبلغ:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
-          break;
-        }
-
-        /* ═══ CANCEL REPAIR ═══ */
-        case 'MS7_ISLAH': {
-          emoji = '🔄';
-          title = 'إلغاء إصلاح';
-          body = `⚠️ قام بإلغاء / مسح إصلاح مسجل.${caisseTotal}`;
-          break;
-        }
-
-        /* ═══ NEW EXPENSE ═══ */
-        case 'ZID_MASROUF': {
-          emoji = '💸';
-          title = 'مصروف مُسجَّل';
-          body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
-                 `━━━━━━━━━━━━━━━━━━\n` +
-                 `💰 <b>المبلغ:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
-          break;
-        }
-
-        /* ═══ CANCEL EXPENSE ═══ */
-        case 'MS7_MASROUF': {
-          emoji = '🔄';
-          title = 'إلغاء مصروف';
-          body = `⚠️ قام بإلغاء / مسح مصروف مسجل.${caisseTotal}`;
-          break;
-        }
-
-        /* ═══ ANOMALY ALERT ═══ */
-        case 'ALERTE_ANOMALIE': {
-          emoji = '🚨';
-          title = 'تنبيه ANOMALIE';
-          body = `${details.alerte_message}\n\n` +
-                 `━━━━━━━━━━━━━━━━━━\n` +
-                 `👀 <i>المرجو مراجعة الفاتورة مباشرة.</i>`;
-          break;
-        }
-
-        /* ═══ LOGIN ═══ */
-        case 'LOGIN': {
-          emoji = '🔑';
-          title = 'دخول للنظام';
-          body = `سجّل الدخول للمحل.`;
-          break;
-        }
-
-        default: {
-          body = `الحدث: <code>${action}</code>${caisseTotal}`;
-        }
+        body = `📋 <b>تفاصيل الفاتورة:</b>\n${lines}\n\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `💰 <b>المجموع الإجمالي:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
+        break;
       }
 
-      // ─── Compose final message ───
-      const message =
-        `${emoji} <b>${title}</b>\n` +
-        `📅 <i>${dateStr} — ${timeStr}</i>\n` +
-        `━━━━━━━━━━━━━━━━━━\n` +
-        `👤 الموظف: <b>${userName}</b>\n\n` +
-        `${body}`;
+      /* ═══ CANCEL SALE ═══ */
+      case 'MS7_BI3A': {
+        emoji = '🔄';
+        title = 'إلغاء مبيعة';
+        body = `⚠️ قام بإلغاء / مسح بيعة سابقة.\n<i>(إرجاع فلوس للزبون)</i>${caisseTotal}`;
+        break;
+      }
 
+      /* ═══ NEW REPAIR ═══ */
+      case 'ZID_ISLAH': {
+        emoji = '🔧';
+        title = 'إصلاح مُقيَّد';
+        body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `💰 <b>المبلغ:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
+        break;
+      }
+
+      /* ═══ CANCEL REPAIR ═══ */
+      case 'MS7_ISLAH': {
+        emoji = '🔄';
+        title = 'إلغاء إصلاح';
+        body = `⚠️ قام بإلغاء / مسح إصلاح مسجل.${caisseTotal}`;
+        break;
+      }
+
+      /* ═══ NEW EXPENSE ═══ */
+      case 'ZID_MASROUF': {
+        emoji = '💸';
+        title = 'مصروف مُسجَّل';
+        body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `💰 <b>المبلغ:</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
+        break;
+      }
+
+      /* ═══ CANCEL EXPENSE ═══ */
+      case 'MS7_MASROUF': {
+        emoji = '🔄';
+        title = 'إلغاء مصروف';
+        body = `⚠️ قام بإلغاء / مسح مصروف مسجل.${caisseTotal}`;
+        break;
+      }
+
+      /* ═══ ANOMALY ALERT ═══ */
+      case 'ALERTE_ANOMALIE': {
+        emoji = '🚨';
+        title = 'تنبيه ANOMALIE';
+        body = `${details.alerte_message}\n\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `👀 <i>المرجو مراجعة الفاتورة مباشرة.</i>`;
+        break;
+      }
+
+      /* ═══ LOGIN ═══ */
+      case 'LOGIN': {
+        emoji = '🔑';
+        title = 'دخول للنظام';
+        body = `سجّل الدخول للمحل.`;
+        break;
+      }
+
+      default: {
+        body = `الحدث: <code>${action}</code>${caisseTotal}`;
+      }
+    }
+
+    // ─── Compose final message ───
+    const message =
+      `${emoji} <b>${title}</b>\n` +
+      `📅 <i>${dateStr} — ${timeStr}</i>\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `👤 الموظف: <b>${userName}</b>\n\n` +
+      `${body}`;
+
+    // ─── Send or Queue ───
+    try {
+      if (!navigator.onLine) {
+        throw new Error('Device is offline');
+      }
       const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
-      await fetch(url, {
+      const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -167,8 +253,12 @@ export class SupabaseService {
           parse_mode: 'HTML'
         })
       });
+      if (!resp.ok) {
+        throw new Error(`Telegram API error: ${resp.status}`);
+      }
     } catch (e) {
-      console.error('Failed to send telegram notification:', e);
+      console.warn('⚠️ Telegram send failed, queuing for retry:', e);
+      this.addToTelegramQueue(message);
     }
   }
 
@@ -608,13 +698,24 @@ export class SupabaseService {
   }
 
   // ==================== Daily Quick Stats (Header) ====================
-  async getDailyQuickStats() {
+  async getDailyQuickStats(userId?: string) {
     const today = new Date().toISOString().split('T')[0];
     
+    let ventesQuery = this.supabase.from('ventes').select('montant_total, profit_total').eq('date', today);
+    let revenusQuery = this.supabase.from('revenus_reparation').select('montant').eq('date', today);
+    let depensesQuery = this.supabase.from('depenses').select('montant').eq('date', today);
+
+    if (userId) {
+      ventesQuery = ventesQuery.eq('user_id', userId);
+      revenusQuery = revenusQuery.eq('user_id', userId);
+      // Depenses are optional for employees, but if they make an expense, it should be deducted from their drawer
+      depensesQuery = depensesQuery.eq('user_id', userId);
+    }
+
     const [ventes, revenus, depenses] = await Promise.all([
-      this.supabase.from('ventes').select('montant_total, profit_total').eq('date', today),
-      this.supabase.from('revenus_reparation').select('montant').eq('date', today),
-      this.supabase.from('depenses').select('montant').eq('date', today)
+      ventesQuery,
+      revenusQuery,
+      depensesQuery
     ]);
 
     const ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);

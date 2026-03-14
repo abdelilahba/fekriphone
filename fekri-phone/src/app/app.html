@@ -71,17 +71,17 @@
       <button class="mobile-menu-btn" (click)="toggleMobileMenu()">☰</button>
     </div>
     
-    <div class="top-bar-center" *ngIf="userRole === 'admin'" id="tour-stats">
-      <div class="quick-stat rib7">
+    <div class="top-bar-center" id="tour-stats">
+      <div class="quick-stat rib7" *ngIf="userRole === 'admin'">
         <span class="stat-icon">📈</span>
         <span class="stat-label">ربح اليوم:</span>
         <span class="stat-val">{{ dailyRib7 }} د.م</span>
       </div>
-      <div class="quick-stat caisse with-action" (click)="openQuickWithdraw()" title="إسحب أو قيد مصروف من الصندوق">
+      <div class="quick-stat caisse" [class.with-action]="userRole === 'admin'" (click)="userRole === 'admin' ? openQuickWithdraw() : null" [title]="userRole === 'admin' ? 'إسحب أو قيد مصروف من الصندوق' : 'مبيعات اليوم'">
         <span class="stat-icon">💵</span>
-        <span class="stat-label">صندوق اليوم:</span>
+        <span class="stat-label">{{ userRole === 'admin' ? 'صندوق اليوم:' : 'مبيعاتك اليوم:' }}</span>
         <span class="stat-val">{{ dailyCaisse }} د.م</span>
-        <span class="quick-act-btn">➖</span>
+        <span class="quick-act-btn" *ngIf="userRole === 'admin'">➖</span>
       </div>
     </div>
 
