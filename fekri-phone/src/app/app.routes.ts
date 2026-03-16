@@ -38,6 +38,11 @@ export const routes: Routes = [
     canActivate: [authGuard, adminGuard]
   },
   {
+    path: 'avances',
+    loadComponent: () => import('./pages/avances/avances.component').then(m => m.AvancesComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'credits',
     loadComponent: () => import('./pages/credits/credits.component').then(m => m.CreditsComponent),
     canActivate: [authGuard]

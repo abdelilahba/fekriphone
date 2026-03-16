@@ -207,6 +207,24 @@ export class SupabaseService {
         break;
       }
 
+      /* ═══ NEW AVANCE (دفع) ═══ */
+      case 'ZID_AVANCE': {
+        emoji = '💰';
+        title = 'دفعة جديدة';
+        body = `📋 <b>الوصف:</b> <i>${details.description || '—'}</i>\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `💰 <b>المبلغ (في الصندوق، ماشي ربح):</b>  <code>${details.montant} د.م</code>${caisseTotal}`;
+        break;
+      }
+
+      /* ═══ CANCEL AVANCE ═══ */
+      case 'MS7_AVANCE': {
+        emoji = '🔄';
+        title = 'إلغاء دفعة';
+        body = `⚠️ قام بإلغاء / مسح دفعة مسجلة.${caisseTotal}`;
+        break;
+      }
+
       /* ═══ ANOMALY ALERT ═══ */
       case 'ALERTE_ANOMALIE': {
         emoji = '🚨';
@@ -584,6 +602,55 @@ export class SupabaseService {
     this.refreshService.triggerRefresh();
   }
 
+  // ==================== Avances (دفع - Avance sur pièces) ====================
+  async getAvances() {
+    const { data, error } = await this.supabase
+      .from('avances')
+      .select('*, profiles!user_id(name)')
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
+  async addAvance(avance: any, userId?: string) {
+    const { data, error } = await this.supabase
+      .from('avances')
+      .insert({ ...avance, user_id: userId })
+      .select()
+      .single();
+    if (error) throw error;
+
+    await this.logActivity('ZID_AVANCE', { 
+      description: avance.description, 
+      montant: avance.montant 
+    }, userId);
+
+    this.refreshService.triggerRefresh();
+    return data;
+  }
+
+  async updateAvance(id: string, avance: any) {
+    const { data, error } = await this.supabase
+      .from('avances')
+      .update(avance)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteAvance(id: string, userId?: string) {
+    const { error } = await this.supabase
+      .from('avances')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+
+    await this.logActivity('MS7_AVANCE', { avance_id: id }, userId);
+    this.refreshService.triggerRefresh();
+  }
+
   // ==================== Credits ====================
   async getCredits(userId?: string) {
     let query = this.supabase.from('credits').select('*').order('created_at', { ascending: false });
@@ -704,27 +771,31 @@ export class SupabaseService {
     let ventesQuery = this.supabase.from('ventes').select('montant_total, profit_total').eq('date', today);
     let revenusQuery = this.supabase.from('revenus_reparation').select('montant').eq('date', today);
     let depensesQuery = this.supabase.from('depenses').select('montant').eq('date', today);
+    let avancesQuery = this.supabase.from('avances').select('montant').eq('date', today);
 
     if (userId) {
       ventesQuery = ventesQuery.eq('user_id', userId);
       revenusQuery = revenusQuery.eq('user_id', userId);
       // Depenses are optional for employees, but if they make an expense, it should be deducted from their drawer
       depensesQuery = depensesQuery.eq('user_id', userId);
+      avancesQuery = avancesQuery.eq('user_id', userId);
     }
 
-    const [ventes, revenus, depenses] = await Promise.all([
+    const [ventes, revenus, depenses, avances] = await Promise.all([
       ventesQuery,
       revenusQuery,
-      depensesQuery
+      depensesQuery,
+      avancesQuery
     ]);
 
     const ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
     const ventesProfitTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+    const avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
 
     return {
-      caisse: ventesTotal + reparationsTotal - depensesTotal,
+      caisse: ventesTotal + reparationsTotal + avancesTotal - depensesTotal,
       rib7: ventesProfitTotal + reparationsTotal - depensesTotal
     };
   }

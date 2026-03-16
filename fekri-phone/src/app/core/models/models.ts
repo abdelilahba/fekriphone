@@ -65,6 +65,15 @@ export interface Depense {
   created_at: string;
 }
 
+export interface Avance {
+  id: string;
+  description: string;
+  montant: number;
+  categorie?: string | null;
+  date: string;
+  created_at: string;
+}
+
 export interface Credit {
   id: string;
   nom_client: string;
