@@ -16,12 +16,29 @@ export class SupabaseService {
 
     // ─── Offline Queue: flush pending notifications when back online ───
     if (typeof window !== 'undefined') {
+      // 1. Standard online event
       window.addEventListener('online', () => {
         console.log('📶 Back online! Flushing queued Telegram notifications...');
         this.flushTelegramQueue();
       });
-      // Also try to flush on startup (in case app was closed while offline)
-      setTimeout(() => this.flushTelegramQueue(), 5000);
+
+      // 2. Flush when app becomes visible again (user switches back to app)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          console.log('👀 App visible again, checking Telegram queue...');
+          setTimeout(() => this.flushTelegramQueue(), 1000);
+        }
+      });
+
+      // 3. Flush on app startup (after 3 seconds)
+      setTimeout(() => this.flushTelegramQueue(), 3000);
+
+      // 4. Periodic retry every 30 seconds (catches all edge cases on mobile)
+      setInterval(() => {
+        if (navigator.onLine) {
+          this.flushTelegramQueue();
+        }
+      }, 30000);
     }
   }
 
