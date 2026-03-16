@@ -1,0 +1,179 @@
+<div class="cloture-page">
+  @if (toastMessage$ | async; as toast) {
+  <div class="toast-container">
+    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+  </div>
+  }
+
+  <div class="page-header">
+    <h1>🔒 إقفال الصندوق</h1>
+    <button class="btn btn-ghost" (click)="toggleHistorique()">
+      {{ showHistorique ? '⬅️ رجوع' : '📜 السجل' }}
+    </button>
+  </div>
+
+  @if (loading$ | async) {
+  <div class="skeleton-loader">
+    <div class="skeleton-row short"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row tall"></div>
+    <div class="skeleton-row"></div>
+  </div>
+  } @else {
+
+  <!-- === MAIN CLOTURE VIEW === -->
+  @if (!showHistorique) {
+
+  <!-- Already Closed Banner -->
+  @if (alreadyClosed && todayCloture) {
+  <div class="already-closed-banner">
+    <div class="banner-icon">✅</div>
+    <div class="banner-text">
+      <h3>الصندوق مسدود اليوم</h3>
+      <p>
+        النظري: <b>{{ formatMAD(todayCloture.montant_theorique) }}</b> |
+        الحقيقي: <b>{{ formatMAD(todayCloture.montant_reel) }}</b> |
+        الفرق: <b [class.ecart-negatif]="todayCloture.ecart < 0" [class.ecart-positif]="todayCloture.ecart >= 0">{{ formatMAD(todayCloture.ecart) }}</b>
+      </p>
+    </div>
+  </div>
+  }
+
+  <!-- Daily Summary Cards -->
+  <div class="stats-grid">
+    <div class="mini-stat-card">
+      <div class="mini-stat-icon" style="background: #dcfce7; color: #16a34a;">🛒</div>
+      <div class="mini-stat-info">
+        <span class="mini-stat-value">{{ formatMAD(ventesTotal) }}</span>
+        <span class="mini-stat-label">مبيعات</span>
+      </div>
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-icon" style="background: #dbeafe; color: #2563eb;">🔧</div>
+      <div class="mini-stat-info">
+        <span class="mini-stat-value">{{ formatMAD(reparationsTotal) }}</span>
+        <span class="mini-stat-label">إصلاحات</span>
+      </div>
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-icon" style="background: #fef9c3; color: #ca8a04;">💰</div>
+      <div class="mini-stat-info">
+        <span class="mini-stat-value">{{ formatMAD(avancesTotal) }}</span>
+        <span class="mini-stat-label">دفعات</span>
+      </div>
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-icon" style="background: #fee2e2; color: #dc2626;">💸</div>
+      <div class="mini-stat-info">
+        <span class="mini-stat-value">- {{ formatMAD(depensesTotal) }}</span>
+        <span class="mini-stat-label">مصاريف</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theorique Total -->
+  <div class="theorique-card">
+    <div class="theorique-label">💵 الحساب النظري (اللي خصو يكون فالصندوق)</div>
+    <div class="theorique-value">{{ formatMAD(montantTheorique) }}</div>
+    <div class="theorique-formula">= مبيعات + إصلاحات + دفعات - مصاريف</div>
+  </div>
+
+  <!-- Input Card -->
+  @if (!alreadyClosed) {
+  <div class="card input-card">
+    <h3>🏦 شحال لقيتي فالصندوق؟</h3>
+    <p class="input-subtitle">حسب الفلوس اللي عندك فالمجر دابا وكتب شحال لقيتي</p>
+    
+    <div class="input-row">
+      <div class="form-group">
+        <label>المبلغ الحقيقي (د.م) *</label>
+        <input type="number" [(ngModel)]="montantReel" class="form-control big-input" 
+               placeholder="مثلا: 1450" min="0" (ngModelChange)="calculateEcart()">
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>ملاحظة (اختيارية)</label>
+      <textarea [(ngModel)]="note" class="form-control" rows="2" 
+                placeholder="مثلا: نسيت نقيد 20 درهم ديال الكازوان..."></textarea>
+    </div>
+
+    <!-- Result -->
+    @if (showResult && montantReel !== null) {
+    <div class="ecart-result" [class.ecart-ok]="ecart === 0" [class.ecart-warning]="ecart !== 0">
+      <div class="ecart-header">
+        @if (ecart === 0) {
+          <span class="ecart-icon">✅</span>
+          <span class="ecart-title">الحساب مريڭل!</span>
+        } @else if (ecart < 0) {
+          <span class="ecart-icon">⚠️</span>
+          <span class="ecart-title">كاين نقص فالصندوق!</span>
+        } @else {
+          <span class="ecart-icon">💡</span>
+          <span class="ecart-title">كاين زيادة فالصندوق</span>
+        }
+      </div>
+      <div class="ecart-details">
+        <div class="ecart-row">
+          <span>الحساب النظري:</span>
+          <span>{{ formatMAD(montantTheorique) }}</span>
+        </div>
+        <div class="ecart-row">
+          <span>الفلوس الحقيقية:</span>
+          <span>{{ formatMAD(montantReel) }}</span>
+        </div>
+        <div class="ecart-row ecart-total" [class.danger]="ecart < 0" [class.success]="ecart >= 0">
+          <span>الفرق:</span>
+          <span>{{ formatMAD(ecart) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg" (click)="submitCloture()">
+      🔒 سدان الصندوق
+    </button>
+    }
+  </div>
+  }
+
+  } @else {
+  <!-- === HISTORY VIEW === -->
+  <div class="card">
+    @if (historique.length > 0) {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>التاريخ</th>
+          <th>النظري</th>
+          <th>الحقيقي</th>
+          <th>الفرق</th>
+          <th>الموظف</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (h of historique; track h.id) {
+        <tr>
+          <td>{{ h.date }}</td>
+          <td>{{ formatMAD(h.montant_theorique) }}</td>
+          <td>{{ formatMAD(h.montant_reel) }}</td>
+          <td>
+            <span class="badge" [class.badge-success]="h.ecart >= 0" [class.badge-danger]="h.ecart < 0">
+              {{ formatMAD(h.ecart) }}
+            </span>
+          </td>
+          <td>{{ h.profiles?.name || '—' }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    } @else {
+    <div class="empty-state">
+      <div class="empty-icon">📜</div>
+      <h3>مازال ما تسد الصندوق حتى مرة</h3>
+    </div>
+    }
+  </div>
+  }
+
+  }
+</div>

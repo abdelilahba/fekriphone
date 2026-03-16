@@ -73,6 +73,11 @@ export const routes: Routes = [
     canActivate: [authGuard, adminGuard]
   },
   {
+    path: 'cloture',
+    loadComponent: () => import('./pages/cloture/cloture.component').then(m => m.ClotureComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: ''
   }

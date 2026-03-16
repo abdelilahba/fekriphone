@@ -252,6 +252,20 @@ export class SupabaseService {
         break;
       }
 
+      /* ═══ CLOTURE CAISSE ═══ */
+      case 'CLOTURE_CAISSE': {
+        const ecartVal = details.ecart || 0;
+        emoji = ecartVal === 0 ? '✅' : '🚨';
+        title = 'إقفال الصندوق';
+        const ecartLabel = ecartVal === 0 ? '✅ مريڭل 100%' : ecartVal < 0 ? `❌ ناقص ${Math.abs(ecartVal)} د.م` : `💡 زيادة ${ecartVal} د.م`;
+        body = `💵 <b>النظري:</b>  <code>${details.montant_theorique} د.م</code>\n` +
+               `🏦 <b>الحقيقي:</b>  <code>${details.montant_reel} د.م</code>\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `📊 <b>الفرق:</b>  ${ecartLabel}` +
+               (details.note ? `\n📝 <b>الملاحظة:</b> <i>${details.note}</i>` : '');
+        break;
+      }
+
       /* ═══ LOGIN ═══ */
       case 'LOGIN': {
         emoji = '🔑';
