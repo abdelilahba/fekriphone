@@ -1,120 +1,199 @@
 .filters {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: var(--transition);
 }
+
 .filter-row {
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
+
 .main-filters {
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
 }
+
+@media (max-width: 992px) {
+  .main-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
 .filter-row .search-box {
-  flex: 1;
-  min-width: 250px;
   position: relative;
+  flex: 1;
 }
+
 .filter-row .search-box .search-icon {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  opacity: 0.5;
+  font-size: 16px;
+  pointer-events: none;
+  opacity: 0.6;
 }
+
 .filter-row .search-box input {
-  padding-right: 38px;
-  height: 42px;
+  padding: 10px 42px 10px 14px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--bg-main);
+  border: 1.5px solid var(--border-light);
+  font-size: 14px;
+  width: 100%;
+  transition: all 0.2s ease;
 }
+
+.filter-row .search-box input:focus {
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px var(--primary-light);
+}
+
 .secondary-filters {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
 }
+
 .filter-select {
-  width: 180px;
-  height: 42px;
-  font-weight: 600;
-  border-color: var(--border-light);
+  min-width: 160px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--bg-main);
+  border: 1.5px solid var(--border-light);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
+
+.filter-select:hover {
+  border-color: var(--primary);
+}
+
 .sort-select {
-  border-left: 3px solid var(--primary);
+  border-right: 4px solid var(--primary);
+  padding-right: 12px;
 }
 
 .action-filters {
-  padding-top: 12px;
+  padding-top: 16px;
   border-top: 1px solid var(--border-light);
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
-.missing-price-btn {
-  background: var(--bg-hover) !important;
-  color: var(--danger) !important;
-  border: 1px dashed var(--danger) !important;
-}
-.missing-price-btn.active {
-  background: var(--danger) !important;
-  color: white !important;
-  border-style: solid !important;
-  animation: pulse-danger 2s infinite;
-}
-
-@keyframes pulse-danger {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-}
-
-/* --- Stock Filters --- */
 .stock-filters {
   display: flex;
   gap: 8px;
-  margin-top: 10px;
 }
 
 .stock-filter-btn {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1.5px solid var(--border);
-  background: var(--bg-card);
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 19px;
+  border: 1.5px solid var(--border-light);
+  background: var(--bg-main);
   color: var(--text-secondary);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .stock-filter-btn:hover {
+  transform: translateY(-2px);
   border-color: var(--primary);
   color: var(--primary);
 }
 
 .stock-filter-btn.active {
+  background: var(--primary);
   border-color: var(--primary);
   color: white;
-  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
 .stock-filter-btn.warning.active {
-  border-color: #f59e0b;
   background: #f59e0b;
-  color: white;
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .stock-filter-btn.danger.active {
+  background: #ef4444;
   border-color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.missing-price-btn {
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  border: 1px dashed #ef4444;
+}
+
+.missing-price-btn.active {
   background: #ef4444;
   color: white;
+  border-style: solid;
+  animation: pulse-danger 2s infinite;
 }
+
+@keyframes pulse-danger {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* --- Table Enhancements --- */
 .table-card {
-  padding: 0;
+  border-radius: var(--radius-md);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
+
+.data-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-hover) !important;
+}
+
+.data-table th {
+  background: var(--bg-main);
+  color: var(--text-secondary);
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px;
+}
+
+.data-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
 .table-responsive {
   overflow-x: auto;
 }
