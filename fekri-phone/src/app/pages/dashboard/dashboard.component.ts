@@ -412,6 +412,26 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const lastMonth = lastMonthDate.getMonth();
     const lastMonthYear = lastMonthDate.getFullYear();
 
+    // 0. Prix manquants (prix_vente = 0 ou prix_achat = 0)
+    const missingPrixVente = produits.filter((p: any) => Number(p.prix_vente) === 0);
+    const missingPrixAchat = produits.filter((p: any) => Number(p.prix_achat) === 0);
+    if (missingPrixVente.length > 0) {
+      alerts.push({
+        type: 'danger', icon: '🏷️',
+        title: missingPrixVente.length + ' منتج ناقصه ثمن البيع!',
+        message: missingPrixVente.slice(0, 3).map((p: any) => p.nom).join('، ') + (missingPrixVente.length > 3 ? ' ...' : '') + ' — خصك تدخل الثمن باش تقدر تبيع!',
+        link: '/produits'
+      });
+    }
+    if (missingPrixAchat.length > 0) {
+      alerts.push({
+        type: 'warning', icon: '💰',
+        title: missingPrixAchat.length + ' منتج ناقصه ثمن الشراء!',
+        message: missingPrixAchat.slice(0, 3).map((p: any) => p.nom).join('، ') + (missingPrixAchat.length > 3 ? ' ...' : '') + ' — بلا ثمن الشراء الربح مش صحيح!',
+        link: '/produits'
+      });
+    }
+
     // 1. Stock critique
     const lowStock = produits.filter((p: any) => p.quantite <= 2 && p.quantite > 0);
     const outOfStock = produits.filter((p: any) => p.quantite <= 0);
