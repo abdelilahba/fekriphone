@@ -30,6 +30,7 @@ export class AppComponent implements OnInit, OnDestroy {
   passwordSuccess = '';
   passwordLoading = false;
   lowStockCount = 0;
+  missingPricesCount = 0;
   showStockToast = false;
   stockToastMessage = '';
 
@@ -533,14 +534,17 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       const produits = await this.supabase.getProduits();
       const lowStock = produits.filter((p: any) => p.quantite <= 5);
-      this.lowStockCount = lowStock.length;
-      if (lowStock.length > 0) {
+      this.missingPricesCount = produits.filter((p: any) => 
+        (Number(p.prix_achat) === 0 || Number(p.prix_vente) === 0)
+      ).length;
+
+      if (lowStock.length > 0 || this.missingPricesCount > 0) {
         const outOfStock = lowStock.filter((p: any) => p.quantite === 0).length;
         const lowOnly = lowStock.length - outOfStock;
-        let msg = '⚠️ تنبيه المخزن: ';
-        if (outOfStock > 0) msg += `${outOfStock} منتج سالي 🔴`;
-        if (outOfStock > 0 && lowOnly > 0) msg += ' و ';
-        if (lowOnly > 0) msg += `${lowOnly} منتج قليل 🟡`;
+        let msg = '⚠️ تنبيه: ';
+        if (outOfStock > 0) msg += `${outOfStock} سالي 🔴 `;
+        if (this.missingPricesCount > 0) msg += `${this.missingPricesCount} ناقصو الثمن 🏷️`;
+        
         this.stockToastMessage = msg;
         this.showStockToast = true;
         this.cdr.detectChanges();

@@ -101,6 +101,11 @@
       <button id="tour-help" class="action-btn circle-btn help-btn" (click)="openGuide()" title="تحتاج مساعدة؟">
         <span>❓</span>
       </button>
+      <button *ngIf="userRole === 'admin' && missingPricesCount > 0" class="action-btn circle-btn notify-btn pulse-glow" routerLink="/produits" title="منتجات خاصهم الثمن!">
+        <span>🏷️</span>
+        <span class="count-badge danger">{{ missingPricesCount }}</span>
+      </button>
+
       <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
         <span>🔍</span>
       </button>
