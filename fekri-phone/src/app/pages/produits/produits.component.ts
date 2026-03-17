@@ -26,6 +26,8 @@ export class ProduitsComponent implements OnInit {
   searchTerm = '';
   filterCategorie = '';
   stockFilter: 'all' | 'low' | 'out' = 'all';
+  sortBy: 'name' | 'price_asc' | 'price_desc' | 'qty_asc' | 'qty_desc' | 'newest' = 'name';
+  priceMissingFilter: 'all' | 'missing' = 'all';
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
   currentPage = 1;
   pageSize = 10;
@@ -104,10 +106,19 @@ export class ProduitsComponent implements OnInit {
     }
     // Stock filter
     if (this.stockFilter === 'out') {
-      result = result.filter(p => p.quantite === 0).sort((a, b) => a.nom.localeCompare(b.nom));
+      result = result.filter(p => p.quantite === 0);
     } else if (this.stockFilter === 'low') {
-      result = result.filter(p => p.quantite > 0 && p.quantite <= 3).sort((a, b) => a.quantite - b.quantite);
+      result = result.filter(p => p.quantite > 0 && p.quantite <= 3);
     }
+
+    // Price missing filter
+    if (this.priceMissingFilter === 'missing') {
+      result = result.filter(p => !p.prix_vente || p.prix_vente === 0 || !p.prix_achat || p.prix_achat === 0);
+    }
+
+    // Sorting
+    result = this.sortProduits(result);
+
     this.filteredProduits$.next(result);
     this.currentPage = 1;
     this.paginate(result);
@@ -116,6 +127,37 @@ export class ProduitsComponent implements OnInit {
   setStockFilter(f: 'all' | 'low' | 'out') {
     this.stockFilter = f;
     this.applyFilter();
+  }
+
+  setSortBy(s: any) {
+    this.sortBy = s;
+    this.applyFilter();
+  }
+
+  togglePriceMissingFilter() {
+    this.priceMissingFilter = this.priceMissingFilter === 'all' ? 'missing' : 'all';
+    this.applyFilter();
+  }
+
+  private sortProduits(list: Produit[]): Produit[] {
+    switch (this.sortBy) {
+      case 'name':
+        return list.sort((a, b) => a.nom.localeCompare(b.nom));
+      case 'price_asc':
+        return list.sort((a, b) => (a.prix_vente || 0) - (b.prix_vente || 0));
+      case 'price_desc':
+        return list.sort((a, b) => (b.prix_vente || 0) - (a.prix_vente || 0));
+      case 'qty_asc':
+        return list.sort((a, b) => a.quantite - b.quantite);
+      case 'qty_desc':
+        return list.sort((a, b) => b.quantite - a.quantite);
+      case 'newest':
+        // Assuming recently added products have higher IDs or we have a created_at field.
+        // If created_at exists, use it. Otherwise, fallback to id string comparison (limited)
+        return list.sort((a, b) => (b.id > a.id ? 1 : -1));
+      default:
+        return list;
+    }
   }
 
   paginate(items?: Produit[]) {

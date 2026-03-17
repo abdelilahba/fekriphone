@@ -28,37 +28,63 @@
 
   <!-- Filters -->
   <div class="filters card" id="tour-prod-list">
-    <div class="filter-row">
+    <div class="filter-row main-filters">
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input
           type="text"
           [(ngModel)]="searchTerm"
           (ngModelChange)="applyFilter()"
-          placeholder="قلّب على منتج..."
+          placeholder="إسم المنتج، باركود..."
           class="form-control"
         />
       </div>
-      <select
-        [(ngModel)]="filterCategorie"
-        (ngModelChange)="applyFilter()"
-        class="form-control filter-select"
-      >
-        <option value="">كل الفئات</option>
-        @for (cat of categories$ | async; track cat.id) {
-          <option [value]="cat.id">{{ cat.nom }}</option>
-        }
-      </select>
+      <div class="secondary-filters">
+        <select
+          [(ngModel)]="filterCategorie"
+          (ngModelChange)="applyFilter()"
+          class="form-control filter-select"
+        >
+          <option value="">كل الفئات</option>
+          @for (cat of categories$ | async; track cat.id) {
+            <option [value]="cat.id">{{ cat.nom }}</option>
+          }
+        </select>
+        
+        <select
+          [(ngModel)]="sortBy"
+          (ngModelChange)="applyFilter()"
+          class="form-control filter-select sort-select"
+        >
+          <option value="name">🔤 الإسم (أ-ي)</option>
+          <option value="price_asc">💰 الثمن (أرخص)</option>
+          <option value="price_desc">💰 الثمن (أغلى)</option>
+          <option value="qty_asc">📦 ستوك (قليل)</option>
+          <option value="qty_desc">📦 ستوك (كثير)</option>
+          <option value="newest">🆕 أحدث المنتجات</option>
+        </select>
+      </div>
     </div>
-    <div class="stock-filters">
-      <button class="stock-filter-btn" [class.active]="stockFilter === 'all'" (click)="setStockFilter('all')">
-        📋 الكل
-      </button>
-      <button class="stock-filter-btn warning" [class.active]="stockFilter === 'low'" (click)="setStockFilter('low')">
-        ⚠️ بقى شوية
-      </button>
-      <button class="stock-filter-btn danger" [class.active]="stockFilter === 'out'" (click)="setStockFilter('out')">
-        🔴 سالات
+    
+    <div class="filter-row action-filters">
+      <div class="stock-filters">
+        <button class="stock-filter-btn" [class.active]="stockFilter === 'all'" (click)="setStockFilter('all')">
+          📋 الكل
+        </button>
+        <button class="stock-filter-btn warning" [class.active]="stockFilter === 'low'" (click)="setStockFilter('low')">
+          ⚠️ بقى شوية
+        </button>
+        <button class="stock-filter-btn danger" [class.active]="stockFilter === 'out'" (click)="setStockFilter('out')">
+          🔴 سالات
+        </button>
+      </div>
+      
+      <button 
+        class="stock-filter-btn missing-price-btn" 
+        [class.active]="priceMissingFilter === 'missing'" 
+        (click)="togglePriceMissingFilter()"
+      >
+        🏷️ خاصو الثمن
       </button>
     </div>
   </div>
