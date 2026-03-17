@@ -1,8 +1,12 @@
 const fs = require('fs');
 
-// Supabase keys (public/anon - safe to include)
+// Supabase keys PRODUCTION (DB de l'ami — ne pas toucher)
 const supabaseUrl = 'https://zdvqqzplcuklajlnhgpt.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdnFxenBsY3VrbGFqbG5oZ3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMTM1MDYsImV4cCI6MjA4NzY4OTUwNn0.Rg6n24mjPYVDxyWhL8zXfEzP184RCEGHHbqEBUDV1dc';
+
+// Supabase keys DEVELOPMENT (mol-sac — DB de test)
+const devSupabaseUrl = 'https://apwfemylhrnpdjaicmby.supabase.co';
+const devSupabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwd2ZlbXlsaHJucGRqYWljbWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MzI1NzAsImV4cCI6MjA4ODQwODU3MH0.sbzZTsPhbyKZ-WAibrFZSG_Ai5GjLuncrLQrCgkPSyE';
 
 // Gemini API Key - MUST be set via environment variable (never hardcoded!)
 // On Vercel: Settings > Environment Variables > GEMINI_API_KEY
@@ -41,8 +45,8 @@ const envFileContent = `export const environment = {
 
 const envDevFileContent = `export const environment = {
   production: false,
-  supabaseUrl: '${supabaseUrl}',
-  supabaseKey: '${supabaseKey}',
+  supabaseUrl: '${devSupabaseUrl}',
+  supabaseKey: '${devSupabaseKey}',
   geminiKey: '${geminiKey}',
   telegramBotToken: '${telegramBotToken}',
   telegramChatId: '${telegramChatId}'

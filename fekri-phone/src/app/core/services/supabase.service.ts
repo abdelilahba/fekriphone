@@ -384,21 +384,27 @@ export class SupabaseService {
     const { data, error } = await this.supabase
       .from('produits')
       .insert(produit)
-      .select('*, categories(nom)')
+      .select('*')
       .single();
     if (error) throw error;
-    return data;
+    // Re-fetch with categories join
+    const { data: full, error: e2 } = await this.supabase
+      .from('produits').select('*, categories(nom)').eq('id', data.id).single();
+    if (e2) return data;
+    return full;
   }
 
   async updateProduit(id: string, produit: any) {
-    const { data, error } = await this.supabase
+    const { error } = await this.supabase
       .from('produits')
       .update({ ...produit, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select('*, categories(nom)')
-      .single();
+      .eq('id', id);
     if (error) throw error;
-    return data;
+    // Re-fetch with categories join
+    const { data: full, error: e2 } = await this.supabase
+      .from('produits').select('*, categories(nom)').eq('id', id).single();
+    if (e2) throw e2;
+    return full;
   }
 
   async deleteProduit(id: string) {
