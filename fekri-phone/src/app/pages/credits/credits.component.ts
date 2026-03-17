@@ -24,7 +24,7 @@ export class CreditsComponent implements OnInit {
   showPayModal = false;
   editMode = false;
   filterPaye = 'non_paye';
-  selectedDate: string = new Date().toISOString().split('T')[0];
+  selectedDate: string = '';
   currentPage = 1;
   pageSize = 10;
   totalPages = 1;
@@ -54,8 +54,6 @@ export class CreditsComponent implements OnInit {
       // Admin gets all credits, employee gets only theirs
       const userIdToFetch = this.userRole === 'admin' ? undefined : (this.currentUserId || undefined);
       this.allCredits = await this.supabase.getCredits(userIdToFetch);
-      const total = this.allCredits.filter(c => !c.est_paye).reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
-      this.totalNonPaye$.next(total);
       this.applyFilter();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
@@ -75,6 +73,10 @@ export class CreditsComponent implements OnInit {
     }
 
     this.filteredCredits$.next(result);
+    // Update the total based on the filtered list so it matches what the user sees
+    const total = result.filter(c => !c.est_paye).reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
+    this.totalNonPaye$.next(total);
+
     this.currentPage = 1;
     this.paginate(result);
   }
