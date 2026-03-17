@@ -191,7 +191,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.focusSearchNeedsTrigger = true;
   }
 
-  private applyProductFilter() {
+  private async applyProductFilter() {
     let result = [...this.allProduits];
     if (this.showLowStock) {
       result = result.filter(p => p.quantite <= 3).sort((a, b) => a.quantite - b.quantite);
@@ -207,7 +207,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       );
       // Auto-add barcode match
       if (result.length === 1 && result[0].code_barre === this.searchTerm) {
-        this.addToCart(result[0]);
+        await this.addToCart(result[0]);
         this.searchTerm = '';
         this.applyProductFilter();
         this.focusSearchNeedsTrigger = true;
@@ -222,7 +222,28 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     return cat?.icone || '📦';
   }
 
-  addToCart(p: Produit) {
+  async addToCart(p: Produit) {
+    // If product has no price, ask the employee to enter it
+    if (!p.prix_vente || p.prix_vente === 0) {
+      const { value: price } = await Swal.fire({
+        title: 'دخل ثمن البيع 💰',
+        text: `هاد المنتج (${p.nom}) ماعندوش ثمن، شحال غتبيعو؟`,
+        input: 'number',
+        inputAttributes: {
+          min: '1',
+          step: '1'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'تأكيد',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: 'var(--primary)',
+        heightAuto: false
+      });
+      
+      if (price === undefined || price === null || price === '') return;
+      p.prix_vente = Number(price);
+    }
+
     const existing = this.cart.find(c => c.produit_id === p.id);
     if (existing) {
       if (existing.quantite < p.quantite) {
@@ -270,14 +291,14 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     if (item) this.decrementCartItem(item);
   }
 
-  incrementCartItem(item: CartItem) {
+  async incrementCartItem(item: CartItem) {
     const p = this.allProduits.find(pr => pr.id === item.produit_id);
-    if (p) this.addToCart(p);
+    if (p) await this.addToCart(p);
   }
 
-  incrementCartByProductId(productId: string) {
+  async incrementCartByProductId(productId: string) {
     const p = this.allProduits.find(pr => pr.id === productId);
-    if (p) this.addToCart(p);
+    if (p) await this.addToCart(p);
   }
 
   getCartQty(productId: string): number {
@@ -360,10 +381,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  applyUpsell() {
+  async applyUpsell() {
     if (!this.upsellSuggestion) return;
     for (const p of this.upsellSuggestion.products) {
-      this.addToCart(p);
+      await this.addToCart(p);
       // Give the discount to the newly added item
       setTimeout(() => {
         const item = this.cart.find(c => c.produit_id === p.id);
