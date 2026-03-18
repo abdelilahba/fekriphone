@@ -8,6 +8,12 @@
   <div class="page-header">
     <h1>📝 الديون</h1>
     <div style="display: flex; gap: 10px; align-items: center;">
+      <select [(ngModel)]="selectedClientId" (ngModelChange)="applyFilter()" class="form-control" style="width: 200px;">
+        <option value="">-- كل الزبناء --</option>
+        @for (client of allClients; track client.id) {
+          <option [value]="client.id">{{ client.nom }}</option>
+        }
+      </select>
       <input type="date" [(ngModel)]="selectedDate" (ngModelChange)="applyFilter()" class="form-control" style="width: 150px;">
       <button class="btn btn-primary" (click)="openAdd()">➕ زيد دين</button>
     </div>
