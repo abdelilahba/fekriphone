@@ -46,10 +46,10 @@ export class CreditsComponent implements OnInit {
     this.auth.user$.subscribe(user => {
       this.currentUserId = user ? user.id : null;
     });
-    this.auth.userRole$.subscribe(role => {
+    this.auth.userRole$.subscribe(async role => {
       this.userRole = role;
       await this.loadClients();
-      this.loadData(); 
+      await this.loadData(); 
     });
   }
 

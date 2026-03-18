@@ -238,9 +238,11 @@ export class RapportComponent implements OnInit {
     // Credits detail
     if (report.creditsList.length > 0) {
       csv += '--- تفاصيل الديون ---\n';
-      csv += '#,الزبون,الوصف,المبلغ\n';
+      csv += '#,الزبون,الوصف,المبلغ الكلي,الباقي\n';
       report.creditsList.forEach((c: any, i: number) => {
-        csv += (i + 1) + ',"' + c.nom_client + '","' + c.description + '",' + c.montant + '\n';
+        const clientName = c.clients?.nom || c.nom_client || '—';
+        const reste = Number(c.montant) - Number(c.montant_paye);
+        csv += (i + 1) + ',"' + clientName + '","' + c.description + '",' + c.montant + ',' + reste + '\n';
       });
     }
 

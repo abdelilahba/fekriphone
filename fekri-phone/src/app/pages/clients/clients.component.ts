@@ -31,7 +31,8 @@ export class ClientsComponent implements OnInit {
   loadingCredits$ = new BehaviorSubject<boolean>(false);
   
   private currentUserId: string | null = null;
-  private userRole: string = 'employee';
+  userRole: string = 'employee';
+  private allCredits: any[] = [];
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
@@ -48,9 +49,13 @@ export class ClientsComponent implements OnInit {
   async loadData() {
     try {
       this.loading$.next(true);
-      const clients = await this.supabase.getClients();
+      const [clients, credits] = await Promise.all([
+        this.supabase.getClients(),
+        this.supabase.getCredits()
+      ]);
       this.allClients = clients;
       this.clients$.next(clients);
+      this.allCredits = credits;
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
@@ -136,9 +141,9 @@ export class ClientsComponent implements OnInit {
   }
 
   getClientStats(clientId: string): { totalCredits: number; totalNonPaye: number; creditsCount: number } {
-    const credits = this.allCredits.filter(c => c.client_id === clientId);
-    const totalCredits = credits.reduce((s, c) => s + Number(c.montant), 0);
-    const totalNonPaye = credits.reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
+    const credits = this.allCredits.filter((c: any) => c.client_id === clientId);
+    const totalCredits = credits.reduce((s: number, c: any) => s + Number(c.montant), 0);
+    const totalNonPaye = credits.reduce((s: number, c: any) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
     return { totalCredits, totalNonPaye, creditsCount: credits.length };
   }
 

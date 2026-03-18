@@ -50,9 +50,9 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   userRole = 'admin';
   selectedDate: string = new Date().toISOString().split('T')[0];
   allVentesData: Vente[] = [];
-
+ 
   private cart: CartItem[] = [];
-
+ 
   @ViewChild('searchInput') searchInput!: ElementRef;
   private focusSearchNeedsTrigger = false;
 

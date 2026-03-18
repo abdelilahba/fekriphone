@@ -258,7 +258,7 @@
           @for (c of report.creditsList; track c.id; let i = $index) {
           <tr>
             <td>{{ i + 1 }}</td>
-            <td>{{ c.nom_client }}</td>
+            <td>{{ c.clients?.nom || c.nom_client }}</td>
             <td>{{ c.description }}</td>
             <td class="amount warning">{{ formatMAD(c.montant) }}</td>
           </tr>
