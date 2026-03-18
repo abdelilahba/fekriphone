@@ -128,6 +128,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { path: '/avances', icon: '💰', label: 'دفع (أربكة)', exact: false, roles: ['admin', 'employee'] },
     { path: '/pertes', icon: '💔', label: 'المنتجات التالفة', exact: false, roles: ['admin'] },
     { path: '/credits', icon: '📋', label: 'الديون', exact: false, roles: ['admin', 'employee'] },
+    { path: '/clients', icon: '👥', label: 'الزبائن', exact: false, roles: ['admin', 'employee'] },
     { path: '/categories', icon: '🏷️', label: 'الفئات', exact: false, roles: ['admin'] },
     { path: '/suivi', icon: '📡', label: 'مراقبة الموظفين', exact: false, roles: ['admin'] },
     { path: '/cloture', icon: '🔒', label: 'سدان الصندوق', exact: false, roles: ['admin', 'employee'] },

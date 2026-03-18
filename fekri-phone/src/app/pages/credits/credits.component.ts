@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
-import { Credit } from '../../core/models/models';
+import { Credit, Client } from '../../core/models/models';
 
 @Component({
   selector: 'app-credits',
@@ -22,6 +22,7 @@ export class CreditsComponent implements OnInit {
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
   showModal = false;
   showPayModal = false;
+  showHistoryModal = false;
   editMode = false;
   filterPaye = 'non_paye';
   selectedDate: string = '';
@@ -30,30 +31,42 @@ export class CreditsComponent implements OnInit {
   totalPages = 1;
   paginatedCredits$ = new BehaviorSubject<Credit[]>([]);
 
-  form = { id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: '' };
-  payForm = { id: '', montant_a_payer: 0, reste: 0 };
+  allClients: Client[] = [];
+  creditHistory: any[] = [];
+
+  form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: '' };
+  payForm = { id: '', montant_a_payer: 0, reste: 0, date: '' };
   
   private currentUserId: string | null = null;
   private userRole: string = 'employee';
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
-  ngOnInit() { 
+  async ngOnInit() { 
     this.auth.user$.subscribe(user => {
       this.currentUserId = user ? user.id : null;
     });
     this.auth.userRole$.subscribe(role => {
       this.userRole = role;
+      await this.loadClients();
       this.loadData(); 
     });
+  }
+
+  async loadClients() {
+    try {
+      this.allClients = await this.supabase.getClients();
+    } catch (e) {
+      console.error('Error loading clients', e);
+    }
   }
 
   async loadData() {
     try {
       this.loading$.next(true);
-      // Admin gets all credits, employee gets only theirs
       const userIdToFetch = this.userRole === 'admin' ? undefined : (this.currentUserId || undefined);
-      this.allCredits = await this.supabase.getCredits(userIdToFetch);
+      const credits = await this.supabase.getCredits(userIdToFetch);
+      this.allCredits = credits;
       this.applyFilter();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
@@ -73,9 +86,7 @@ export class CreditsComponent implements OnInit {
     }
 
     this.filteredCredits$.next(result);
-    // Update the total based on the filtered list so it matches what the user sees
-    const total = result.filter(c => !c.est_paye).reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
-    this.totalNonPaye$.next(total);
+    this.totalNonPaye$.next(result.filter(c => !c.est_paye).reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0));
 
     this.currentPage = 1;
     this.paginate(result);
@@ -92,36 +103,69 @@ export class CreditsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: new Date().toISOString().split('T')[0] };
     this.showModal = true;
   }
 
   openEdit(c: Credit) {
     this.editMode = true;
-    this.form = { id: c.id, nom_client: c.nom_client, telephone_client: c.telephone_client || '', description: c.description, montant: c.montant, montant_paye: c.montant_paye, date: c.date };
+    this.form = { 
+      id: c.id, 
+      client_id: c.client_id || '', 
+      nom_client: c.nom_client, 
+      telephone_client: c.telephone_client || '', 
+      description: c.description, 
+      montant: c.montant, 
+      montant_paye: c.montant_paye, 
+      date: c.date 
+    };
     this.showModal = true;
   }
 
   openPay(c: Credit) {
     const reste = Number(c.montant) - Number(c.montant_paye);
-    this.payForm = { id: c.id, montant_a_payer: reste, reste };
+    this.payForm = { id: c.id, montant_a_payer: reste, reste, date: new Date().toISOString().split('T')[0] };
     this.showPayModal = true;
+  }
+
+  async openHistory(c: Credit) {
+    try {
+      this.creditHistory = await this.supabase.getCreditPaiements(c.id);
+      this.showHistoryModal = true;
+    } catch (error) {
+      this.showToast('خطأ فالتحميل ديال التاريخ', 'error');
+    }
+  }
+
+  onClientChange() {
+    const selectedClient = this.allClients.find(cl => cl.id === this.form.client_id);
+    if (selectedClient) {
+      this.form.nom_client = selectedClient.nom;
+      this.form.telephone_client = selectedClient.telephone || '';
+    }
   }
 
   closeModal() { this.showModal = false; }
   closePayModal() { this.showPayModal = false; }
+  closeHistoryModal() { this.showHistoryModal = false; }
 
   async save() {
     if (!this.form.nom_client || !this.form.description || !this.form.montant) {
-      this.showToast('خصك تدخل الإسم والوصف والمبلغ', 'error');
+      this.showToast('خصك تدخل الزبون والوصف والمبلغ', 'error');
       return;
     }
     try {
       const data: any = {
-        nom_client: this.form.nom_client, telephone_client: this.form.telephone_client || null,
-        description: this.form.description, montant: this.form.montant, montant_paye: this.form.montant_paye,
-        est_paye: this.form.montant_paye >= this.form.montant, date: this.form.date
+        client_id: this.form.client_id || null,
+        nom_client: this.form.nom_client, 
+        telephone_client: this.form.telephone_client, 
+        description: this.form.description, 
+        montant: this.form.montant, 
+        montant_paye: this.form.montant_paye,
+        est_paye: Number(this.form.montant_paye) >= Number(this.form.montant), 
+        date: this.form.date 
       };
+
       if (this.editMode) {
         await this.supabase.updateCredit(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
@@ -130,24 +174,40 @@ export class CreditsComponent implements OnInit {
         this.showToast('تزاد بنجاح ✅', 'success');
       }
       this.closeModal();
+      await this.loadClients();
       await this.loadData();
-    } catch (error) {
-      this.showToast('وقع مشكل', 'error');
-    }
+    } catch (error) { this.showToast('وقع مشكل', 'error'); }
   }
 
   async pay() {
     try {
       const credit = this.allCredits.find(c => c.id === this.payForm.id);
       if (!credit) return;
-      const newPaye = Number(credit.montant_paye) + Number(this.payForm.montant_a_payer);
-      await this.supabase.updateCredit(this.payForm.id, { montant_paye: newPaye, est_paye: newPaye >= Number(credit.montant) });
+      
+      const nouveauMontant = Number(credit.montant_paye) + Number(this.payForm.montant_a_payer);
+      
+      await this.supabase.addPaiement(this.payForm.id, Number(this.payForm.montant_a_payer), this.payForm.date);
+      
+      await this.supabase.updateCredit(this.payForm.id, { 
+        montant_paye: nouveauMontant, 
+        est_paye: nouveauMontant >= credit.montant 
+      });
+      
       this.showToast('تخلص بنجاح ✅', 'success');
       this.closePayModal();
       await this.loadData();
-    } catch (error) {
-      this.showToast('وقع مشكل', 'error');
+    } catch (error) { this.showToast('وقع مشكل', 'error'); }
+  }
+
+  sendWhatsApp(c: Credit) {
+    if (!c.telephone_client) {
+      this.showToast('ما كاينش نمرة التليفون', 'error');
+      return;
     }
+    const reste = this.getReste(c);
+    const message = `السلام عليكم ${c.nom_client}, بغيت نفكرك فالدين اللي بيناتنا (${c.description}). الباقي هو ${reste} د.م. شكرا.`;
+    const url = `https://wa.me/212${c.telephone_client.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   }
 
   async delete(c: Credit) {
@@ -166,12 +226,11 @@ export class CreditsComponent implements OnInit {
       await this.supabase.deleteCredit(c.id);
       this.showToast('تمسح ✅', 'success');
       await this.loadData();
-    } catch (error) {
-      this.showToast('وقع مشكل', 'error');
-    }
+    } catch (error) { this.showToast('وقع مشكل', 'error'); }
   }
 
   getReste(c: Credit): number { return Number(c.montant) - Number(c.montant_paye); }
+
   formatMAD(a: number): string { return Number(a).toLocaleString('ar-MA') + ' د.م'; }
   showToast(msg: string, type: string) {
     this.toastMessage$.next({ message: msg, type });

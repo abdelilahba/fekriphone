@@ -1,0 +1,125 @@
+.clients-page {
+  padding: 20px;
+}
+
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.client-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.client-header {
+  margin-bottom: 12px;
+}
+
+.client-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+}
+
+.phone {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.adresse {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 8px 0;
+}
+
+.client-stats {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.stat-value.danger {
+  color: var(--danger);
+}
+
+.client-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.credits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.credit-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 4px solid var(--danger);
+}
+
+.credit-item.paid {
+  border-left-color: var(--success);
+}
+
+.credit-info {
+  flex: 1;
+}
+
+.credit-info .badge {
+  margin-bottom: 4px;
+}
+
+.credit-desc {
+  margin: 4px 0 0 0;
+  font-size: 0.9rem;
+}
+
+.credit-amounts {
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+.credit-amounts .reste {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.credit-date {
+  text-align: right;
+  color: var(--text-secondary);
+}
+
+.modal-lg {
+  max-width: 600px;
+}

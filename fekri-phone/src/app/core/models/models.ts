@@ -76,6 +76,7 @@ export interface Avance {
 
 export interface Credit {
   id: string;
+  client_id: string | null;
   nom_client: string;
   telephone_client: string | null;
   description: string;
@@ -85,6 +86,25 @@ export interface Credit {
   date: string;
   created_at: string;
   updated_at: string;
+  // Joined
+  clients?: Client;
+  credit_paiements?: CreditPaiement[];
+}
+
+export interface Client {
+  id: string;
+  nom: string;
+  telephone: string | null;
+  adresse: string | null;
+  created_at: string;
+}
+
+export interface CreditPaiement {
+  id: string;
+  credit_id: string;
+  montant: number;
+  date: string;
+  created_at: string;
 }
 
 export interface Perte {

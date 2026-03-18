@@ -428,7 +428,11 @@ export class SupabaseService {
   async addVente(montantTotal: number, profitTotal: number, items: any[], userId?: string) {
     const { data: vente, error: venteError } = await this.supabase
       .from('ventes')
-      .insert({ montant_total: montantTotal, profit_total: profitTotal, user_id: userId })
+      .insert({ 
+        montant_total: montantTotal, 
+        profit_total: profitTotal, 
+        user_id: userId 
+      })
       .select()
       .single();
     if (venteError) throw venteError;
@@ -688,9 +692,11 @@ export class SupabaseService {
     this.refreshService.triggerRefresh();
   }
 
-  // ==================== Credits ====================
   async getCredits(userId?: string) {
-    let query = this.supabase.from('credits').select('*').order('created_at', { ascending: false });
+    let query = this.supabase
+      .from('credits')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (userId) {
       query = query.eq('user_id', userId);
     }
@@ -729,7 +735,80 @@ export class SupabaseService {
     if (error) throw error;
   }
 
-  // ==================== Pertes (Produits défectueux) ====================
+  // ==================== Clients ====================
+  async getClients() {
+    const { data, error } = await this.supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
+  async addClient(client: any) {
+    const { data, error } = await this.supabase
+      .from('clients')
+      .insert(client)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async updateClient(id: string, client: any) {
+    const { data, error } = await this.supabase
+      .from('clients')
+      .update(client)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteClient(id: string) {
+    const { error } = await this.supabase
+      .from('clients')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  async getClientCredits(clientId: string) {
+    const { data, error } = await this.supabase
+      .from('credits')
+      .select('*, credit_paiements(*)')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
+  async getCreditPaiements(creditId: string) {
+    const { data, error } = await this.supabase
+      .from('credit_paiements')
+      .select('*')
+      .eq('credit_id', creditId)
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
+  async addPaiement(creditId: string, montant: number, date?: string) {
+    const { data, error } = await this.supabase
+      .from('credit_paiements')
+      .insert({
+        credit_id: creditId,
+        montant: montant,
+        date: date || new Date().toISOString().split('T')[0]
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // ==================== Categories ====================
   async getPertes() {
     const { data, error } = await this.supabase
       .from('pertes')

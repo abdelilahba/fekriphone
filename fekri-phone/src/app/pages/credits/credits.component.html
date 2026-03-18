@@ -22,136 +22,164 @@
   </div>
 
   <div class="filter-tabs">
-    <button class="tab" [class.active]="filterPaye === 'non_paye'" (click)="filterPaye = 'non_paye'; applyFilter()">🔴
-      ما تخلصوش</button>
-    <button class="tab" [class.active]="filterPaye === 'paye'" (click)="filterPaye = 'paye'; applyFilter()">🟢
-      تخلصو</button>
-    <button class="tab" [class.active]="filterPaye === 'tous'"
-      (click)="filterPaye = 'tous'; applyFilter()">الكل</button>
+    <button class="tab" [class.active]="filterPaye === 'non_paye'" (click)="filterPaye = 'non_paye'; applyFilter()">🔴 ما تخلصوش</button>
+    <button class="tab" [class.active]="filterPaye === 'paye'" (click)="filterPaye = 'paye'; applyFilter()">🟢 تخلصو</button>
+    <button class="tab" [class.active]="filterPaye === 'tous'" (click)="filterPaye = 'tous'; applyFilter()">الكل</button>
   </div>
 
   @if (loading$ | async) {
-  <div class="skeleton-loader">
-    <div class="skeleton-row short"></div>
-    <div class="skeleton-row"></div>
-    <div class="skeleton-row tall"></div>
-    <div class="skeleton-row"></div>
-  </div>
-  } @else {
-  @if (filteredCredits$ | async; as allCredits) {
-  @if (allCredits.length > 0) {
-  <div class="credits-grid">
-    @for (c of paginatedCredits$ | async; track c.id) {
-    <div class="credit-card card" [class.paid]="c.est_paye">
-      <div class="credit-header">
-        <div class="client-info">
-          <h3>👤 {{ c.nom_client }}</h3>
-          @if (c.telephone_client) { <span class="phone">📞 {{ c.telephone_client }}</span> }
-        </div>
-        <span class="badge" [class]="c.est_paye ? 'badge-success' : 'badge-danger'">
-          {{ c.est_paye ? 'تخلص ✅' : 'ما تخلصش ❌' }}
-        </span>
-      </div>
-      <p class="credit-desc">{{ c.description }}</p>
-      <div class="credit-amounts">
-        <div class="amount-row"><span>المبلغ الكلي:</span><strong>{{ formatMAD(c.montant) }}</strong></div>
-        @if (c.montant_paye > 0) {
-        <div class="amount-row"><span>اللي دفع:</span><strong class="paid-amount">{{ formatMAD(c.montant_paye)
-            }}</strong></div>
-        }
-        @if (!c.est_paye) {
-        <div class="amount-row reste"><span>الباقي:</span><strong>{{ formatMAD(getReste(c)) }}</strong></div>
-        }
-      </div>
-      <div class="credit-footer">
-        <span class="date">📅 {{ c.date }}</span>
-        <div class="actions">
-          @if (!c.est_paye) { <button class="btn btn-success btn-sm" (click)="openPay(c)">💰 خلّص</button> }
-          <button class="btn btn-ghost btn-sm" (click)="openEdit(c)">✏️</button>
-          <button class="btn btn-ghost btn-sm" (click)="delete(c)">🗑️</button>
-        </div>
-      </div>
+    <div class="skeleton-loader">
+      <div class="skeleton-row short"></div>
+      <div class="skeleton-row"></div>
     </div>
-    }
-  </div>
-  <div class="pagination" style="margin-top: 16px;">
-    <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 18l6-6-6-6" />
-      </svg>
-    </button>
-    <div class="page-numbers">
-      @for (p of getPages(); track p) {
-      <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+  } @else {
+    @if (filteredCredits$ | async; as allCredits) {
+      @if (allCredits.length > 0) {
+        <div class="credits-grid">
+          @for (c of paginatedCredits$ | async; track c.id) {
+            <div class="credit-card card" [class.paid]="c.est_paye">
+              <div class="credit-header">
+                <h3>👤 {{ c.nom_client }}</h3>
+                <span class="badge" [class]="c.est_paye ? 'badge-success' : 'badge-danger'">
+                  {{ c.est_paye ? 'تخلص ✅' : 'ما تخلصش ❌' }}
+                </span>
+              </div>
+              
+              <p class="credit-desc">{{ c.description }}</p>
+              @if (c.telephone_client) { <span class="phone">📞 {{ c.telephone_client }}</span> }
+
+              <div class="credit-amounts">
+                <div class="amount-row"><span>المبلغ الكلي:</span><strong>{{ formatMAD(c.montant) }}</strong></div>
+                @if (c.montant_paye > 0) {
+                <div class="amount-row"><span>اللي دفع:</span><strong class="paid-amount">{{ formatMAD(c.montant_paye) }}</strong></div>
+                }
+                @if (!c.est_paye) {
+                <div class="amount-row reste"><span>الباقي:</span><strong>{{ formatMAD(getReste(c)) }}</strong></div>
+                }
+              </div>
+
+              <div class="credit-footer">
+                <span class="date">📅 {{ c.date }}</span>
+                <div class="actions">
+                  @if (c.montant_paye > 0) {
+                    <button class="btn btn-ghost btn-sm" (click)="openHistory(c)" title="تاريخ الدفعات">📜</button>
+                  }
+                  @if (c.telephone_client) {
+                    <button class="btn btn-ghost btn-sm" (click)="sendWhatsApp(c)" title="WhatsApp Reminder">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.67-1.611-.917-2.206-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </button>
+                  }
+                  @if (!c.est_paye) { <button class="btn btn-success btn-sm" (click)="openPay(c)">💰 خلّص</button> }
+                  <button class="btn btn-ghost btn-sm" (click)="openEdit(c)">✏️</button>
+                  <button class="btn btn-ghost btn-sm" (click)="delete(c)">🗑️</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        
+        <div class="pagination" style="margin-top: 16px;">
+          <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6" /></svg>
+          </button>
+          <div class="page-numbers">
+            @for (p of getPages(); track p) {
+              <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+            }
+          </div>
+          <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" /></svg>
+          </button>
+        </div>
+      } @else {
+        <div class="card empty-state">
+          <div class="empty-icon">📝</div>
+          <h3>حتا دين ما مطابق للبحث</h3>
+        </div>
       }
-    </div>
-    <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M15 18l-6-6 6-6" />
-      </svg>
-    </button>
-    <div class="pagination-info">إجمالي: {{ allCredits.length }} دين</div>
-  </div>
-  } @else {
-  <div class="card empty-state">
-    <div class="empty-icon">📝</div>
-    <h3>ما كاين حتا دين</h3>
-    <p>الحمد لله 😄</p>
-  </div>
-  }
-  }
+    }
   }
 
+  <!-- Modals -->
   @if (showModal) {
-  <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ editMode ? '✏️ عدّل الدين' : '➕ زيد دين جديد' }}</h2>
-        <button class="close-btn" (click)="closeModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group"><label>إسم الزبون *</label><input type="text" [(ngModel)]="form.nom_client"
-              class="form-control" placeholder="مثلا: أحمد"></div>
-          <div class="form-group"><label>رقم الهاتف</label><input type="tel" [(ngModel)]="form.telephone_client"
-              class="form-control" placeholder="06XXXXXXXX"></div>
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editMode ? '✏️ عدّل الدين' : '➕ زيد دين جديد' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
         </div>
-        <div class="form-group"><label>الوصف *</label><input type="text" [(ngModel)]="form.description"
-            class="form-control" placeholder="مثلا: iPhone 15 بالكريدي"></div>
-        <div class="form-row">
-          <div class="form-group"><label>المبلغ (د.م) *</label><input type="number" [(ngModel)]="form.montant"
-              class="form-control" min="0"></div>
-          <div class="form-group"><label>اللي دفع (د.م)</label><input type="number" [(ngModel)]="form.montant_paye"
-              class="form-control" min="0"></div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>الزبون *</label>
+            @if (allClients.length > 0) {
+              <select [(ngModel)]="form.client_id" (ngModelChange)="onClientChange()" class="form-control">
+                <option value="">-- اختار الزبون --</option>
+                @for (client of allClients; track client.id) {
+                  <option [value]="client.id">{{ client.nom }}{{ client.telephone ? ' - ' + client.telephone : '' }}</option>
+                }
+              </select>
+            }
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>إسم الزبون *</label>
+              <input type="text" [(ngModel)]="form.nom_client" class="form-control" placeholder="مثلا: أحمد"></div>
+            <div class="form-group"><label>رقم الهاتف</label>
+              <input type="tel" [(ngModel)]="form.telephone_client" class="form-control" placeholder="06XXXXXXXX"></div>
+          </div>
+          <div class="form-group"><label>الوصف (شنو خدا بالكريدي) *</label>
+            <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="مثلا: iPhone 15"></div>
+          <div class="form-row">
+            <div class="form-group"><label>المبلغ الكلي (د.م) *</label><input type="number" [(ngModel)]="form.montant" class="form-control" min="0"></div>
+            <div class="form-group"><label>اللي دفع دابا (د.م)</label><input type="number" [(ngModel)]="form.montant_paye" class="form-control" min="0" [disabled]="editMode"></div>
+          </div>
+          <div class="form-group"><label>التاريخ</label><input type="date" [(ngModel)]="form.date" class="form-control"></div>
         </div>
-        <div class="form-group"><label>التاريخ</label><input type="date" [(ngModel)]="form.date" class="form-control">
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
+          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
-        <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
       </div>
     </div>
-  </div>
   }
 
   @if (showPayModal) {
-  <div class="modal-overlay" (click)="closePayModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>💰 خلّص الدين</h2>
-        <button class="close-btn" (click)="closePayModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="pay-info">الباقي: <strong>{{ formatMAD(payForm.reste) }}</strong></p>
-        <div class="form-group"><label>المبلغ اللي بغا يخلص (د.م)</label><input type="number"
-            [(ngModel)]="payForm.montant_a_payer" class="form-control" [max]="payForm.reste" min="0"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" (click)="pay()">💰 خلّص</button>
-        <button class="btn btn-ghost" (click)="closePayModal()">إلغاء</button>
+    <div class="modal-overlay" (click)="closePayModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h2>💰 خلّص جزء من الدين</h2><button class="close-btn" (click)="closePayModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="reste-info">الباقي: <strong>{{ formatMAD(payForm.reste) }}</strong></div>
+          <div class="form-group"><label>المبلغ اللي غايخلص دابا (د.م) *</label>
+            <input type="number" [(ngModel)]="payForm.montant_a_payer" class="form-control" [max]="payForm.reste" min="1"></div>
+          <div class="form-group"><label>تاريخ الدفعة</label>
+            <input type="date" [(ngModel)]="payForm.date" class="form-control"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" (click)="pay()">💰 تسجل الدفعة</button>
+          <button class="btn btn-ghost" (click)="closePayModal()">إلغاء</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
+
+  @if (showHistoryModal) {
+    <div class="modal-overlay" (click)="closeHistoryModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h2>📜 تاريخ الدفعات</h2><button class="close-btn" (click)="closeHistoryModal()">✕</button></div>
+        <div class="modal-body">
+          @if (creditHistory.length > 0) {
+            <div class="history-list">
+              @for (p of creditHistory; track p.id) {
+                <div class="history-item">
+                  <span class="history-date">📅 {{ p.date }}</span>
+                  <span class="history-amount">{{ formatMAD(p.montant) }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty-state">ما عنده حتى دفعات!</p>
+          }
+        </div>
+      </div>
+    </div>
   }
 </div>
