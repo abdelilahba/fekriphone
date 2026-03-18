@@ -1,32 +1,78 @@
 <div class="clients-page">
+  <!-- Toast Notifications -->
   @if (toastMessage$ | async; as toast) {
-  <div class="toast-container">
-    <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
-  </div>
+    <div class="toast-container">
+      <div class="toast" [class]="'toast-' + toast.type">{{ toast.message }}</div>
+    </div>
   }
 
+  <!-- Page Header -->
   <div class="page-header">
-    <h1>👥 الزبائن</h1>
-    <button class="btn btn-primary" (click)="openAdd()">➕ زيد زبون</button>
+    <h1>👥 {{ 'الزبائن' }}</h1>
+    <button class="btn btn-primary btn-lg" (click)="openAdd()">
+      ➕ <span style="margin-right: 8px;">زيد زبون جديد</span>
+    </button>
   </div>
 
+  <!-- Stats Summary Cards -->
+  @if (clients$ | async; as allClients) {
+    <div class="stats-summary">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">👤</div>
+        <div class="stat-info">
+          <h3>{{ allClients.length }}</h3>
+          <p>إجمالي الزبائن</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">💸</div>
+        <div class="stat-info">
+          <h3>{{ formatMAD(getTotalCreditsGlobal()) }}</h3>
+          <p>مجموع الديون الخارجية</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Search and Filtering -->
+  <div class="search-container">
+    <span class="search-icon">🔍</span>
+    <input 
+      type="text" 
+      class="search-input" 
+      placeholder="بحث بالسمية أو نمرة التليفون..." 
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="applyFilter()">
+  </div>
+
+  <!-- Main Content -->
   @if (loading$ | async) {
     <div class="skeleton-loader">
       <div class="skeleton-row short"></div>
       <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
     </div>
   } @else {
-    @if (clients$ | async; as allClients) {
-      @if (allClients.length > 0) {
+    @if (filteredClients$ | async; as clients) {
+      @if (clients.length > 0) {
         <div class="clients-grid">
-          @for (c of allClients; track c.id) {
-            <div class="client-card card">
+          @for (c of clients; track c.id) {
+            <div class="client-card">
               <div class="client-header">
-                <h3>👤 {{ c.nom }}</h3>
-                @if (c.telephone) { <span class="phone">📞 {{ c.telephone }}</span> }
+                <div class="client-info">
+                  <h3>👤 {{ c.nom }}</h3>
+                  @if (c.telephone) {
+                    <span class="phone">📞 {{ c.telephone }}</span>
+                  }
+                </div>
+                <div class="badge" [class]="getClientStats(c.id).totalNonPaye > 0 ? 'badge-danger' : 'badge-success'">
+                  {{ getClientStats(c.id).totalNonPaye > 0 ? 'كريدي' : 'مريڭل' }}
+                </div>
               </div>
               
-              @if (c.adresse) { <p class="adresse">{{ c.adresse }}</p> }
+              @if (c.adresse) {
+                <div class="adresse">📍 {{ c.adresse }}</div>
+              }
 
               <div class="client-stats">
                 <div class="stat-item">
@@ -35,15 +81,19 @@
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">الباقي</span>
-                  <span class="stat-value danger">{{ formatMAD(getClientStats(c.id).totalNonPaye) }}</span>
+                  <span class="stat-value" [class.danger]="getClientStats(c.id).totalNonPaye > 0">
+                    {{ formatMAD(getClientStats(c.id).totalNonPaye) }}
+                  </span>
                 </div>
               </div>
 
               <div class="client-actions">
-                <button class="btn btn-secondary btn-sm" (click)="loadClientCredits(c)">📋 شوف الديون</button>
-                <button class="btn btn-ghost btn-sm" (click)="openEdit(c)">✏️</button>
+                <button class="btn-view-credits" (click)="loadClientCredits(c)">
+                  📋 <span style="margin-right: 4px;">تفاصيل الديون</span>
+                </button>
+                <button class="btn btn-ghost btn-sm" (click)="openEdit(c)" title="تعديل">✏️</button>
                 @if (userRole === 'admin') {
-                  <button class="btn btn-ghost btn-sm" (click)="delete(c)">🗑️</button>
+                  <button class="btn btn-ghost btn-sm" (click)="delete(c)" title="حذف">🗑️</button>
                 }
               </div>
             </div>
@@ -51,49 +101,60 @@
         </div>
       } @else {
         <div class="card empty-state">
-          <div class="empty-icon">👥</div>
-          <h3>ما كاين زبائن</h3>
-          <p>زوّد زبون جديد باش تبدا</p>
+          <div class="empty-icon" style="font-size: 60px; margin-bottom: 16px;">🔍</div>
+          <h3>ما لقينا حتى زبون</h3>
+          <p>جرب سمية أخرى أو نمرة تليفون أخرى</p>
         </div>
       }
     }
   }
 
-  <!-- Add/Edit Modal -->
+  <!-- Add/Edit Modal (Professional Upgrade) -->
   @if (showModal) {
     <div class="modal-overlay" (click)="closeModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 500px;">
         <div class="modal-header">
-          <h2>{{ editMode ? '✏️ عدّل الزبون' : '➕ زيد زبون جديد' }}</h2>
+          <h2>{{ editMode ? '✏️ تعديل بيانات الزبون' : '➕ زبون جديد بمواصفات خاصة' }}</h2>
           <button class="close-btn" (click)="closeModal()">✕</button>
         </div>
         <div class="modal-body">
-          <div class="form-group"><label>الإسم *</label>
-            <input type="text" [(ngModel)]="form.nom" class="form-control" placeholder="مثلا: أحمد"></div>
-          <div class="form-group"><label>رقم الهاتف</label>
-            <input type="tel" [(ngModel)]="form.telephone" class="form-control" placeholder="06XXXXXXXX"></div>
-          <div class="form-group"><label>العنوان</label>
-            <input type="text" [(ngModel)]="form.adresse" class="form-control" placeholder="مثال: الدار البيضاء"></div>
+          <div class="form-group">
+            <label>👤 الإسم الكامل *</label>
+            <input type="text" [(ngModel)]="form.nom" class="form-control" placeholder="مثلا: الحاج أحمد المراكشي">
+          </div>
+          <div class="form-group">
+            <label>📞 رقم الهاتف</label>
+            <input type="tel" [(ngModel)]="form.telephone" class="form-control" placeholder="06XXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>📍 العنوان أو ملاحظة مكانية</label>
+            <input type="text" [(ngModel)]="form.adresse" class="form-control" placeholder="مثال: قرب مسجد التقوى">
+          </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-primary" (click)="save()">💾 حفظ</button>
-          <button class="btn btn-ghost" (click)="closeModal()">إلغاء</button>
+          <button class="btn btn-primary" (click)="save()" style="width: 100%;">💾 حفظ البيانات</button>
         </div>
       </div>
     </div>
   }
 
-  <!-- Client Credits Modal -->
+  <!-- Client Credits Modal (Premium Detailed View) -->
   @if (showCreditsModal && selectedClient) {
     <div class="modal-overlay" (click)="closeCreditsModal()">
-      <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>📋 ديون {{ selectedClient.nom }}</h2>
+      <div class="modal-content modal-lg" (click)="$event.stopPropagation()" style="background: var(--bg-main);">
+        <div class="modal-header" style="background: white;">
+          <div>
+            <h2 style="margin: 0;">📜 سجل ديون: {{ selectedClient.nom }}</h2>
+            @if (selectedClient.telephone) {
+              <small style="color: var(--primary); font-weight: 700;">📞 {{ selectedClient.telephone }}</small>
+            }
+          </div>
           <button class="close-btn" (click)="closeCreditsModal()">✕</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 20px;">
           @if (loadingCredits$ | async) {
             <div class="skeleton-loader">
+              <div class="skeleton-row"></div>
               <div class="skeleton-row"></div>
             </div>
           } @else {
@@ -102,29 +163,29 @@
                 @for (credit of clientCredits; track credit.id) {
                   <div class="credit-item" [class.paid]="credit.est_paye">
                     <div class="credit-info">
-                      <span class="badge" [class]="credit.est_paye ? 'badge-success' : 'badge-danger'">
-                        {{ credit.est_paye ? 'تخلص ✅' : 'ما تخلصش ❌' }}
-                      </span>
-                      <p class="credit-desc">{{ credit.description }}</p>
-                    </div>
-                    <div class="credit-amounts">
-                      <div><small>الكلي:</small> {{ formatMAD(credit.montant) }}</div>
-                      @if (credit.montant_paye > 0) {
-                        <div><small>اللي دفع:</small> {{ formatMAD(credit.montant_paye) }}</div>
+                      @if (credit.est_paye) {
+                        <span class="paid-label">✓ تخلصات بالكامل</span>
+                      } @else {
+                        <span class="badge badge-danger">باقي</span>
                       }
+                      <h4 style="margin: 8px 0;">{{ credit.description }}</h4>
+                      <span class="credit-date">📅 {{ credit.date }}</span>
+                    </div>
+                    <div class="credit-amounts-mini">
                       @if (!credit.est_paye) {
-                        <div class="reste"><small>الباقي:</small> <strong>{{ formatMAD(getReste(credit)) }}</strong></div>
+                        <div class="reste-amount">{{ formatMAD(getReste(credit)) }}</div>
+                        <small style="color: var(--text-light);">من أصل {{ formatMAD(credit.montant) }}</small>
+                      } @else {
+                        <div class="paid-label" style="font-size: 16px;">{{ formatMAD(credit.montant) }}</div>
+                        <small style="color: var(--text-light);">تم الإقفال بنجاح</small>
                       }
-                    </div>
-                    <div class="credit-date">
-                      <small>📅 {{ credit.date }}</small>
                     </div>
                   </div>
                 }
               </div>
             } @else {
-              <div class="empty-state">
-                <p>ما عنده حتى دين هاد الزبون!</p>
+              <div class="empty-state" style="padding: 40px;">
+                <p style="font-size: 16px; font-weight: 600;">الحمد لله، هاد الزبون ما كيسالو المحل حتى ريال! 🎉</p>
               </div>
             }
           }

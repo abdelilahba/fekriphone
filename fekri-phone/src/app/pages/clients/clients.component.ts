@@ -17,8 +17,10 @@ import { Client, Credit, CreditPaiement } from '../../core/models/models';
 export class ClientsComponent implements OnInit {
   private allClients: Client[] = [];
   clients$ = new BehaviorSubject<Client[]>([]);
+  filteredClients$ = new BehaviorSubject<Client[]>([]);
   loading$ = new BehaviorSubject<boolean>(true);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
+  searchQuery = '';
   
   showModal = false;
   showCreditsModal = false;
@@ -54,8 +56,8 @@ export class ClientsComponent implements OnInit {
         this.supabase.getCredits()
       ]);
       this.allClients = clients;
-      this.clients$.next(clients);
       this.allCredits = credits;
+      this.applyFilter();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
@@ -145,6 +147,24 @@ export class ClientsComponent implements OnInit {
     const totalCredits = credits.reduce((s: number, c: any) => s + Number(c.montant), 0);
     const totalNonPaye = credits.reduce((s: number, c: any) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
     return { totalCredits, totalNonPaye, creditsCount: credits.length };
+  }
+
+  applyFilter() {
+    if (!this.searchQuery) {
+      this.filteredClients$.next(this.allClients);
+      return;
+    }
+    const q = this.searchQuery.toLowerCase();
+    const result = this.allClients.filter(c => 
+      c.nom.toLowerCase().includes(q) || 
+      (c.telephone || '').includes(q) ||
+      (c.adresse || '').toLowerCase().includes(q)
+    );
+    this.filteredClients$.next(result);
+  }
+
+  getTotalCreditsGlobal(): number {
+    return this.allCredits.filter(c => !c.est_paye).reduce((s, c) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
   }
 
   getReste(c: Credit): number { return Number(c.montant) - Number(c.montant_paye); }
