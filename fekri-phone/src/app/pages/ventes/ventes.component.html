@@ -181,43 +181,42 @@
       <!-- سلة المشتريات -->
       <div class="pos-cart-side">
         <div class="cart-header">
-          <h3>فاتورة جديدة</h3>
-          <span class="cart-items-count">عدد الأنواع: {{ (cart$ | async)?.length || 0 }}</span>
-        </div>
-
-        <div class="cart-table-header">
-          <div class="col-product">المنتج</div>
-          <div class="col-qty">الكمية</div>
-          <div class="col-price">الثمن</div>
-          <div class="col-action"></div>
+          <h3>🧾 فاتورة جديدة</h3>
+          <span class="cart-items-count">{{ (cart$ | async)?.length || 0 }} منتجات</span>
         </div>
 
         <div class="cart-list">
           @if (cart$ | async; as cartItems) {
           @for (item of cartItems; track item.produit_id; let i = $index) {
-          <div class="cart-row">
-            <div class="col-product">
-              <div class="cart-item-name">{{ item.nom }}</div>
-              <div class="cart-item-sub">
-                الثمن: <input type="number" [(ngModel)]="item.prix_unitaire" (ngModelChange)="updateCartItem(item)"
-                  class="cart-inline-input" min="0"> د.م
+          <div class="cart-item-card">
+            <div class="cart-item-top">
+              <span class="cart-item-index">{{ i + 1 }}</span>
+              <div class="cart-item-info">
+                <div class="cart-item-name">{{ item.icone }} {{ item.nom }}</div>
+                <div class="cart-item-price-edit">
+                  <input type="number" [(ngModel)]="item.prix_unitaire" (ngModelChange)="updateCartItem(item)"
+                    class="cart-inline-input" min="0">
+                  <span class="price-unit">د.م / وحدة</span>
+                </div>
               </div>
+              <button class="cart-trash" (click)="removeFromCart(i)">✕</button>
             </div>
-            <div class="col-qty">
+            <div class="cart-item-bottom">
               <div class="qty-control">
-                <button (click)="decrementCartItem(item)">-</button>
+                <button (click)="decrementCartItem(item)">−</button>
                 <span>{{ item.quantite }}</span>
                 <button (click)="incrementCartItem(item)">+</button>
               </div>
-            </div>
-            <div class="col-price">{{ item.sous_total }}</div>
-            <div class="col-action">
-              <button class="cart-trash" (click)="removeFromCart(i)">🗑️</button>
+              <div class="cart-item-subtotal">{{ item.sous_total }} د.م</div>
             </div>
           </div>
           }
           @if (cartItems.length === 0) {
-          <div class="cart-empty">السلة فارغة، إبدأ بإضافة المنتجات.</div>
+          <div class="cart-empty">
+            <div class="cart-empty-icon">🛒</div>
+            <div>السلة فارغة</div>
+            <div class="cart-empty-hint">إضغط على منتج لإضافته</div>
+          </div>
           }
           }
         </div>
