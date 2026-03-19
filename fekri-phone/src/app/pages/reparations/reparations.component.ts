@@ -28,8 +28,11 @@ export class ReparationsComponent implements OnInit {
   userRole = 'admin';
   selectedDate: string = new Date().toISOString().split('T')[0];
   allRevenusData: RevenuReparation[] = [];
+  clients: any[] = [];
+  filteredClients: any[] = [];
+  showClientsList = false;
 
-  form = { id: '', description: '', montant: 0, date: '' };
+  form = { id: '', description: '', montant: 0, date: '', nomClient: '', montantPaye: 0 };
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
@@ -53,6 +56,8 @@ export class ReparationsComponent implements OnInit {
 
       this.allRevenusData = finalRevenus;
       this.filterByDate();
+      
+      this.clients = await this.supabase.getClients();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
@@ -84,13 +89,27 @@ export class ReparationsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', description: '', montant: 0, date: new Date().toISOString().split('T')[0] };
+    this.form = { 
+      id: '', 
+      description: '', 
+      montant: 0, 
+      date: new Date().toISOString().split('T')[0],
+      nomClient: '',
+      montantPaye: 0 
+    };
     this.showModal = true;
   }
 
-  openEdit(r: RevenuReparation) {
+  openEdit(r: any) {
     this.editMode = true;
-    this.form = { id: r.id, description: r.description, montant: r.montant, date: r.date };
+    this.form = { 
+      id: r.id, 
+      description: r.description, 
+      montant: r.montant, 
+      date: r.date,
+      nomClient: r.nom_client || '',
+      montantPaye: r.montant // On assumption that old records were paid in full
+    };
     this.showModal = true;
   }
 
@@ -102,12 +121,44 @@ export class ReparationsComponent implements OnInit {
       return;
     }
     try {
-      const data = { description: this.form.description, montant: this.form.montant, date: this.form.date };
+      const data = { 
+        description: this.form.description, 
+        montant: this.form.montant, 
+        date: this.form.date,
+        nom_client: this.form.nomClient 
+      };
       const uid = this.auth.currentUser?.id;
+      
       if (this.editMode) {
         await this.supabase.updateRevenu(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
+        // Handle Credit if needed
+        const reste = this.form.montant - this.form.montantPaye;
+        if (reste > 0) {
+          if (!this.form.nomClient.trim()) {
+            this.showToast('خصك تدخل سمية الكليان للكريدي', 'error');
+            return;
+          }
+
+          let client = this.clients.find(c => c.nom.toLowerCase() === this.form.nomClient.trim().toLowerCase());
+          let clientId = client ? client.id : null;
+          
+          if (!clientId) {
+            const newClient = await this.supabase.addClient({ nom: this.form.nomClient.trim() });
+            clientId = newClient.id;
+          }
+
+          await this.supabase.addCredit({
+            client_id: clientId,
+            nom_client: this.form.nomClient.trim(),
+            description: 'باقي ديال إصلاح: ' + this.form.description,
+            montant: reste,
+            montant_paye: 0,
+            date: this.form.date
+          }, uid);
+        }
+
         await this.supabase.addRevenu(data, uid);
         this.showToast('تزاد بنجاح ✅', 'success');
       }
@@ -116,6 +167,23 @@ export class ReparationsComponent implements OnInit {
     } catch (error) {
       this.showToast('وقع مشكل', 'error');
     }
+  }
+
+  // Custom methods for client auto-complete
+  onClientSearch() {
+    const term = this.form.nomClient.toLowerCase().trim();
+    if (!term) {
+      this.filteredClients = [];
+      this.showClientsList = false;
+      return;
+    }
+    this.filteredClients = this.clients.filter(c => c.nom.toLowerCase().includes(term)).slice(0, 5);
+    this.showClientsList = this.filteredClients.length > 0;
+  }
+
+  selectClient(name: string) {
+    this.form.nomClient = name;
+    this.showClientsList = false;
   }
 
   async delete(r: RevenuReparation) {

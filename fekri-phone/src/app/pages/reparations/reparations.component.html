@@ -107,15 +107,36 @@
           <input type="text" [(ngModel)]="form.description" class="form-control"
             placeholder="مثلا: تصليح شاشة iPhone 12">
         </div>
+        <div class="form-group" style="position: relative;">
+          <label>👤 إسم الزبون</label>
+          <input type="text" [(ngModel)]="form.nomClient" (keyup)="onClientSearch()" class="form-control"
+            placeholder="مثلا: حمزة">
+          @if (showClientsList) {
+            <div class="autocomplete-list">
+              @for (c of filteredClients; track c.id) {
+                <div class="autocomplete-item" (click)="selectClient(c.nom)">{{ c.nom }}</div>
+              }
+            </div>
+          }
+        </div>
         <div class="form-row">
           <div class="form-group">
-            <label>المبلغ (د.م) *</label>
+            <label>المبلغ الإجمالي (د.م) *</label>
             <input type="number" [(ngModel)]="form.montant" class="form-control" min="0">
           </div>
           <div class="form-group">
-            <label>التاريخ</label>
-            <input type="date" [(ngModel)]="form.date" class="form-control">
+            <label>شحال خلص دابا (د.م)</label>
+            <input type="number" [(ngModel)]="form.montantPaye" class="form-control" min="0">
           </div>
+        </div>
+        @if (form.montant > form.montantPaye) {
+          <div class="credit-warning">
+            ⚠️ غيتسجل كريدي ديال <b>{{ formatMAD(form.montant - form.montantPaye) }}</b> للكليان <b>{{ form.nomClient || '...' }}</b>
+          </div>
+        }
+        <div class="form-group">
+          <label>التاريخ</label>
+          <input type="date" [(ngModel)]="form.date" class="form-control">
         </div>
       </div>
       <div class="modal-footer">
