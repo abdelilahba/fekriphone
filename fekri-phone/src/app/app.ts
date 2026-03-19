@@ -295,7 +295,8 @@ export class AppComponent implements OnInit, OnDestroy {
           `,
           icon: 'info',
           confirmButtonText: 'فهمت، شكرا! 👍',
-          confirmButtonColor: '#9b30ff'
+          confirmButtonColor: '#9b30ff',
+          showCloseButton: true
         });
         localStorage.setItem('update_msg_v1_1_seen', 'true');
       }, 1500); // Wait a bit until layout fully loads

@@ -88,6 +88,7 @@
     <!-- Personalized Welcome for Employee/Admin -->
     <div class="welcome-msg-top" *ngIf="welcomeMessage && userRole !== 'admin'" id="tour-welcome">
       {{ welcomeMessage }}
+      <button class="welcome-close-btn" (click)="welcomeMessage = ''" title="إغلاق">X</button>
     </div>
 
     <div class="top-bar-right">
@@ -125,7 +126,7 @@
   <div class="modal-content help-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ helpTitle }}</h2>
-      <button class="close-btn" (click)="closeHelpModal()">✕</button>
+      <button class="close-btn" (click)="closeHelpModal()">X</button>
     </div>
     <div class="modal-body">
       <div class="guide-container">
@@ -188,6 +189,7 @@
   <div class="stock-toast-inner">
     <span>{{ stockToastMessage }}</span>
     <a routerLink="/produits" class="stock-toast-link" (click)="showStockToast = false">شوف المنتجات →</a>
+    <button class="toast-close-btn" (click)="showStockToast = false">✕</button>
   </div>
 </div>
 }
@@ -198,7 +200,7 @@
   <div class="modal-content password-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>🔑 تبديل الباسوورد</h2>
-      <button class="close-btn" (click)="closePasswordModal()">✕</button>
+      <button class="close-btn" (click)="closePasswordModal()">X</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -235,7 +237,7 @@
     <div class="search-header">
       <input type="text" id="globalSearchInput" [(ngModel)]="searchQuery" (ngModelChange)="doSearch()"
         placeholder="🔍 قلب على شي منتج بالسمية ولا بالكود بار..." class="form-control search-input" autocomplete="off">
-      <button class="close-btn" (click)="closeSearch()">✕</button>
+      <button class="close-btn" (click)="closeSearch()">X</button>
     </div>
     <div class="search-results">
       @if (searchResults.length > 0) {
@@ -267,7 +269,7 @@
   <div class="modal-content password-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>➖ سحب من الصندوق (مصروف)</h2>
-      <button class="close-btn" (click)="closeQuickWithdraw()">✕</button>
+      <button class="close-btn" (click)="closeQuickWithdraw()">X</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
