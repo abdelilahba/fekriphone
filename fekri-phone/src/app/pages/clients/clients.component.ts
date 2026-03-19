@@ -56,6 +56,7 @@ export class ClientsComponent implements OnInit {
         this.supabase.getCredits()
       ]);
       this.allClients = clients;
+      this.clients$.next(clients);
       this.allCredits = credits;
       this.applyFilter();
     } catch (error) {
@@ -122,9 +123,16 @@ export class ClientsComponent implements OnInit {
   }
 
   async delete(c: Client) {
+    const stats = this.getClientStats(c.id);
+    let warningText = `بغيتي تمسح الزبون "${c.nom}"?`;
+    
+    if (stats.totalNonPaye > 0) {
+      warningText = `⚠️ هاد الزبون باقي كيسالو المحل ${this.formatMAD(stats.totalNonPaye)}! واش بصح بغيتي تمسحو؟`;
+    }
+
     const result = await Swal.fire({
       title: 'واش بصح؟',
-      text: `بغيتي تمسح الزبون "${c.nom}"?`,
+      text: warningText,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',

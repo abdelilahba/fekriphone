@@ -92,9 +92,7 @@
                   📋 <span style="margin-right: 4px;">تفاصيل الديون</span>
                 </button>
                 <button class="btn btn-ghost btn-sm" (click)="openEdit(c)" title="تعديل">✏️</button>
-                @if (userRole === 'admin') {
-                  <button class="btn btn-ghost btn-sm" (click)="delete(c)" title="حذف">🗑️</button>
-                }
+                <button class="btn btn-ghost btn-sm" (click)="delete(c)" title="حذف">🗑️</button>
               </div>
             </div>
           }
