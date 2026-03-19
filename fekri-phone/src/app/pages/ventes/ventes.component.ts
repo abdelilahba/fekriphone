@@ -209,7 +209,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
       result = result.filter(p =>
-        p.nom.toLowerCase().includes(term) ||
+        (p.nom && p.nom.toLowerCase().includes(term)) ||
         (p.code_barre && p.code_barre.includes(term))
       );
       // Auto-add barcode match
@@ -276,6 +276,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.cart$.next([...this.cart]);
     this.updateCartTotal();
     this.focusSearchNeedsTrigger = true;
+    this.cdr.detectChanges();
   }
 
   decrementCartItem(item: CartItem) {
@@ -287,6 +288,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       this.cart$.next([...this.cart]);
       this.updateCartTotal();
       this.focusSearchNeedsTrigger = true;
+      this.cdr.detectChanges();
     } else {
       const index = this.cart.findIndex(c => c.produit_id === item.produit_id);
       if (index > -1) this.removeFromCart(index);
@@ -318,6 +320,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.cart$.next([...this.cart]);
     this.updateCartTotal();
     this.focusSearchNeedsTrigger = true;
+    this.cdr.detectChanges();
   }
 
   updateCartItem(item: CartItem) {
@@ -325,6 +328,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     item.profit = (item.prix_unitaire - item.prix_achat_unitaire) * item.quantite;
     this.cart$.next([...this.cart]);
     this.updateCartTotal();
+    this.cdr.detectChanges();
   }
 
   private updateCartTotal() {
@@ -343,18 +347,18 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
     const hasPhone = this.cart.some(item => 
       item.prix_unitaire >= 800 || 
-      item.nom.toLowerCase().includes('iphone') || 
-      item.nom.toLowerCase().includes('samsung') || 
-      item.nom.toLowerCase().includes('redmi')
+      (item.nom && item.nom.toLowerCase().includes('iphone')) || 
+      (item.nom && item.nom.toLowerCase().includes('samsung')) || 
+      (item.nom && item.nom.toLowerCase().includes('redmi'))
     );
 
-    const hasAntiChoc = this.cart.some(item => item.nom.toLowerCase().includes('anti') || item.nom.toLowerCase().includes('incassable'));
-    const hasPochette = this.cart.some(item => item.nom.toLowerCase().includes('pochette') || item.nom.toLowerCase().includes('silicone') || item.nom.toLowerCase().includes('etui'));
+    const hasAntiChoc = this.cart.some(item => item.nom && (item.nom.toLowerCase().includes('anti') || item.nom.toLowerCase().includes('incassable')));
+    const hasPochette = this.cart.some(item => item.nom && (item.nom.toLowerCase().includes('pochette') || item.nom.toLowerCase().includes('silicone') || item.nom.toLowerCase().includes('etui')));
 
     // Scenario 1: Phone = Suggest Anti-choc + Pochette
     if (hasPhone && (!hasAntiChoc || !hasPochette)) {
-      const antiChocs = this.allProduits.filter(p => (p.nom.toLowerCase().includes('anti') || p.nom.toLowerCase().includes('incassable')) && p.quantite > 0);
-      const pochettes = this.allProduits.filter(p => (p.nom.toLowerCase().includes('pochette') || p.nom.toLowerCase().includes('silicone') || p.nom.toLowerCase().includes('etui')) && p.quantite > 0);
+      const antiChocs = this.allProduits.filter(p => p.nom && (p.nom.toLowerCase().includes('anti') || p.nom.toLowerCase().includes('incassable')) && p.quantite > 0);
+      const pochettes = this.allProduits.filter(p => p.nom && (p.nom.toLowerCase().includes('pochette') || p.nom.toLowerCase().includes('silicone') || p.nom.toLowerCase().includes('etui')) && p.quantite > 0);
 
       const toSuggest: Produit[] = [];
       if (!hasAntiChoc && antiChocs.length > 0) toSuggest.push(antiChocs[0]);
@@ -372,11 +376,11 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     } 
     
     // Scenario 2: Charger = Suggest Cable
-    const hasChargeur = this.cart.some(item => item.nom.toLowerCase().includes('chargeur') || item.nom.toLowerCase().includes('شاحن'));
+    const hasChargeur = this.cart.some(item => item.nom && (item.nom.toLowerCase().includes('chargeur') || item.nom.toLowerCase().includes('شاحن')));
     if (hasChargeur) {
-       const hasCable = this.cart.some(item => item.nom.toLowerCase().includes('cable') || item.nom.toLowerCase().includes('كابل'));
+       const hasCable = this.cart.some(item => item.nom && (item.nom.toLowerCase().includes('cable') || item.nom.toLowerCase().includes('كابل')));
        if (!hasCable) {
-          const cables = this.allProduits.filter(p => (p.nom.toLowerCase().includes('cable') || p.nom.toLowerCase().includes('كابل')) && p.quantite > 0);
+          const cables = this.allProduits.filter(p => p.nom && (p.nom.toLowerCase().includes('cable') || p.nom.toLowerCase().includes('كابل')) && p.quantite > 0);
           if (cables.length > 0) {
             this.upsellSuggestion = {
               message: `💡 <strong>اقتراح ذكي (Agent IA):</strong> الزبون خذا شاحن، واش ما يحتاجش كابل معاه؟ زيدلو <b>${cables[0].nom}</b> بتخفيض 10 د.م ⚡`,
@@ -406,6 +410,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     }
     this.upsellSuggestion = null;
     this.showToast('تمت إضافة العرض بنجاح! 🚀', 'success');
+    this.cdr.detectChanges();
   }
 
   // --- Smart Calculator (Caisse) & Credit ---
