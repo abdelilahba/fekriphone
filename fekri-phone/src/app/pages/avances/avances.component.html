@@ -10,11 +10,15 @@
     <button class="btn btn-primary" (click)="openAdd()">➕ زيد دفعة</button>
   </div>
 
+  <div class="date-picker-row no-print" style="margin-bottom: 20px;">
+    <input type="date" [(ngModel)]="selectedDate" (ngModelChange)="applyFilters()" class="form-control date-input">
+  </div>
+
   <div class="stat-card total-card">
     <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">💸</div>
     <div class="stat-info">
-      <h3>{{ formatMAD((totalMois$ | async) || 0) }}</h3>
-      <p>مجموع دفع هاد الشهر</p>
+      <h3>{{ formatMAD((totalJour$ | async) || 0) }}</h3>
+      <p>مجموع دفع هاد النهار</p>
     </div>
   </div>
 
@@ -80,7 +84,7 @@
   } @else {
   <div class="card empty-state">
     <div class="empty-icon">💸</div>
-    <h3>مازال ما كاينين مصاريف</h3>
+    <h3>مازال ما كاينين دفع</h3>
     <p>كليكي على "زيد دفعة"</p>
   </div>
   }

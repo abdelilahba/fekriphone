@@ -17,8 +17,10 @@ import { Avance } from '../../core/models/models';
 export class AvancesComponent implements OnInit {
   avances$ = new BehaviorSubject<Avance[]>([]);
   loading$ = new BehaviorSubject<boolean>(true);
-  totalMois$ = new BehaviorSubject<number>(0);
+  totalJour$ = new BehaviorSubject<number>(0);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
+  selectedDate: string = new Date().toISOString().split('T')[0];
+  allAvancesData: Avance[] = [];
   showModal = false;
   editMode = false;
   currentPage = 1;
@@ -36,20 +38,26 @@ export class AvancesComponent implements OnInit {
   async loadData() {
     try {
       this.loading$.next(true);
-      const avances = await this.supabase.getAvances();
-      this.avances$.next(avances);
-      const now = new Date();
-      const total = avances
-        .filter((d: any) => { const date = new Date(d.date); return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear(); })
-        .reduce((s: number, d: any) => s + Number(d.montant), 0);
-      this.totalMois$.next(total);
-      this.currentPage = 1;
-      this.paginate();
+      this.allAvancesData = await this.supabase.getAvances();
+      this.applyFilters();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
       this.loading$.next(false);
     }
+  }
+
+  applyFilters() {
+    let filtered = this.allAvancesData;
+    if (this.selectedDate) {
+      filtered = filtered.filter(a => a.date === this.selectedDate);
+    }
+    this.avances$.next(filtered);
+
+    const total = filtered.reduce((s: number, a: any) => s + Number(a.montant), 0);
+    this.totalJour$.next(total);
+    this.currentPage = 1;
+    this.paginate();
   }
 
   paginate() {
