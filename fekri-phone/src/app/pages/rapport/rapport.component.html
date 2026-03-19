@@ -120,6 +120,22 @@
       </div>
       <div class="stat-amount warning">{{ formatMAD(report.creditsTotal) }}</div>
     </div>
+
+    <div class="report-stat-card">
+      <div class="stat-head">
+        <span class="stat-emoji">💰</span>
+        <span class="stat-count">{{ report.avancesCount }} دفع</span>
+      </div>
+      <div class="stat-amount success">{{ formatMAD(report.avancesTotal) }}</div>
+    </div>
+
+    <div class="report-stat-card">
+      <div class="stat-head">
+        <span class="stat-emoji">✅</span>
+        <span class="stat-count">{{ report.paiementsCount }} أداء</span>
+      </div>
+      <div class="stat-amount info">{{ formatMAD(report.paiementsTotal) }}</div>
+    </div>
   </div>
 
   <!-- Transaction Details -->
@@ -133,6 +149,10 @@
         report.depensesCount }})</button>
       <button class="tab" [class.active]="activeTab === 'credits'" (click)="activeTab = 'credits'">📝 الديون ({{
         report.creditsCount }})</button>
+      <button class="tab" [class.active]="activeTab === 'avances'" (click)="activeTab = 'avances'">💰 دفع/عربون ({{
+        report.avancesCount }})</button>
+      <button class="tab" [class.active]="activeTab === 'paiements'" (click)="activeTab = 'paiements'">✅ أداء الديون ({{
+        report.paiementsCount }})</button>
     </div>
 
     <div class="tab-content">
@@ -275,6 +295,72 @@
       <div class="empty-tab">ما كاينين ديون هاد النهار 😊</div>
       }
       }
+
+      @if (activeTab === 'avances') {
+      @if (report.avancesList.length > 0) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الوصف</th>
+            <th>النوع</th>
+            <th>المبلغ</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of report.avancesList; track a.id; let i = $index) {
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td>{{ a.description }}</td>
+            <td>@if (a.categorie) { <span class="badge badge-info">{{ a.categorie }}</span> }</td>
+            <td class="amount success">{{ formatMAD(a.montant) }}</td>
+          </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>المجموع</strong></td>
+            <td class="amount success"><strong>{{ formatMAD(report.avancesTotal) }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+      } @else {
+      <div class="empty-tab">عربون زيرو هاد النهار 😅</div>
+      }
+      }
+
+      @if (activeTab === 'paiements') {
+      @if (report.paiementsList.length > 0) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الزبون / الدين</th>
+            <th>التاريخ</th>
+            <th>مبلغ الأداء</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of report.paiementsList; track p.id; let i = $index) {
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td>{{ p.credits?.nom_client || '—' }}</td>
+            <td>{{ p.date }}</td>
+            <td class="amount info">{{ formatMAD(p.montant) }}</td>
+          </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>المجموع</strong></td>
+            <td class="amount info"><strong>{{ formatMAD(report.paiementsTotal) }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+      } @else {
+      <div class="empty-tab">ما خلص حتا واحد اليوم 😴</div>
+      }
+      }
     </div>
   </div>
 
@@ -302,6 +388,16 @@
         <td>📝 الديون</td>
         <td>{{ report.creditsCount }}</td>
         <td>{{ formatMAD(report.creditsTotal) }}</td>
+      </tr>
+      <tr>
+        <td>💰 دفع (عربون/أربكة)</td>
+        <td>{{ report.avancesCount }}</td>
+        <td>{{ formatMAD(report.avancesTotal) }}</td>
+      </tr>
+      <tr>
+        <td>✅ أداء الديون الكاش</td>
+        <td>{{ report.paiementsCount }}</td>
+        <td>{{ formatMAD(report.paiementsTotal) }}</td>
       </tr>
       <tr class="total-row">
         <td>💰 الربح الصافي</td>

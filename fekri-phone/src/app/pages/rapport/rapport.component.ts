@@ -16,12 +16,18 @@ interface DayReport {
   depensesTotal: number;
   creditsCount: number;
   creditsTotal: number;
+  avancesCount: number;
+  avancesTotal: number;
+  paiementsCount: number;
+  paiementsTotal: number;
   benefice: number;
   caisse: number;
   ventesList: any[];
   reparationsList: any[];
   depensesList: any[];
   creditsList: any[];
+  avancesList: any[];
+  paiementsList: any[];
 }
 
 @Component({
@@ -36,7 +42,7 @@ export class RapportComponent implements OnInit {
   yesterday$ = new BehaviorSubject<DayReport | null>(null);
   loading$ = new BehaviorSubject<boolean>(true);
   selectedDate: string = '';
-  activeTab: 'ventes' | 'reparations' | 'depenses' | 'credits' = 'ventes';
+  activeTab: 'ventes' | 'reparations' | 'depenses' | 'credits' | 'avances' | 'paiements' = 'ventes';
 
   constructor(private supabase: SupabaseService) { }
 
@@ -67,23 +73,29 @@ export class RapportComponent implements OnInit {
 
   private async buildDayReport(date: Date): Promise<DayReport> {
     const dateStr = this.formatDate(date);
-    const [ventes, revenus, depenses, credits] = await Promise.all([
+    const [ventes, revenus, depenses, credits, avances, paiements] = await Promise.all([
       this.supabase.getVentes(),
       this.supabase.getRevenus(),
       this.supabase.getDepenses(),
-      this.supabase.getCredits()
+      this.supabase.getCredits(),
+      this.supabase.getAvances(),
+      this.supabase.getAllCreditPaiements()
     ]);
 
-    const dayVentes = ventes.filter((v: any) => v.date === dateStr);
+    const dayVentes = ventes.filter((v: any) => v.date === dateStr || (v.created_at && v.created_at.startsWith(dateStr)));
     const dayRevenus = revenus.filter((r: any) => r.date === dateStr);
     const dayDepenses = depenses.filter((d: any) => d.date === dateStr);
     const dayCredits = credits.filter((c: any) => c.date === dateStr);
+    const dayAvances = avances.filter((a: any) => a.date === dateStr);
+    const dayPaiements = paiements.filter((p: any) => p.date === dateStr);
 
     const ventesTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
     const ventesProfitTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const reparationsTotal = dayRevenus.reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = dayDepenses.reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
     const creditsTotal = dayCredits.reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+    const avancesTotal = dayAvances.reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
+    const paiementsTotal = dayPaiements.reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
 
     return {
       date: dateStr,
@@ -97,12 +109,18 @@ export class RapportComponent implements OnInit {
       depensesTotal,
       creditsCount: dayCredits.length,
       creditsTotal,
+      avancesCount: dayAvances.length,
+      avancesTotal,
+      paiementsCount: dayPaiements.length,
+      paiementsTotal,
       benefice: ventesProfitTotal + reparationsTotal - depensesTotal,
-      caisse: ventesTotal + reparationsTotal - depensesTotal,
+      caisse: ventesTotal + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsTotal,
       ventesList: dayVentes,
       reparationsList: dayRevenus,
       depensesList: dayDepenses,
-      creditsList: dayCredits
+      creditsList: dayCredits,
+      avancesList: dayAvances,
+      paiementsList: dayPaiements
     };
   }
 
@@ -168,7 +186,9 @@ export class RapportComponent implements OnInit {
         <tr><td>💰 ربح المبيعات</td><td>—</td><td class="positive">${this.formatMAD(report.ventesProfitTotal)}</td></tr>
         <tr><td>🔧 الإصلاحات</td><td>${report.reparationsCount}</td><td>${this.formatMAD(report.reparationsTotal)}</td></tr>
         <tr><td>💸 المصاريف</td><td>${report.depensesCount}</td><td class="negative">${this.formatMAD(report.depensesTotal)}</td></tr>
-        <tr><td>📝 الديون</td><td>${report.creditsCount}</td><td>${this.formatMAD(report.creditsTotal)}</td></tr>
+        <tr><td>📝 الديون</td><td>${report.creditsCount}</td><td class="negative">${this.formatMAD(report.creditsTotal)}</td></tr>
+        <tr><td>💰 دفع (عربون/أربكة)</td><td>${report.avancesCount}</td><td class="positive">${this.formatMAD(report.avancesTotal)}</td></tr>
+        <tr><td>✅ أداء الديون الكاش</td><td>${report.paiementsCount}</td><td class="positive">${this.formatMAD(report.paiementsTotal)}</td></tr>
         <tr class="total-row"><td>📈 الربح الصافي</td><td></td><td class="${report.benefice >= 0 ? 'positive' : 'negative'}">${this.formatMAD(report.benefice)}</td></tr>
         <tr class="total-row"><td>💵 الفلوس فالصندوق</td><td></td><td>${this.formatMAD(report.caisse)}</td></tr>
       </tbody>
@@ -195,13 +215,14 @@ export class RapportComponent implements OnInit {
     let csv = '\uFEFF'; // BOM for Arabic support in Excel
     csv += 'تقرير يوم,' + report.dateLabel + '\n\n';
 
-    // Summary
-    csv += 'البند,العدد,المبلغ\n';
+    csv += 'الحساب,العدد,المبلغ\n';
     csv += 'المبيعات,' + report.ventesCount + ',' + report.ventesTotal + '\n';
     csv += 'ربح المبيعات,—,' + report.ventesProfitTotal + '\n';
     csv += 'الإصلاحات,' + report.reparationsCount + ',' + report.reparationsTotal + '\n';
     csv += 'المصاريف,' + report.depensesCount + ',' + report.depensesTotal + '\n';
     csv += 'الديون,' + report.creditsCount + ',' + report.creditsTotal + '\n';
+    csv += 'دفع (عربون/أربكة),' + report.avancesCount + ',' + report.avancesTotal + '\n';
+    csv += 'أداء الديون الكاش,' + report.paiementsCount + ',' + report.paiementsTotal + '\n';
     csv += 'الربح الصافي,,' + report.benefice + '\n';
     csv += 'الفلوس فالصندوق,,' + report.caisse + '\n\n';
 
@@ -244,6 +265,27 @@ export class RapportComponent implements OnInit {
         const reste = Number(c.montant) - Number(c.montant_paye);
         csv += (i + 1) + ',"' + clientName + '","' + c.description + '",' + c.montant + ',' + reste + '\n';
       });
+      csv += '\n';
+    }
+
+    // Avances detail
+    if (report.avancesList.length > 0) {
+      csv += '--- تفاصيل العربون/الأربكة ---\n';
+      csv += '#,الوصف,النوع,المبلغ\n';
+      report.avancesList.forEach((a: any, i: number) => {
+        csv += (i + 1) + ',"' + a.description + '",' + (a.categorie || '') + ',' + a.montant + '\n';
+      });
+      csv += '\n';
+    }
+    
+    // Paiements detail
+    if (report.paiementsList.length > 0) {
+      csv += '--- تفاصيل أداء الديون الكاش ---\n';
+      csv += '#,مبلغ الأداء\n';
+      report.paiementsList.forEach((p: any, i: number) => {
+        csv += (i + 1) + ',' + p.montant + '\n';
+      });
+      csv += '\n';
     }
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

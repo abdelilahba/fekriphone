@@ -794,6 +794,15 @@ export class SupabaseService {
     return data;
   }
 
+  async getAllCreditPaiements() {
+    const { data, error } = await this.supabase
+      .from('credit_paiements')
+      .select('*, credits(nom_client)')
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
+
   async addPaiement(creditId: string, montant: number, date?: string) {
     const { data, error } = await this.supabase
       .from('credit_paiements')
