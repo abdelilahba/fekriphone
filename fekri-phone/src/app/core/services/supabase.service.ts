@@ -888,6 +888,8 @@ export class SupabaseService {
     let revenusQuery = this.supabase.from('revenus_reparation').select('montant').eq('date', today);
     let depensesQuery = this.supabase.from('depenses').select('montant').eq('date', today);
     let avancesQuery = this.supabase.from('avances').select('montant').eq('date', today);
+    let creditsQuery = this.supabase.from('credits').select('montant').eq('date', today);
+    let paiementsQuery = this.supabase.from('credit_paiements').select('montant').eq('date', today);
 
     if (userId) {
       ventesQuery = ventesQuery.eq('user_id', userId);
@@ -895,13 +897,18 @@ export class SupabaseService {
       // Depenses are optional for employees, but if they make an expense, it should be deducted from their drawer
       depensesQuery = depensesQuery.eq('user_id', userId);
       avancesQuery = avancesQuery.eq('user_id', userId);
+      creditsQuery = creditsQuery.eq('user_id', userId);
     }
 
-    const [ventes, revenus, depenses, avances] = await Promise.all([
+    // Note: credit_paiements does not have user_id, it is a global cash inflow when client pays.
+    
+    const [ventes, revenus, depenses, avances, credits, paiements] = await Promise.all([
       ventesQuery,
       revenusQuery,
       depensesQuery,
-      avancesQuery
+      avancesQuery,
+      creditsQuery,
+      paiementsQuery
     ]);
 
     const ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
@@ -909,9 +916,11 @@ export class SupabaseService {
     const reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
     const avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
+    const creditsTotal = (credits.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+    const paiementsTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
 
     return {
-      caisse: ventesTotal + reparationsTotal + avancesTotal - depensesTotal,
+      caisse: ventesTotal + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsTotal,
       rib7: ventesProfitTotal + reparationsTotal - depensesTotal
     };
   }

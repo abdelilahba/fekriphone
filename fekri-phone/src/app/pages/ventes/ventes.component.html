@@ -233,10 +233,15 @@
             <strong>{{ formatMAD((cartTotal$ | async) || 0) }}</strong>
           </div>
 
-          <!-- Smart Calculator -->
+          <!-- Smart Calculator & Partial Payment -->
           @if ((cart$ | async)?.length) {
             <div class="smart-calculator">
               <div class="calc-header">
+                <label>المبلغ المؤدى :</label>
+                <input type="number" [(ngModel)]="montantPaye" [placeholder]="(cartTotal$ | async) || 0" class="form-control" />
+              </div>
+              
+              <div class="calc-header" style="margin-top: 10px;">
                 <label>تسلّمت (Espèce) :</label>
                 <input type="number" [(ngModel)]="montantRecu" placeholder="0" class="form-control" />
               </div>
@@ -246,12 +251,29 @@
                 <button (click)="addMontantRecu(100)">+100</button>
                 <button (click)="addMontantRecu(200)">+200</button>
               </div>
-              @if (montantRecu !== null) {
-                <div class="change-display">
+              
+              <div class="change-display" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                   <span>الصرف (Monnaie) :</span>
                   <strong [class.success]="monnaie > 0">{{ formatMAD(monnaie) }}</strong>
                 </div>
-              }
+                
+                @if (resteAPayer > 0) {
+                  <div style="display: flex; justify-content: space-between; color: var(--danger); margin-bottom: 10px;">
+                    <span>الباقي (كريدي) :</span>
+                    <strong>{{ formatMAD(resteAPayer) }}</strong>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <input type="text" [(ngModel)]="nomClient" list="clients-list" placeholder="إسم الزبون للكريدي *" class="form-control" [class.error-input]="!nomClient" />
+                    <datalist id="clients-list">
+                      @for (c of clients; track c.id) {
+                        <option [value]="c.nom">{{ c.nom }}</option>
+                      }
+                    </datalist>
+                    <input type="text" [(ngModel)]="descriptionCredit" [placeholder]="defaultCreditDescription" title="شنو خديتي بالكريدي" class="form-control" />
+                  </div>
+                }
+              </div>
             </div>
           }
 

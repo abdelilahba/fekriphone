@@ -6,7 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { LayoutService } from '../../core/services/layout.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
-import { Produit, Vente, Categorie } from '../../core/models/models';
+import { Produit, Vente, Categorie, Client } from '../../core/models/models';
 
 interface CartItem {
   produit_id: string;
@@ -31,6 +31,7 @@ interface CartItem {
 export class VentesComponent implements OnInit, AfterViewChecked {
   private allProduits: Produit[] = [];
   private categories: Categorie[] = [];
+  clients: Client[] = [];
   ventes$ = new BehaviorSubject<Vente[]>([]);
   filteredProduits$ = new BehaviorSubject<Produit[]>([]);
   categories$ = new BehaviorSubject<Categorie[]>([]);
@@ -82,10 +83,11 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   async loadData() {
     try {
       this.loading$.next(true);
-      const [produits, ventes, categories] = await Promise.all([
+      const [produits, ventes, categories, clients] = await Promise.all([
         this.supabase.getProduits(),
         this.supabase.getVentes(),
-        this.supabase.getCategories()
+        this.supabase.getCategories(),
+        this.supabase.getClients()
       ]);
       // Calculate sales per product for sorting "Best Selling First"
       const salesCount: { [key: string]: number } = {};
@@ -105,6 +107,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
       this.allProduits = produits;
       this.categories = categories;
+      this.clients = clients;
 
       let finalVentes = ventes;
       if (this.userRole !== 'admin') {
@@ -159,6 +162,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.layout.setPosModalState(true);
     this.layout.enterFullscreen();
     this.focusSearchNeedsTrigger = true;
+    this.montantRecu = null;
+    this.montantPaye = null;
+    this.nomClient = '';
+    this.descriptionCredit = '';
     this.cdr.detectChanges();
   }
 
@@ -401,13 +408,33 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.showToast('تمت إضافة العرض بنجاح! 🚀', 'success');
   }
 
-  // --- Smart Calculator (Caisse) ---
+  // --- Smart Calculator (Caisse) & Credit ---
   montantRecu: number | null = null;
+  montantPaye: number | null = null;
+  nomClient: string = '';
+  descriptionCredit: string = '';
+
+  get defaultCreditDescription(): string {
+    if (this.cart.length === 0) return '';
+    const items = this.cart.map(i => `${i.quantite}x ${i.nom}`).join(' و ');
+    return `باقي من ثمن ${items}`;
+  }
+
+  get totalCart(): number {
+    return this.cart.reduce((s, i) => s + i.sous_total, 0);
+  }
+
+  get resteAPayer(): number {
+    const total = this.totalCart;
+    if (this.montantPaye === null || this.montantPaye >= total) return 0;
+    return total - this.montantPaye;
+  }
 
   get monnaie(): number {
-    const total = this.cart.reduce((s, i) => s + i.sous_total, 0);
-    if (!this.montantRecu || this.montantRecu < total) return 0;
-    return this.montantRecu - total;
+    const total = this.totalCart;
+    const aPayer = this.montantPaye !== null ? this.montantPaye : total;
+    if (!this.montantRecu || this.montantRecu < aPayer) return 0;
+    return this.montantRecu - aPayer;
   }
 
   setMontantRecu(amount: number) {
@@ -420,20 +447,53 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   async confirmVente() {
     if (this.cart.length === 0) { this.showToast('السلة فارغة!', 'error'); return; }
+    
+    const total = this.totalCart;
+    const reste = this.resteAPayer;
+
+    if (reste > 0 && !this.nomClient.trim()) {
+      this.showToast('المرجو إدخال إسم الزبون للكريدي!', 'error');
+      return;
+    }
+
     try {
-      const total = this.cart.reduce((s, i) => s + i.sous_total, 0);
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
       const uid = this.auth.currentUser?.id;
       await this.supabase.addVente(total, profitTotal, this.cart, uid);
       
-      this.printTicket(this.cart, total);
+      if (reste > 0) {
+        const finalDesc = this.descriptionCredit.trim() || this.defaultCreditDescription;
+        
+        let client = this.clients.find(c => c.nom.toLowerCase() === this.nomClient.trim().toLowerCase());
+        let clientId = client ? client.id : null;
+        
+        if (!clientId) {
+           const newClient = await this.supabase.addClient({ nom: this.nomClient.trim() });
+           clientId = newClient.id;
+        }
+
+        await this.supabase.addCredit({
+          client_id: clientId,
+          nom_client: this.nomClient.trim(),
+          description: finalDesc,
+          montant: reste,
+          montant_paye: 0,
+          est_paye: false,
+          date: new Date().toISOString().split('T')[0]
+        }, uid);
+      }
+
+      this.printTicket(this.cart, total, this.montantPaye !== null ? this.montantPaye : total, reste);
 
       this.ngZone.run(() => {
         this.showToast('تسجلت البيعة بنجاح ✅', 'success');
         this.cart = [];
         this.cart$.next([]);
         this.updateCartTotal();
-        this.montantRecu = null; // Reset calculator
+        this.montantRecu = null; 
+        this.montantPaye = null;
+        this.nomClient = '';
+        this.descriptionCredit = '';
         this.closeVenteModal();
         this.loadData();
       });
@@ -442,7 +502,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  printTicket(cartItems: CartItem[], total: number) {
+
+  printTicket(cartItems: CartItem[], total: number, paye: number, reste: number) {
     let html = `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -509,6 +570,16 @@ export class VentesComponent implements OnInit, AfterViewChecked {
           <span class="total-label">المجموع الإجمالي:</span>
           <span class="total-amount">${total} د.م</span>
         </div>
+        ${reste > 0 ? `
+        <div style="display:flex; justify-content:space-between; margin-top:5px; font-weight:bold; font-size:12px;">
+          <span>المبلغ المؤدى:</span>
+          <span>${paye} د.م</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:2px; font-weight:bold; font-size:12px; color:#d32f2f;">
+          <span>الباقي (كريدي):</span>
+          <span>${reste} د.م</span>
+        </div>
+        ` : ''}
         
         <div class="barcode-container">
           <div class="barcode-line"></div>
