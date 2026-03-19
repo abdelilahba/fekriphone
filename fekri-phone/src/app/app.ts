@@ -178,6 +178,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.checkLowStock();
         this.loadSearchCache();
         this.loadQuickStats();
+        this.showUpdateMessage();
 
         if (this.statsInterval) clearInterval(this.statsInterval);
         this.statsInterval = setInterval(() => {
@@ -276,6 +277,29 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getRoleLabel(role: string): string {
     return role === 'admin' ? 'معلم 👑' : 'موظف 👤';
+  }
+
+  private async showUpdateMessage() {
+    const seen = localStorage.getItem('update_msg_v1_1_seen');
+    if (!seen) {
+      setTimeout(async () => {
+        await Swal.fire({
+          title: '🎉 تحديث جديد في التطبيق!',
+          html: `
+            <div style="text-align: right; line-height: 1.8; font-size: 15px;">
+              <b>شنو الجديد؟</b><br>
+              1️⃣ <b>الكريدي فالمبيعات:</b> دابا ملي تبيع شي حاجة، تقدر تكتب شحال عطاك الكليان بالضبط فـ (المبلغ المؤدى)، والباقي غيتسجل كريدي أوتوماتيكيا!<br>
+              2️⃣ <b>تسجيل الكليان أوتوماتيك:</b> ملي تبغي تقيد كريدي (سواء فالبيع ولا فصفحة الديون)، يكفي تكتب سميت الكليان. الا ماكانش مسجل غيتسجل بوحدو بلا ما تمشي تزيدو بيدك.<br>
+              3️⃣ <b>الحساب د الكاصة مقاد:</b> دابا الكاصة (الفوق) كتحسب غير الفلوس الكاش لي دخلات بصح باش ميوقعش غلط مع الكريدي!
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'فهمت، شكرا! 👍',
+          confirmButtonColor: '#9b30ff'
+        });
+        localStorage.setItem('update_msg_v1_1_seen', 'true');
+      }, 1500); // Wait a bit until layout fully loads
+    }
   }
 
   ngOnDestroy() {
