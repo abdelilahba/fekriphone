@@ -36,6 +36,13 @@
     @if (stats$ | async; as stats) {
       <!-- Stats Cards Row -->
       <div class="stats-grid">
+        <div class="stat-card ca-card">
+          <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">📈</div>
+          <div class="stat-info">
+            <h3>{{ formatMAD(stats.chiffreAffaire) }}</h3>
+            <p>رقم المعاملات (CA)</p>
+          </div>
+        </div>
         <div class="stat-card">
           <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🛒</div>
           <div class="stat-info">

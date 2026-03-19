@@ -15,6 +15,7 @@ interface DashboardStats {
   totalDepenses: number;
   totalCreditsEnCours: number;
   totalPertes?: number;
+  chiffreAffaire: number;
   benefice: number;
 }
 
@@ -40,7 +41,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   stats$ = new BehaviorSubject<DashboardStats>({
     totalProduits: 0, totalVentes: 0, totalRevenusReparation: 0,
-    totalDepenses: 0, totalCreditsEnCours: 0, benefice: 0
+    totalDepenses: 0, totalCreditsEnCours: 0, chiffreAffaire: 0, benefice: 0
   });
   loading$ = new BehaviorSubject<boolean>(true);
   chartReady = false;
@@ -103,8 +104,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
       this.ventesCount = ventes.length;
       this.reparationsCount = revenus.length;
-      const totalIn = stats.totalVentes + stats.totalRevenusReparation;
-      this.beneficePercent = totalIn > 0 ? Math.round((stats.benefice / totalIn) * 100) : 0;
+      this.beneficePercent = stats.chiffreAffaire > 0 ? Math.round((stats.benefice / stats.chiffreAffaire) * 100) : 0;
 
       // Extract top 5 products from vente_items
       const productSales = new Map<string, { qty: number, nom: string, icone: string }>();
