@@ -31,6 +31,7 @@ export class ReparationsComponent implements OnInit {
   clients: any[] = [];
   filteredClients: any[] = [];
   showClientsList = false;
+  searchQuery = '';
 
   form = { id: '', description: '', montant: 0, date: '', nomClient: '', montantPaye: 0 };
 
@@ -70,6 +71,15 @@ export class ReparationsComponent implements OnInit {
     if (this.selectedDate) {
       filtered = filtered.filter(r => (r.date.split(' ')[0] || r.date) === this.selectedDate);
     }
+    
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(r => 
+        (r.description && r.description.toLowerCase().includes(q)) ||
+        (r.nom_client && r.nom_client.toLowerCase().includes(q))
+      );
+    }
+
     this.revenus$.next(filtered);
 
     const total = filtered.reduce((s: number, r: any) => s + Number(r.montant), 0);

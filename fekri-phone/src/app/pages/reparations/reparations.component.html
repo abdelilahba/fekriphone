@@ -13,6 +13,16 @@
     </div>
   </div>
 
+  <div class="search-container no-tour" style="margin-bottom: 20px;">
+    <span class="search-icon">🔍</span>
+    <input 
+      type="text" 
+      class="search-input" 
+      placeholder="بحث بالوصف أو بسمية الكليان..." 
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="filterByDate()">
+  </div>
+
   <div class="stat-card total-card">
     <div class="stat-icon" style="background: var(--info-light); color: var(--info);">🔧</div>
     <div class="stat-info">
@@ -31,60 +41,50 @@
   } @else {
   @if (revenus$ | async; as allRevenus) {
   @if (allRevenus.length > 0) {
-  <div class="card table-card">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>الوصف</th>
-          <th>الزبون</th>
-          @if (userRole === 'admin') {
-            <th>المسجل</th>
-          }
-          <th>المبلغ</th>
-          <th>التاريخ</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of paginatedRevenus$ | async; track r.id) {
-        <tr>
-          <td class="desc-cell">{{ r.description }}</td>
-          <td>{{ r.nom_client || '---' }}</td>
-          @if (userRole === 'admin') {
-            <td><span class="user-badge">{{ r.profiles?.name || '---' }}</span></td>
-          }
-          <td class="montant-cell">{{ formatMAD(r.montant) }}</td>
-          <td>{{ r.date }}</td>
-          <td>
-            <div class="actions">
-              <button class="btn btn-ghost btn-sm" (click)="openEdit(r)">✏️</button>
-              <button class="btn btn-ghost btn-sm" (click)="delete(r)">🗑️</button>
-            </div>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-    <!-- Pagination -->
-    <div class="pagination">
-      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)"
-        [disabled]="currentPage === totalPages">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </button>
-      <div class="page-numbers">
-        @for (p of getPages(); track p) {
-        <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-        }
+  <div class="reparations-grid">
+    @for (r of paginatedRevenus$ | async; track r.id) {
+    <div class="reparation-card">
+      <div class="card-status" [class.is-credit]="r.montant > 0 && r.nom_client">
+        {{ r.nom_client ? '👤 ' + r.nom_client : '📦 عام' }}
       </div>
-      <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      </button>
-      <div class="pagination-info">إجمالي: {{ allRevenus.length }} إصلاح</div>
+      <div class="card-body">
+        <h3 class="reparation-desc">{{ r.description }}</h3>
+        <div class="reparation-meta">
+          <span class="date-badge">📅 {{ r.date }}</span>
+          @if (userRole === 'admin') {
+            <span class="user-badge">👤 {{ r.profiles?.name || '---' }}</span>
+          }
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="reparation-amount">{{ formatMAD(r.montant) }}</div>
+        <div class="card-actions">
+          <button class="btn btn-ghost btn-icon" (click)="openEdit(r)" title="تعديل">✏️</button>
+          <button class="btn btn-ghost btn-icon" (click)="delete(r)" title="حذف">🗑️</button>
+        </div>
+      </div>
     </div>
+    }
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)"
+      [disabled]="currentPage === totalPages">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
+    <div class="page-numbers">
+      @for (p of getPages(); track p) {
+      <button class="pagination-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+      }
+    </div>
+    <button class="pagination-btn nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    </button>
   </div>
   } @else {
   <div class="card empty-state">
