@@ -72,17 +72,30 @@
     </div>
     
     <div class="top-bar-center" id="tour-stats">
-      <div class="quick-stat rib7" *ngIf="userRole === 'admin'">
-        <span class="stat-icon">📈</span>
-        <span class="stat-label">ربح اليوم:</span>
-        <span class="stat-val">{{ dailyRib7 }} د.م</span>
-      </div>
-      <div class="quick-stat caisse" [class.with-action]="userRole === 'admin'" (click)="userRole === 'admin' ? openQuickWithdraw() : null" [title]="userRole === 'admin' ? 'إسحب أو قيد مصروف من الصندوق' : 'مبيعات اليوم'">
-        <span class="stat-icon">💵</span>
-        <span class="stat-label">{{ userRole === 'admin' ? 'صندوق اليوم:' : 'مبيعاتك اليوم:' }}</span>
-        <span class="stat-val">{{ dailyCaisse }} د.م</span>
-        <span class="quick-act-btn" *ngIf="userRole === 'admin'">➖</span>
-      </div>
+      @if (userRole === 'admin') {
+        <div class="quick-stat rib7">
+          <span class="stat-icon">📈</span>
+          <span class="stat-label">ربح اليوم:</span>
+          <span class="stat-val">{{ dailyRib7 }} د.م</span>
+        </div>
+        <div class="quick-stat caisse with-action" (click)="openQuickWithdraw()" title="إسحب أو قيد مصروف من الصندوق">
+          <span class="stat-icon">💵</span>
+          <span class="stat-label">صندوق اليوم:</span>
+          <span class="stat-val">{{ dailyCaisse }} د.م</span>
+          <span class="quick-act-btn">➖</span>
+        </div>
+      } @else {
+        <div class="quick-stat ventes" title="مجموع المبيعات والإصلاحات اللي درتي اليوم">
+          <span class="stat-icon">🛒</span>
+          <span class="stat-label">مبيعاتك:</span>
+          <span class="stat-val">{{ dailySalesValue }} د.م</span>
+        </div>
+        <div class="quick-stat caisse" title="شحال خاصو يكون عندك ديال الكاش">
+          <span class="stat-icon">💵</span>
+          <span class="stat-label">الصندوق:</span>
+          <span class="stat-val">{{ dailyCaisse }} د.م</span>
+        </div>
+      }
     </div>
 
     <!-- Personalized Welcome for Employee/Admin -->

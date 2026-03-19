@@ -139,6 +139,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // --- Global Top Bar Stats ---
   dailyCaisse = 0;
+  dailySalesValue = 0;
   dailyRib7 = 0;
   private statsInterval: any;
 
@@ -209,6 +210,9 @@ export class AppComponent implements OnInit, OnDestroy {
       if (role !== 'admin') {
         this.lowStockCount = 0;
       }
+      
+      // Reload stats immediately with the correct role logic
+      this.loadQuickStats();
 
       // Auto redirect employee to sales page if they try to access root
       if (role === 'employee' && (this.router.url === '/' || this.router.url === '')) {
@@ -318,6 +322,7 @@ export class AppComponent implements OnInit, OnDestroy {
         if (uid) {
           const stats = await this.supabase.getDailyQuickStats(uid);
           this.dailyCaisse = stats.caisse;
+          this.dailySalesValue = (stats as any).ventes || 0;
           this.dailyRib7 = 0; // Employees don't see profit
         }
       }

@@ -950,6 +950,7 @@ export class SupabaseService {
 
     return {
       caisse: ventesTotal + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsTotal,
+      ventes: ventesTotal + reparationsTotal,
       rib7: ventesProfitTotal + reparationsTotal - depensesTotal
     };
   }

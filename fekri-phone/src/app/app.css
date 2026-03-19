@@ -348,6 +348,12 @@
   background: rgba(34, 197, 94, 0.05);
 }
 
+.quick-stat.ventes {
+  color: #8b5cf6; /* Purple/Violet */
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.05);
+}
+
 .quick-stat.caisse.with-action {
   cursor: pointer;
   transition: all 0.2s;
