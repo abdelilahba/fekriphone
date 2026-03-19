@@ -878,13 +878,14 @@ export class SupabaseService {
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    const [produits, revenus, depenses, credits, ventes, pertes] = await Promise.all([
+    const [produits, revenus, depenses, credits, ventes, pertes, avances] = await Promise.all([
       this.supabase.from('produits').select('id', { count: 'exact', head: true }),
       this.supabase.from('revenus_reparation').select('montant').gte('date', firstDay).lte('date', lastDay),
       this.supabase.from('depenses').select('montant').gte('date', firstDay).lte('date', lastDay),
       this.supabase.from('credits').select('montant, montant_paye').eq('est_paye', false),
       this.supabase.from('ventes').select('montant_total, profit_total').gte('date', firstDay).lte('date', lastDay),
-      this.supabase.from('pertes').select('montant_perte').gte('date', firstDay).lte('date', lastDay)
+      this.supabase.from('pertes').select('montant_perte').gte('date', firstDay).lte('date', lastDay),
+      this.supabase.from('avances').select('montant').gte('date', firstDay).lte('date', lastDay)
     ]);
 
     const totalRevenus = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant), 0);
@@ -893,6 +894,7 @@ export class SupabaseService {
     const totalVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total), 0);
     const totalProfitVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const totalPertes = (pertes.data || []).reduce((s: number, p: any) => s + Number(p.montant_perte), 0);
+    const totalAvances = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant), 0);
 
     return {
       totalProduits: produits.count || 0,
@@ -901,7 +903,7 @@ export class SupabaseService {
       totalCreditsEnCours: totalCredits,
       totalVentes: totalVentes,
       totalPertes: totalPertes,
-      chiffreAffaire: totalVentes + totalRevenus,
+      chiffreAffaire: totalVentes + totalRevenus + totalAvances,
       benefice: totalProfitVentes + totalRevenus - totalDepenses - totalPertes
     };
   }
