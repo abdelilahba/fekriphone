@@ -508,6 +508,8 @@ export class SupabaseService {
           .eq('id', item.produit_id);
       }
     }
+    
+    await this.logActivity('BI3A', { montant: montantTotal, items: items.length }, userId);
 
     this.refreshService.triggerRefresh();
     return vente;
@@ -580,6 +582,8 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
+    
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -629,6 +633,8 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
+    
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -678,6 +684,8 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
+    
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -713,6 +721,9 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
+
+    await this.logActivity('ZID_CREDIT', { nom: credit.nom_client, montant: credit.montant }, userId);
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -724,6 +735,7 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
+    this.refreshService.triggerRefresh();
     return data;
   }
 
@@ -733,6 +745,7 @@ export class SupabaseService {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.refreshService.triggerRefresh();
   }
 
   // ==================== Clients ====================
@@ -814,6 +827,9 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
+
+    await this.logActivity('ADAA_DIN', { credit_id: creditId, montant: montant }, undefined);
+    this.refreshService.triggerRefresh();
     return data;
   }
 
