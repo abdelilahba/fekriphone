@@ -52,8 +52,6 @@ export interface RevenuReparation {
   montant: number;
   date: string;
   user_id?: string;
-  nom_client?: string;
-  client_id?: string;
   created_at: string;
   profiles?: { name: string };
 }

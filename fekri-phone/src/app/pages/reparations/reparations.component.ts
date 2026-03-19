@@ -28,12 +28,8 @@ export class ReparationsComponent implements OnInit {
   userRole = 'admin';
   selectedDate: string = new Date().toISOString().split('T')[0];
   allRevenusData: RevenuReparation[] = [];
-  clients: any[] = [];
-  filteredClients: any[] = [];
-  showClientsList = false;
-  searchQuery = '';
 
-  form = { id: '', description: '', montant: 0, date: '', nomClient: '', montantPaye: 0 };
+  form = { id: '', description: '', montant: 0, date: '' };
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
@@ -57,8 +53,6 @@ export class ReparationsComponent implements OnInit {
 
       this.allRevenusData = finalRevenus;
       this.filterByDate();
-      
-      this.clients = await this.supabase.getClients();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
@@ -71,15 +65,6 @@ export class ReparationsComponent implements OnInit {
     if (this.selectedDate) {
       filtered = filtered.filter(r => (r.date.split(' ')[0] || r.date) === this.selectedDate);
     }
-    
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(r => 
-        (r.description && r.description.toLowerCase().includes(q)) ||
-        (r.nom_client && r.nom_client.toLowerCase().includes(q))
-      );
-    }
-
     this.revenus$.next(filtered);
 
     const total = filtered.reduce((s: number, r: any) => s + Number(r.montant), 0);
@@ -99,27 +84,13 @@ export class ReparationsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { 
-      id: '', 
-      description: '', 
-      montant: 0, 
-      date: new Date().toISOString().split('T')[0],
-      nomClient: '',
-      montantPaye: 0 
-    };
+    this.form = { id: '', description: '', montant: 0, date: new Date().toISOString().split('T')[0] };
     this.showModal = true;
   }
 
-  openEdit(r: any) {
+  openEdit(r: RevenuReparation) {
     this.editMode = true;
-    this.form = { 
-      id: r.id, 
-      description: r.description, 
-      montant: r.montant, 
-      date: r.date,
-      nomClient: r.nom_client || '',
-      montantPaye: r.montant // On assumption that old records were paid in full
-    };
+    this.form = { id: r.id, description: r.description, montant: r.montant, date: r.date };
     this.showModal = true;
   }
 
@@ -131,50 +102,12 @@ export class ReparationsComponent implements OnInit {
       return;
     }
     try {
-      let clientId = null;
-      if (this.form.nomClient.trim()) {
-        let client = this.clients.find(c => c.nom.toLowerCase() === this.form.nomClient.trim().toLowerCase());
-        if (client) {
-          clientId = client.id;
-        } else {
-          const newClient = await this.supabase.addClient({ nom: this.form.nomClient.trim() });
-          clientId = newClient.id;
-          // Update local list
-          this.clients.push(newClient);
-        }
-      }
-
-      const data = { 
-        description: this.form.description, 
-        montant: this.form.montant, 
-        date: this.form.date,
-        nom_client: this.form.nomClient.trim(),
-        client_id: clientId
-      };
+      const data = { description: this.form.description, montant: this.form.montant, date: this.form.date };
       const uid = this.auth.currentUser?.id;
-      
       if (this.editMode) {
         await this.supabase.updateRevenu(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
-        // Handle Credit only if client name is provided AND there's a remainder
-        const reste = this.form.montant - this.form.montantPaye;
-        if (this.form.nomClient.trim() && reste > 0) {
-          if (!clientId) {
-            this.showToast('وقع مشكل فربط الكليان بالكريدي', 'error');
-            return;
-          }
-
-          await this.supabase.addCredit({
-            client_id: clientId,
-            nom_client: this.form.nomClient.trim(),
-            description: 'باقي ديال إصلاح: ' + this.form.description,
-            montant: reste,
-            montant_paye: 0,
-            date: this.form.date
-          }, uid);
-        }
-
         await this.supabase.addRevenu(data, uid);
         this.showToast('تزاد بنجاح ✅', 'success');
       }
@@ -183,29 +116,6 @@ export class ReparationsComponent implements OnInit {
     } catch (error) {
       this.showToast('وقع مشكل', 'error');
     }
-  }
-
-  // Custom methods for client auto-complete
-  onClientSearch() {
-    const term = this.form.nomClient.toLowerCase().trim();
-    if (!term) {
-      this.filteredClients = [];
-      this.showClientsList = false;
-      return;
-    }
-    this.filteredClients = this.clients.filter(c => c.nom.toLowerCase().includes(term)).slice(0, 5);
-    this.showClientsList = this.filteredClients.length > 0;
-  }
-
-  selectClient(name: string) {
-    this.form.nomClient = name;
-    this.showClientsList = false;
-  }
-
-  // Auto-fill paid amount if it's the same as total
-  onMontantChange() {
-    // If montantPaye was 0 or never edited, and montant is set, we could auto-suggest it
-    // But for now, the save() logic handles "no name = no credit" which is safer.
   }
 
   async delete(r: RevenuReparation) {
