@@ -903,6 +903,7 @@ export class SupabaseService {
       totalCreditsEnCours: totalCredits,
       totalVentes: totalVentes,
       totalPertes: totalPertes,
+      totalAvances: totalAvances,
       chiffreAffaire: totalVentes + totalRevenus + totalAvances,
       benefice: totalProfitVentes + totalRevenus - totalDepenses - totalPertes
     };

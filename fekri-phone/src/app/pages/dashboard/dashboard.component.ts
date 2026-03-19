@@ -15,6 +15,7 @@ interface DashboardStats {
   totalDepenses: number;
   totalCreditsEnCours: number;
   totalPertes?: number;
+  totalAvances: number;
   chiffreAffaire: number;
   benefice: number;
 }
@@ -41,7 +42,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   stats$ = new BehaviorSubject<DashboardStats>({
     totalProduits: 0, totalVentes: 0, totalRevenusReparation: 0,
-    totalDepenses: 0, totalCreditsEnCours: 0, chiffreAffaire: 0, benefice: 0
+    totalDepenses: 0, totalCreditsEnCours: 0, totalAvances: 0, chiffreAffaire: 0, benefice: 0
   });
   loading$ = new BehaviorSubject<boolean>(true);
   chartReady = false;
