@@ -142,13 +142,7 @@ export class CreditsComponent implements OnInit {
     }
   }
 
-  onClientChange() {
-    const selectedClient = this.allClients.find(cl => cl.id === this.form.client_id);
-    if (selectedClient) {
-      this.form.nom_client = selectedClient.nom;
-      this.form.telephone_client = selectedClient.telephone || '';
-    }
-  }
+  // Removed onClientChange since we use datalist and auto-create
 
   closeModal() { this.showModal = false; }
   closePayModal() { this.showPayModal = false; }
@@ -160,9 +154,22 @@ export class CreditsComponent implements OnInit {
       return;
     }
     try {
+      let finalClientId = this.form.client_id || null;
+      let existingClient = this.allClients.find(c => c.nom.toLowerCase() === this.form.nom_client.trim().toLowerCase());
+        
+      if (existingClient) {
+        finalClientId = existingClient.id;
+      } else {
+        const newClient = await this.supabase.addClient({ 
+          nom: this.form.nom_client.trim(), 
+          telephone: this.form.telephone_client || null 
+        });
+        finalClientId = newClient.id;
+      }
+
       const data: any = {
-        client_id: this.form.client_id || null,
-        nom_client: this.form.nom_client, 
+        client_id: finalClientId,
+        nom_client: this.form.nom_client.trim(), 
         telephone_client: this.form.telephone_client, 
         description: this.form.description, 
         montant: this.form.montant, 

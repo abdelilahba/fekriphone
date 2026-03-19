@@ -236,34 +236,37 @@
           <!-- Smart Calculator & Partial Payment -->
           @if ((cart$ | async)?.length) {
             <div class="smart-calculator">
-              <div class="calc-header">
-                <label>المبلغ المؤدى :</label>
-                <input type="number" [(ngModel)]="montantPaye" [placeholder]="(cartTotal$ | async) || 0" class="form-control" />
+              <div class="calc-inputs-section">
+                <div class="calc-input-group" title="شحال غيدفع الكليان دابا">
+                  <label>المبلغ المؤدى (Payé) :</label>
+                  <input type="number" [(ngModel)]="montantPaye" [placeholder]="(cartTotal$ | async) || 0" class="form-control" />
+                </div>
+                
+                <div class="calc-input-group mt-2" title="الورقة لي عطاك (مثلاً ورقة د 200)">
+                  <label>تسلّمت (Espèce / ورقة) :</label>
+                  <input type="number" [(ngModel)]="montantRecu" placeholder="0" class="form-control" />
+                </div>
+                
+                <div class="quick-bills">
+                  <button (click)="addMontantRecu(20)">+20</button>
+                  <button (click)="addMontantRecu(50)">+50</button>
+                  <button (click)="addMontantRecu(100)">+100</button>
+                  <button (click)="addMontantRecu(200)">+200</button>
+                </div>
               </div>
               
-              <div class="calc-header" style="margin-top: 10px;">
-                <label>تسلّمت (Espèce) :</label>
-                <input type="number" [(ngModel)]="montantRecu" placeholder="0" class="form-control" />
-              </div>
-              <div class="quick-bills">
-                <button (click)="addMontantRecu(20)">+20</button>
-                <button (click)="addMontantRecu(50)">+50</button>
-                <button (click)="addMontantRecu(100)">+100</button>
-                <button (click)="addMontantRecu(200)">+200</button>
-              </div>
-              
-              <div class="change-display" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <div class="calc-summary-section" [class.has-credit]="resteAPayer > 0">
+                <div class="summary-row">
                   <span>الصرف (Monnaie) :</span>
                   <strong [class.success]="monnaie > 0">{{ formatMAD(monnaie) }}</strong>
                 </div>
                 
                 @if (resteAPayer > 0) {
-                  <div style="display: flex; justify-content: space-between; color: var(--danger); margin-bottom: 10px;">
+                  <div class="summary-row credit-row">
                     <span>الباقي (كريدي) :</span>
                     <strong>{{ formatMAD(resteAPayer) }}</strong>
                   </div>
-                  <div style="display: flex; flex-direction: column; gap: 5px;">
+                  <div class="credit-input-group">
                     <input type="text" [(ngModel)]="nomClient" list="clients-list" placeholder="إسم الزبون للكريدي *" class="form-control" [class.error-input]="!nomClient" />
                     <datalist id="clients-list">
                       @for (c of clients; track c.id) {

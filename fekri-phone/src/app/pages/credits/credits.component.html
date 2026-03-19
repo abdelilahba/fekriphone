@@ -115,21 +115,17 @@
           <button class="close-btn" (click)="closeModal()">✕</button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label>الزبون *</label>
-            @if (allClients.length > 0) {
-              <select [(ngModel)]="form.client_id" (ngModelChange)="onClientChange()" class="form-control">
-                <option value="">-- اختار الزبون --</option>
-                @for (client of allClients; track client.id) {
-                  <option [value]="client.id">{{ client.nom }}{{ client.telephone ? ' - ' + client.telephone : '' }}</option>
-                }
-              </select>
-            }
-          </div>
           <div class="form-row">
-            <div class="form-group"><label>إسم الزبون *</label>
-              <input type="text" [(ngModel)]="form.nom_client" class="form-control" placeholder="مثلا: أحمد"></div>
-            <div class="form-group"><label>رقم الهاتف</label>
+            <div class="form-group">
+              <label>إسم الزبون *</label>
+              <input type="text" [(ngModel)]="form.nom_client" list="credit-clients-list" class="form-control" placeholder="إسم موجود أو كتب جديد" [class.error-input]="!form.nom_client" title="سيتم تسجيل الزبون تلقائيا إذا لم يكن موجودا">
+              <datalist id="credit-clients-list">
+                @for (client of allClients; track client.id) {
+                  <option [value]="client.nom">{{ client.nom }}</option>
+                }
+              </datalist>
+            </div>
+            <div class="form-group"><label>رقم الهاتف (إختياري)</label>
               <input type="tel" [(ngModel)]="form.telephone_client" class="form-control" placeholder="06XXXXXXXX"></div>
           </div>
           <div class="form-group"><label>الوصف (شنو خدا بالكريدي) *</label>
