@@ -121,11 +121,25 @@ export class ReparationsComponent implements OnInit {
       return;
     }
     try {
+      let clientId = null;
+      if (this.form.nomClient.trim()) {
+        let client = this.clients.find(c => c.nom.toLowerCase() === this.form.nomClient.trim().toLowerCase());
+        if (client) {
+          clientId = client.id;
+        } else {
+          const newClient = await this.supabase.addClient({ nom: this.form.nomClient.trim() });
+          clientId = newClient.id;
+          // Update local list
+          this.clients.push(newClient);
+        }
+      }
+
       const data = { 
         description: this.form.description, 
         montant: this.form.montant, 
         date: this.form.date,
-        nom_client: this.form.nomClient 
+        nom_client: this.form.nomClient.trim(),
+        client_id: clientId
       };
       const uid = this.auth.currentUser?.id;
       
@@ -136,17 +150,9 @@ export class ReparationsComponent implements OnInit {
         // Handle Credit if needed
         const reste = this.form.montant - this.form.montantPaye;
         if (reste > 0) {
-          if (!this.form.nomClient.trim()) {
+          if (!clientId) {
             this.showToast('خصك تدخل سمية الكليان للكريدي', 'error');
             return;
-          }
-
-          let client = this.clients.find(c => c.nom.toLowerCase() === this.form.nomClient.trim().toLowerCase());
-          let clientId = client ? client.id : null;
-          
-          if (!clientId) {
-            const newClient = await this.supabase.addClient({ nom: this.form.nomClient.trim() });
-            clientId = newClient.id;
           }
 
           await this.supabase.addCredit({

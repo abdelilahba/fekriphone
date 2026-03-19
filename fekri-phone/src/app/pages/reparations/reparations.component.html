@@ -36,6 +36,7 @@
       <thead>
         <tr>
           <th>الوصف</th>
+          <th>الزبون</th>
           @if (userRole === 'admin') {
             <th>المسجل</th>
           }
@@ -48,6 +49,7 @@
         @for (r of paginatedRevenus$ | async; track r.id) {
         <tr>
           <td class="desc-cell">{{ r.description }}</td>
+          <td>{{ r.nom_client || '---' }}</td>
           @if (userRole === 'admin') {
             <td><span class="user-badge">{{ r.profiles?.name || '---' }}</span></td>
           }
