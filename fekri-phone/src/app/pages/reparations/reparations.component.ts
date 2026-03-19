@@ -157,11 +157,11 @@ export class ReparationsComponent implements OnInit {
         await this.supabase.updateRevenu(this.form.id, data);
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
-        // Handle Credit if needed
+        // Handle Credit only if client name is provided AND there's a remainder
         const reste = this.form.montant - this.form.montantPaye;
-        if (reste > 0) {
+        if (this.form.nomClient.trim() && reste > 0) {
           if (!clientId) {
-            this.showToast('خصك تدخل سمية الكليان للكريدي', 'error');
+            this.showToast('وقع مشكل فربط الكليان بالكريدي', 'error');
             return;
           }
 
@@ -200,6 +200,12 @@ export class ReparationsComponent implements OnInit {
   selectClient(name: string) {
     this.form.nomClient = name;
     this.showClientsList = false;
+  }
+
+  // Auto-fill paid amount if it's the same as total
+  onMontantChange() {
+    // If montantPaye was 0 or never edited, and montant is set, we could auto-suggest it
+    // But for now, the save() logic handles "no name = no credit" which is safer.
   }
 
   async delete(r: RevenuReparation) {

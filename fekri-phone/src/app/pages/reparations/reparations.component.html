@@ -131,7 +131,7 @@
             <input type="number" [(ngModel)]="form.montantPaye" class="form-control" min="0">
           </div>
         </div>
-        @if (form.montant > form.montantPaye) {
+        @if (form.nomClient && form.montant > form.montantPaye) {
           <div class="credit-warning">
             ⚠️ غيتسجل كريدي ديال <b>{{ formatMAD(form.montant - form.montantPaye) }}</b> للكليان <b>{{ form.nomClient || '...' }}</b>
           </div>
