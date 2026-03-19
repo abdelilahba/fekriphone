@@ -117,6 +117,47 @@
             <input type="date" [(ngModel)]="form.date" class="form-control">
           </div>
         </div>
+
+        <!-- Credit Toggle (only for new entries) -->
+        @if (!editMode) {
+        <div class="credit-section">
+          <label class="credit-toggle">
+            <input type="checkbox" [(ngModel)]="isCredit">
+            <span class="toggle-label">💳 كريدي؟ (الزبون ما خلصش كولشي)</span>
+          </label>
+
+          @if (isCredit) {
+          <div class="credit-fields" style="margin-top: 12px;">
+            <div class="form-group">
+              <label>👤 اسم الزبون *</label>
+              <div style="position: relative;">
+                <input type="text" [(ngModel)]="nomClient" (ngModelChange)="filterClients()" class="form-control"
+                  placeholder="كتب اسم الزبون..." autocomplete="off">
+                @if (filteredClients.length > 0) {
+                <div class="client-suggestions">
+                  @for (c of filteredClients; track c.id) {
+                  <div class="suggestion-item" (click)="selectClient(c)">
+                    👤 {{ c.nom }}
+                    @if (c.telephone) { <small style="opacity: 0.6;">📞 {{ c.telephone }}</small> }
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+            <div class="form-group">
+              <label>💵 المبلغ المؤدى (شحال خلص)</label>
+              <input type="number" [(ngModel)]="montantPaye" class="form-control" [max]="form.montant" min="0"
+                placeholder="0">
+            </div>
+            <div class="reste-display">
+              <span>الباقي (كريدي):</span>
+              <strong class="reste-amount">{{ formatMAD(resteCredit) }}</strong>
+            </div>
+          </div>
+          }
+        </div>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" (click)="save()">💾 حفظ</button>

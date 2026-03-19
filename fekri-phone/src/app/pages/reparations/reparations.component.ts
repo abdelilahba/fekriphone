@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
-import { RevenuReparation } from '../../core/models/models';
+import { RevenuReparation, Client } from '../../core/models/models';
 
 @Component({
   selector: 'app-reparations',
@@ -29,6 +29,13 @@ export class ReparationsComponent implements OnInit {
   selectedDate: string = new Date().toISOString().split('T')[0];
   allRevenusData: RevenuReparation[] = [];
 
+  // Credit fields
+  isCredit = false;
+  montantPaye: number | null = null;
+  nomClient = '';
+  clients: Client[] = [];
+  filteredClients: Client[] = [];
+
   form = { id: '', description: '', montant: 0, date: '' };
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
@@ -37,7 +44,34 @@ export class ReparationsComponent implements OnInit {
     this.auth.userRole$.subscribe(role => {
       this.userRole = role;
     });
-    this.loadData(); 
+    this.loadData();
+    this.loadClients();
+  }
+
+  async loadClients() {
+    try {
+      this.clients = await this.supabase.getClients();
+    } catch {}
+  }
+
+  filterClients() {
+    if (!this.nomClient || this.nomClient.trim().length < 1) {
+      this.filteredClients = [];
+      return;
+    }
+    const q = this.nomClient.toLowerCase();
+    this.filteredClients = this.clients.filter(c => c.nom.toLowerCase().includes(q)).slice(0, 5);
+  }
+
+  selectClient(c: Client) {
+    this.nomClient = c.nom;
+    this.filteredClients = [];
+  }
+
+  get resteCredit(): number {
+    const montant = this.form.montant || 0;
+    const paye = this.montantPaye ?? montant;
+    return Math.max(0, montant - paye);
   }
 
   async loadData() {
@@ -85,12 +119,19 @@ export class ReparationsComponent implements OnInit {
   openAdd() {
     this.editMode = false;
     this.form = { id: '', description: '', montant: 0, date: new Date().toISOString().split('T')[0] };
+    this.isCredit = false;
+    this.montantPaye = null;
+    this.nomClient = '';
+    this.filteredClients = [];
     this.showModal = true;
   }
 
   openEdit(r: RevenuReparation) {
     this.editMode = true;
     this.form = { id: r.id, description: r.description, montant: r.montant, date: r.date };
+    this.isCredit = false;
+    this.montantPaye = null;
+    this.nomClient = '';
     this.showModal = true;
   }
 
@@ -101,6 +142,10 @@ export class ReparationsComponent implements OnInit {
       this.showToast('خصك تدخل الوصف والمبلغ', 'error');
       return;
     }
+    if (this.isCredit && !this.nomClient.trim()) {
+      this.showToast('خصك تدخل اسم الزبون للكريدي', 'error');
+      return;
+    }
     try {
       const data = { description: this.form.description, montant: this.form.montant, date: this.form.date };
       const uid = this.auth.currentUser?.id;
@@ -109,10 +154,33 @@ export class ReparationsComponent implements OnInit {
         this.showToast('تعدل بنجاح ✅', 'success');
       } else {
         await this.supabase.addRevenu(data, uid);
+
+        // Create credit if partial/no payment
+        if (this.isCredit && this.resteCredit > 0) {
+          let client = this.clients.find(c => c.nom.toLowerCase() === this.nomClient.trim().toLowerCase());
+          let clientId = client ? client.id : null;
+
+          if (!clientId) {
+            const newClient = await this.supabase.addClient({ nom: this.nomClient.trim() });
+            clientId = newClient.id;
+          }
+
+          await this.supabase.addCredit({
+            client_id: clientId,
+            nom_client: this.nomClient.trim(),
+            description: 'إصلاح: ' + this.form.description,
+            montant: this.resteCredit,
+            montant_paye: 0,
+            est_paye: false,
+            date: this.form.date || new Date().toISOString().split('T')[0]
+          }, uid);
+        }
+
         this.showToast('تزاد بنجاح ✅', 'success');
       }
       this.closeModal();
       await this.loadData();
+      await this.loadClients();
     } catch (error) {
       this.showToast('وقع مشكل', 'error');
     }
