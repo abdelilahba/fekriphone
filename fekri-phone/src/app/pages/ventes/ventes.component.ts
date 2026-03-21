@@ -53,6 +53,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   allVentesData: Vente[] = [];
  
   private cart: CartItem[] = [];
+  editingVenteId: string | null = null;
  
   @ViewChild('searchInput') searchInput!: ElementRef;
   private focusSearchNeedsTrigger = false;
@@ -162,10 +163,44 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.layout.setPosModalState(true);
     this.layout.enterFullscreen();
     this.focusSearchNeedsTrigger = true;
+    this.editingVenteId = null;
     this.montantRecu = null;
     this.montantPaye = null;
     this.nomClient = '';
     this.descriptionCredit = '';
+    this.cdr.detectChanges();
+  }
+
+  editVente(vente: any) {
+    this.editingVenteId = vente.id;
+    this.cart = vente.vente_items.map((vi: any) => ({
+      produit_id: vi.produit_id,
+      nom: vi.produits?.nom || 'منتج',
+      icone: '📦', // Or fetch from product
+      prix_unitaire: vi.prix_unitaire,
+      prix_original: vi.prix_unitaire,
+      prix_achat_unitaire: vi.prix_achat_unitaire,
+      profit: vi.profit,
+      quantite: vi.quantite,
+      stock_restant: vi.produits?.quantite || 0,
+      sous_total: vi.sous_total
+    }));
+    this.cart$.next([...this.cart]);
+    this.updateCartTotal();
+    this.searchTerm = '';
+    this.activeCategory = '';
+    this.filteredProduits$.next([...this.allProduits]);
+    
+    // Set payment fields if applicable
+    this.montantPaye = null;
+    this.montantRecu = null;
+    this.nomClient = '';
+    this.descriptionCredit = '';
+
+    this.showVenteModal = true;
+    this.layout.setPosModalState(true);
+    this.layout.enterFullscreen();
+    this.focusSearchNeedsTrigger = true;
     this.cdr.detectChanges();
   }
 
@@ -464,7 +499,13 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     try {
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
       const uid = this.auth.currentUser?.id;
-      await this.supabase.addVente(total, profitTotal, this.cart, uid);
+
+      if (this.editingVenteId) {
+        await this.supabase.updateVente(this.editingVenteId, total, profitTotal, this.cart, uid);
+        this.editingVenteId = null;
+      } else {
+        await this.supabase.addVente(total, profitTotal, this.cart, uid);
+      }
       
       if (reste > 0) {
         const finalDesc = this.descriptionCredit.trim() || this.defaultCreditDescription;

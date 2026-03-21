@@ -69,6 +69,14 @@
       </div>
 
       <div class="mvr-actions">
+        <!-- Edit Button -->
+        <button class="mvr-btn-edit" (click)="editVente(v)" title="تعديل هذه البيعة" style="margin-left: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+        </button>
+        <!-- Delete Button -->
         <button class="mvr-btn-delete" (click)="deleteVente(v)" title="حذف هذه البيعة">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -181,7 +189,7 @@
       <!-- سلة المشتريات -->
       <div class="pos-cart-side">
         <div class="cart-header">
-          <h3>🧾 فاتورة جديدة</h3>
+          <h3>🧾 {{ editingVenteId ? 'تعديل الفاتورة' : 'فاتورة جديدة' }}</h3>
           <span class="cart-items-count">{{ (cart$ | async)?.length || 0 }} منتجات</span>
         </div>
 
@@ -294,7 +302,7 @@
           }
 
           <button id="tour-pos-checkout" class="confirm-btn" (click)="confirmVente()" [disabled]="(cart$ | async)?.length === 0">
-            دفع وحفظ الفاتورة
+            {{ editingVenteId ? 'تحديث الفاتورة' : 'دفع وحفظ الفاتورة' }}
           </button>
         </div>
       </div>

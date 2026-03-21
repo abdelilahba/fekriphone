@@ -547,6 +547,69 @@ export class SupabaseService {
     this.refreshService.triggerRefresh();
   }
 
+  async updateVente(id: string, montantTotal: number, profitTotal: number, newItems: any[], userId?: string) {
+    // 1. Fetch old items to restore stock
+    const { data: oldItems, error: oldItemsError } = await this.supabase
+      .from('vente_items')
+      .select('produit_id, quantite, produits(quantite)')
+      .eq('vente_id', id);
+
+    if (!oldItemsError && oldItems) {
+      for (const item of oldItems) {
+        if (item.produit_id && item.produits) {
+          const currentStock = (item.produits as any).quantite || 0;
+          await this.supabase
+            .from('produits')
+            .update({ quantite: currentStock + item.quantite })
+            .eq('id', item.produit_id);
+        }
+      }
+    }
+
+    // 2. Delete old items
+    await this.supabase.from('vente_items').delete().eq('vente_id', id);
+
+    // 3. Update the vente totals
+    const { error: venteError } = await this.supabase
+      .from('ventes')
+      .update({ montant_total: montantTotal, profit_total: profitTotal })
+      .eq('id', id);
+    if (venteError) throw venteError;
+
+    // 4. Insert new items
+    const venteItemsToInsert = newItems.map(item => ({
+      vente_id: id,
+      produit_id: item.produit_id,
+      quantite: item.quantite,
+      prix_unitaire: item.prix_unitaire,
+      prix_achat_unitaire: item.prix_achat_unitaire || 0,
+      profit: item.profit || 0,
+      sous_total: item.sous_total
+    }));
+
+    const { error: insertError } = await this.supabase.from('vente_items').insert(venteItemsToInsert);
+    if (insertError) throw insertError;
+
+    // 5. Decrement stock for new items
+    for (const item of newItems) {
+      const { error: rpcError } = await this.supabase.rpc('decrement_stock', {
+        p_id: item.produit_id,
+        p_qty: item.quantite
+      });
+      if (rpcError) {
+        // Fallback if RPC doesn't exist
+        const { data: prod } = await this.supabase.from('produits').select('quantite').eq('id', item.produit_id).single();
+        if (prod) {
+          await this.supabase.from('produits').update({ quantite: prod.quantite - item.quantite }).eq('id', item.produit_id);
+        }
+      }
+    }
+
+    await this.logActivity('MODIF_BI3A', { vente_id: id, montant: montantTotal, items_count: newItems.length }, userId);
+    this.refreshService.triggerRefresh();
+  }
+
+
   // ==================== Revenus Réparation ====================
   async getRevenus() {
     const { data, error } = await this.supabase

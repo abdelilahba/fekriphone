@@ -153,9 +153,11 @@
 .mvr-actions {
   flex-shrink: 0;
   margin-right: 12px;
+  display: flex;
+  gap: 8px;
 }
 
-.mvr-btn-delete {
+.mvr-btn-delete, .mvr-btn-edit {
   background: var(--bg-main);
   border: 1px solid var(--border-light);
   color: var(--text-light);
@@ -174,6 +176,13 @@
   background: var(--danger-light);
   color: var(--danger);
   border-color: var(--danger);
+  transform: scale(1.05);
+}
+
+.mvr-btn-edit:hover {
+  background: rgba(124, 58, 237, 0.1); /* Primary color light */
+  color: var(--primary);
+  border-color: var(--primary);
   transform: scale(1.05);
 }
 
