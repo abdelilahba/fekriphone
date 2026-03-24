@@ -425,13 +425,14 @@ export class SupabaseService {
     return data;
   }
 
-  async addVente(montantTotal: number, profitTotal: number, items: any[], userId?: string) {
+  async addVente(montantTotal: number, profitTotal: number, items: any[], userId?: string, dateStr?: string) {
     const { data: vente, error: venteError } = await this.supabase
       .from('ventes')
       .insert({ 
         montant_total: montantTotal, 
         profit_total: profitTotal, 
-        user_id: userId 
+        user_id: userId,
+        date: dateStr || new Date().toISOString()
       })
       .select()
       .single();
@@ -547,7 +548,7 @@ export class SupabaseService {
     this.refreshService.triggerRefresh();
   }
 
-  async updateVente(id: string, montantTotal: number, profitTotal: number, newItems: any[], userId?: string) {
+  async updateVente(id: string, montantTotal: number, profitTotal: number, newItems: any[], userId?: string, dateStr?: string) {
     // 1. Fetch old items to restore stock
     const { data: oldItems, error: oldItemsError } = await this.supabase
       .from('vente_items')
@@ -570,9 +571,12 @@ export class SupabaseService {
     await this.supabase.from('vente_items').delete().eq('vente_id', id);
 
     // 3. Update the vente totals
+    const updatePayload: any = { montant_total: montantTotal, profit_total: profitTotal };
+    if (dateStr) updatePayload.date = dateStr;
+
     const { error: venteError } = await this.supabase
       .from('ventes')
-      .update({ montant_total: montantTotal, profit_total: profitTotal })
+      .update(updatePayload)
       .eq('id', id);
     if (venteError) throw venteError;
 

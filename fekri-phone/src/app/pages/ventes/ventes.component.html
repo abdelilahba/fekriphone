@@ -128,7 +128,7 @@
     <div class="pos-header">
       <div class="pos-title">
         <h2>مرحبا بك في نقطة البيع</h2>
-        <span class="pos-date">{{ currentDate() }}</span>
+        <input type="date" [(ngModel)]="saleDate" class="form-control" style="width: 140px; padding: 4px; font-size: 13px;" title="يمكنك تغيير تاريخ البيعة إذا نسيتها في يوم آخر" />
       </div>
       <div class="pos-search" id="tour-pos-search">
         <input #searchInput type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"

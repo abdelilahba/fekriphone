@@ -51,6 +51,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   userRole = 'admin';
   selectedDate: string = new Date().toISOString().split('T')[0];
   allVentesData: Vente[] = [];
+  saleDate: string = new Date().toISOString().split('T')[0];
  
   private cart: CartItem[] = [];
   editingVenteId: string | null = null;
@@ -168,6 +169,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.montantPaye = null;
     this.nomClient = '';
     this.descriptionCredit = '';
+    this.saleDate = this.selectedDate || new Date().toISOString().split('T')[0];
     this.cdr.detectChanges();
   }
 
@@ -499,12 +501,11 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     try {
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
       const uid = this.auth.currentUser?.id;
-
       if (this.editingVenteId) {
-        await this.supabase.updateVente(this.editingVenteId, total, profitTotal, this.cart, uid);
+        await this.supabase.updateVente(this.editingVenteId, total, profitTotal, this.cart, uid, this.saleDate);
         this.editingVenteId = null;
       } else {
-        await this.supabase.addVente(total, profitTotal, this.cart, uid);
+        await this.supabase.addVente(total, profitTotal, this.cart, uid, this.saleDate);
       }
       
       if (reste > 0) {
