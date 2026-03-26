@@ -140,7 +140,7 @@
   @if (showCreditsModal && selectedClient) {
     <div class="modal-overlay" (click)="closeCreditsModal()">
       <div class="modal-content modal-lg" (click)="$event.stopPropagation()" style="background: var(--bg-main);">
-        <div class="modal-header" style="background: white;">
+        <div class="modal-header" style="background: var(--bg-card);">
           <div>
             <h2 style="margin: 0;">📜 سجل ديون: {{ selectedClient.nom }}</h2>
             @if (selectedClient.telephone) {

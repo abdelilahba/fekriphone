@@ -31,7 +31,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -83,9 +83,10 @@
   padding-right: 45px;
   border-radius: 12px;
   border: 2px solid var(--border-light);
-  background: white;
+  background: var(--bg-card);
   font-family: 'Cairo', sans-serif;
   font-size: 15px;
+  color: var(--text-primary);
   transition: all 0.3s;
 }
 
@@ -112,7 +113,7 @@
 }
 
 .client-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: var(--radius-md);
   padding: 24px;
   border: 1px solid var(--border-light);
@@ -123,7 +124,7 @@
 
 .client-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-lg);
   border-color: var(--primary-light);
 }
 
@@ -259,7 +260,7 @@
 }
 
 .credit-item:hover {
-  background: white;
+  background: var(--bg-card);
   box-shadow: var(--shadow-sm);
   transform: translateX(-5px);
 }
