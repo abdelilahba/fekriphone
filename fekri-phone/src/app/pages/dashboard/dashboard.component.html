@@ -11,6 +11,16 @@
       <h1>📊 لوحة التحكم</h1>
     </div>
 
+    @if (userRole === 'admin') {
+      <div class="felicitation-banner">
+        <span class="felicitation-icon">🎉</span>
+        <div class="felicitation-text">
+          <strong>مبروك! التطبيق ديالك نشط و صالح للأبد ✅</strong>
+          <p>أنا ديما حاضر إلا كانت شي تعديلات ولا إضافات — غير تواصل معايا فأي وقت 💬</p>
+        </div>
+      </div>
+    }
+
     <!-- Smart Alerts -->
     @if (alerts.length > 0 && !alertsDismissed) {
       <div class="alerts-panel">
