@@ -942,8 +942,13 @@ export class SupabaseService {
   // ==================== Dashboard Stats ====================
   async getDashboardStats() {
     const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    
+    const firstObj = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstDay = `${firstObj.getFullYear()}-${pad(firstObj.getMonth() + 1)}-${pad(firstObj.getDate())}`;
+    
+    const lastObj = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const lastDay = `${lastObj.getFullYear()}-${pad(lastObj.getMonth() + 1)}-${pad(lastObj.getDate())}`;
 
     const [produits, revenus, depenses, credits, ventes, pertes, avances] = await Promise.all([
       this.supabase.from('produits').select('id', { count: 'exact', head: true }),
