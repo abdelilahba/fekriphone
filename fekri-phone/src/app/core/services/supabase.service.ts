@@ -939,47 +939,6 @@ export class SupabaseService {
     if (error) throw error;
   }
 
-  // ==================== Dashboard Stats ====================
-  async getDashboardStats() {
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    
-    const firstObj = new Date(now.getFullYear(), now.getMonth(), 1);
-    const firstDay = `${firstObj.getFullYear()}-${pad(firstObj.getMonth() + 1)}-${pad(firstObj.getDate())}`;
-    
-    const lastObj = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const lastDay = `${lastObj.getFullYear()}-${pad(lastObj.getMonth() + 1)}-${pad(lastObj.getDate())}`;
-
-    const [produits, revenus, depenses, credits, ventes, pertes, avances] = await Promise.all([
-      this.supabase.from('produits').select('id', { count: 'exact', head: true }),
-      this.supabase.from('revenus_reparation').select('montant').gte('date', firstDay).lte('date', lastDay),
-      this.supabase.from('depenses').select('montant').gte('date', firstDay).lte('date', lastDay),
-      this.supabase.from('credits').select('montant, montant_paye').eq('est_paye', false),
-      this.supabase.from('ventes').select('montant_total, profit_total').gte('date', firstDay).lte('date', lastDay),
-      this.supabase.from('pertes').select('montant_perte').gte('date', firstDay).lte('date', lastDay),
-      this.supabase.from('avances').select('montant').gte('date', firstDay).lte('date', lastDay)
-    ]);
-
-    const totalRevenus = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant), 0);
-    const totalDepenses = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant), 0);
-    const totalCredits = (credits.data || []).reduce((s: number, c: any) => s + (Number(c.montant) - Number(c.montant_paye)), 0);
-    const totalVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total), 0);
-    const totalProfitVentes = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
-    const totalPertes = (pertes.data || []).reduce((s: number, p: any) => s + Number(p.montant_perte), 0);
-    const totalAvances = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant), 0);
-
-    return {
-      totalProduits: produits.count || 0,
-      totalRevenusReparation: totalRevenus,
-      totalDepenses: totalDepenses,
-      totalCreditsEnCours: totalCredits,
-      totalVentes: totalVentes,
-      totalPertes: totalPertes,
-      totalAvances: totalAvances,
-      chiffreAffaire: totalVentes + totalRevenus + totalAvances,
-      benefice: totalProfitVentes + totalRevenus - totalDepenses - totalPertes
-    };
-  }
 
   // ==================== Daily Quick Stats (Header) ====================
   async getDailyQuickStats(userId?: string) {

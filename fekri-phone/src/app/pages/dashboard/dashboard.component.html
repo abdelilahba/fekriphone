@@ -7,8 +7,15 @@
       <div class="skeleton-row"></div>
     </div>
   } @else {
-    <div class="page-header">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
       <h1>📊 لوحة التحكم</h1>
+      <div class="period-filter">
+        <select [ngModel]="selectedPeriod" (ngModelChange)="onPeriodChange($event)" class="filter-select">
+          <option value="month">هاد الشهر</option>
+          <option value="year">هاد العام</option>
+          <option value="all">كولشي (جميع الأوقات)</option>
+        </select>
+      </div>
     </div>
 
     @if (userRole === 'admin') {

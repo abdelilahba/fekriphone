@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -31,7 +32,7 @@ interface SmartAlert {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -89,54 +90,139 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   
   ngAfterViewInit() { this.chartReady = true; }
 
+  selectedPeriod: 'month' | 'year' | 'all' = 'month';
+
+  allVentes: any[] = [];
+  allDepenses: any[] = [];
+  allRevenus: any[] = [];
+  allProduits: any[] = [];
+  allPertes: any[] = [];
+  allCredits: any[] = [];
+  allAvances: any[] = [];
+
   async loadStats() {
     try {
       this.loading$.next(true);
-      const [stats, ventes, depenses, revenus, produits, pertes, credits] = await Promise.all([
-        this.supabase.getDashboardStats(),
+      const [ventes, depenses, revenus, produits, pertes, credits, avances] = await Promise.all([
         this.supabase.getVentes(),
         this.supabase.getDepenses(),
         this.supabase.getRevenus(),
         this.supabase.getProduits(),
         this.supabase.getPertes(),
-        this.supabase.getCredits()
+        this.supabase.getCredits(),
+        this.supabase.getAvances()
       ]);
-      this.stats$.next(stats);
 
-      this.ventesCount = ventes.length;
-      this.reparationsCount = revenus.length;
-      this.beneficePercent = stats.chiffreAffaire > 0 ? Math.round((stats.benefice / stats.chiffreAffaire) * 100) : 0;
+      this.allVentes = ventes || [];
+      this.allDepenses = depenses || [];
+      this.allRevenus = revenus || [];
+      this.allProduits = produits || [];
+      this.allPertes = pertes || [];
+      this.allCredits = credits || [];
+      this.allAvances = avances || [];
 
-      // Extract top 5 products from vente_items
-      const productSales = new Map<string, { qty: number, nom: string, icone: string }>();
-      ventes.forEach((v: any) => {
-        if (v.vente_items && Array.isArray(v.vente_items)) {
-          v.vente_items.forEach((item: any) => {
-            const pid = item.produit_id;
-            if (pid) {
-              const p = produits.find((pr: any) => pr.id === pid);
-              if (!productSales.has(pid)) {
-                productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
-              }
-              productSales.get(pid)!.qty += item.quantite;
-            }
-          });
-        }
-      });
+      this.updateStatsForPeriod();
 
-      this.topProduits = Array.from(productSales.values())
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5);
-
-      this.generateAlerts(produits, ventes, depenses, pertes, credits, stats);
-      this.buildComparison(ventes, depenses, revenus, pertes);
-      this.buildStockPredictions(produits, ventes);
-      setTimeout(() => this.buildCharts(ventes, depenses, revenus, stats), 300);
+      // Top products (overall or per period? keeping overall logic as they depend on full ventes)
+      this.buildStockPredictions(this.allProduits, this.allVentes);
+      
     } catch (error) {
       console.error('خطأ:', error);
     } finally {
       this.loading$.next(false);
     }
+  }
+
+  onPeriodChange(period: 'month' | 'year' | 'all') {
+    this.selectedPeriod = period;
+    this.updateStatsForPeriod();
+  }
+
+  private filterByPeriod(items: any[]) {
+    if (this.selectedPeriod === 'all') return items;
+    const now = new Date();
+    const currYear = now.getFullYear();
+    const currMonth = now.getMonth();
+    
+    return items.filter(item => {
+      const dStr = item.date || item.created_at;
+      if (!dStr) return false;
+      const d = new Date(dStr);
+      if (this.selectedPeriod === 'year') {
+        return d.getFullYear() === currYear;
+      } else if (this.selectedPeriod === 'month') {
+        return d.getFullYear() === currYear && d.getMonth() === currMonth;
+      }
+      return true;
+    });
+  }
+
+  private updateStatsForPeriod() {
+    const fVentes = this.filterByPeriod(this.allVentes);
+    const fRevenus = this.filterByPeriod(this.allRevenus);
+    const fDepenses = this.filterByPeriod(this.allDepenses);
+    const fPertes = this.filterByPeriod(this.allPertes);
+    const fAvances = this.filterByPeriod(this.allAvances);
+    
+    // Credits en cours doesn't depend on period, it's current unpaid debt
+    const creditsEnCours = this.allCredits
+      .filter((c: any) => !c.est_paye)
+      .reduce((sum: number, c: any) => sum + (Number(c.montant || 0) - Number(c.montant_paye || 0)), 0);
+
+    const totalVentesMontant = fVentes.reduce((sum, v) => sum + Number(v.montant_total || 0), 0);
+    const totalProfitVentes = fVentes.reduce((sum, v) => sum + Number(v.profit_total || 0), 0);
+    const totalRevenus = fRevenus.reduce((sum, r) => sum + Number(r.montant || 0), 0);
+    const totalDepenses = fDepenses.reduce((sum, d) => sum + Number(d.montant || 0), 0);
+    const totalPertes = fPertes.reduce((sum, p) => sum + Number(p.montant_perte || 0), 0);
+    const totalAvances = fAvances.reduce((sum, a) => sum + Number(a.montant || 0), 0);
+
+    this.ventesCount = fVentes.length;
+    this.reparationsCount = fRevenus.length;
+
+    const chiffreAffaire = totalVentesMontant + totalRevenus + totalAvances;
+    const benefice = totalProfitVentes + totalRevenus - totalDepenses - totalPertes;
+
+    this.beneficePercent = chiffreAffaire > 0 ? Math.round((benefice / chiffreAffaire) * 100) : 0;
+
+    const stats: DashboardStats = {
+      totalProduits: this.allProduits.length,
+      totalVentes: totalVentesMontant,
+      totalRevenusReparation: totalRevenus,
+      totalDepenses: totalDepenses,
+      totalCreditsEnCours: creditsEnCours,
+      totalPertes: totalPertes,
+      totalAvances: totalAvances,
+      chiffreAffaire: chiffreAffaire,
+      benefice: benefice
+    };
+
+    this.stats$.next(stats);
+
+    // Extract top 5 products from filtered ventes
+    const productSales = new Map<string, { qty: number, nom: string, icone: string }>();
+    fVentes.forEach((v: any) => {
+      if (v.vente_items && Array.isArray(v.vente_items)) {
+        v.vente_items.forEach((item: any) => {
+          const pid = item.produit_id;
+          if (pid) {
+            const p = this.allProduits.find((pr: any) => pr.id === pid);
+            if (!productSales.has(pid)) {
+              productSales.set(pid, { qty: 0, nom: p?.nom || 'منتج محذوف (أو قديم)', icone: p?.categorie_icone || '📦' });
+            }
+            productSales.get(pid)!.qty += item.quantite;
+          }
+        });
+      }
+    });
+
+    this.topProduits = Array.from(productSales.values())
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+
+    this.generateAlerts(this.allProduits, fVentes, fDepenses, fPertes, this.allCredits, stats);
+    // Comparison and charts still use 'allVentes' because they show history
+    this.buildComparison(this.allVentes, this.allDepenses, this.allRevenus, this.allPertes);
+    setTimeout(() => this.buildCharts(this.allVentes, this.allDepenses, this.allRevenus, stats), 100);
   }
 
   private buildCharts(ventes: any[], depenses: any[], revenus: any[], stats: DashboardStats) {
