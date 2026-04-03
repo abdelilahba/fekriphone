@@ -236,6 +236,67 @@
           </div>
         </div>
       }
+
+      <!-- Day of Week Analytics Heatmap -->
+      @if (dayOfWeekStats.length > 0) {
+        <div class="card heatmap-card">
+          <h2>📅 تحليل أيام الأسبوع — آشمن نهار كتبيع مزيان؟</h2>
+          <div class="heatmap-container-wrap">
+            <div class="heatmap-container">
+              @for (stat of dayOfWeekStats; track stat.day) {
+                <div class="heatmap-col">
+                  <div class="heatmap-bar-wrapper">
+                    <div class="heatmap-bar" [class]="getDayRankClass(stat.rank)" [style.height]="stat.barHeight + '%'">
+                      <span class="heatmap-tooltip">{{ formatMAD(stat.totalVentes) }}<br>{{ stat.count }} بيعات</span>
+                    </div>
+                  </div>
+                  <div class="heatmap-day">{{ stat.dayShort }}</div>
+                  <div class="heatmap-rank">{{ getDayRankLabel(stat.rank) }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Stagnant Products -->
+      @if (stagnantProducts.length > 0) {
+        <div class="card stagnant-card">
+          <div class="stagnant-header">
+            <h2>⚠️ منتجات جامدة — رأس مال محبوس! ({{ stagnantProducts.length }}+)</h2>
+            <div class="total-stagnant">
+              المجموع المحبوس: <strong>{{ formatMAD(totalCapitalBloque) }}</strong>
+            </div>
+          </div>
+          <div class="prediction-table-wrap">
+            <table class="prediction-table stagnant-table">
+              <thead>
+                <tr>
+                  <th>المنتج</th>
+                  <th>الكمية الجامدة</th>
+                  <th>رأس المال المحبوس</th>
+                  <th>إجراء يوصى به (Agent IA)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of stagnantProducts; track p.nom) {
+                  <tr>
+                    <td class="product-cell">
+                      <span class="pred-icon">😴</span>
+                      <span>{{ p.nom }}</span>
+                    </td>
+                    <td><strong>{{ p.quantite }} حبات</strong></td>
+                    <td class="stagnant-capital">{{ formatMAD(p.capitalBloque) }}</td>
+                    <td>
+                      <span class="action-btn" [routerLink]="['/produits']">نقص الثمن بـ {{ p.prixVente > 200 ? 50 : 10 }} د.م ⬇️</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     }
   }
 </div>

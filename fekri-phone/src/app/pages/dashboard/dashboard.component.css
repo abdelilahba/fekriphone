@@ -398,7 +398,67 @@
   left: 15px; /* RTL adjusting */
   top: 50%;
   transform: translateY(-50%);
-  color: var(--primary);
   pointer-events: none;
   font-size: 12px;
+}
+
+/* Heatmap Chart */
+.heatmap-card { margin-top: 20px; padding: 24px; }
+.heatmap-card h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+.heatmap-container-wrap { overflow-x: auto; width: 100%; }
+.heatmap-container {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  height: 250px; padding-bottom: 20px; border-bottom: 1px dashed var(--border);
+  min-width: 500px; /* force horizontal scroll on mobile */
+}
+.heatmap-col {
+  display: flex; flex-direction: column; align-items: center; width: 12%; gap: 10px;
+}
+.heatmap-bar-wrapper {
+  height: 150px; width: 100%; display: flex; align-items: flex-end; justify-content: center;
+  background: var(--bg-main); border-radius: 8px 8px 0 0;
+}
+.heatmap-bar {
+  width: 70%; border-radius: 6px 6px 0 0; position: relative; cursor: pointer;
+  transition: all 0.3s;
+}
+.heatmap-bar:hover { opacity: 0.8; transform: scaleY(1.05); }
+.rank-best { background: linear-gradient(to top, #16a34a, #22c55e); }
+.rank-good { background: linear-gradient(to top, #0284c7, #38bdf8); }
+.rank-avg { background: linear-gradient(to top, #9ca3af, #cbd5e1); }
+.rank-weak { background: linear-gradient(to top, #d97706, #fbbf24); }
+.rank-worst { background: linear-gradient(to top, #dc2626, #f87171); }
+
+.heatmap-tooltip {
+  position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
+  background: #1e1b3a; color: white; padding: 6px 10px; border-radius: 6px;
+  font-size: 11px; white-space: nowrap; font-weight: bold; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10;
+}
+.heatmap-bar:hover .heatmap-tooltip { opacity: 1; }
+.heatmap-tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border-width: 5px; border-style: solid; border-color: #1e1b3a transparent transparent transparent;
+}
+.heatmap-day { font-weight: 800; font-size: 14px; color: var(--text-primary); }
+.heatmap-rank { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-align: center; }
+
+/* Stagnant Products */
+.stagnant-card { margin-top: 20px; padding: 24px; border: 2px solid #fee2e2; }
+.stagnant-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.stagnant-header h2 { font-size: 18px; font-weight: 800; color: #dc2626; margin: 0; }
+.total-stagnant { font-size: 15px; font-weight: 700; color: #7f1d1d; background: #fee2e2; padding: 6px 16px; border-radius: 8px; }
+.total-stagnant strong { font-size: 18px; font-weight: 900; }
+.stagnant-table thead th { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+.stagnant-capital { font-weight: 900 !important; color: #dc2626; }
+.action-btn { 
+  background: var(--bg-main); color: var(--primary); padding: 6px 12px;
+  border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer;
+  border: 1px solid var(--border-light); transition: all 0.2s; display: inline-block;
+  text-decoration: none;
+}
+.action-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+
+@media (max-width: 768px) {
+  .heatmap-container { padding-bottom: 5px; height: 180px; }
 }

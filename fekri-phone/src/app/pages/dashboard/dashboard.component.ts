@@ -77,6 +77,23 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     status: 'danger' | 'warning' | 'safe';
     statusLabel: string;
   }[] = [];
+
+  // Day-of-week analytics
+  dayOfWeekStats: {
+    day: string; dayShort: string;
+    totalVentes: number; count: number;
+    avgVente: number; totalProfit: number;
+    rank: 'best' | 'good' | 'average' | 'weak' | 'worst';
+    barHeight: number;
+  }[] = [];
+
+  // Stagnant products
+  stagnantProducts: {
+    nom: string; quantite: number;
+    capitalBloque: number; prixVente: number;
+  }[] = [];
+  totalCapitalBloque = 0;
+
   private charts: Chart[] = [];
 
   constructor(private supabase: SupabaseService, private auth: AuthService) { }
@@ -125,6 +142,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
       // Top products (overall or per period? keeping overall logic as they depend on full ventes)
       this.buildStockPredictions(this.allProduits, this.allVentes);
+      this.buildDayOfWeekAnalytics(this.allVentes);
+      this.buildStagnantProducts(this.allProduits, this.allVentes);
       
     } catch (error) {
       console.error('خطأ:', error);
@@ -624,6 +643,97 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   dismissAlerts() {
     this.alertsDismissed = true;
+  }
+
+  // ========== Day of Week Analytics ==========
+  private buildDayOfWeekAnalytics(ventes: any[]) {
+    const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const dayShortNames = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+    const dayData = Array.from({ length: 7 }, () => ({ total: 0, count: 0, profit: 0 }));
+
+    ventes.forEach((v: any) => {
+      const d = new Date(v.date || v.created_at);
+      const dow = d.getDay();
+      dayData[dow].total += Number(v.montant_total || 0);
+      dayData[dow].profit += Number(v.profit_total || 0);
+      dayData[dow].count++;
+    });
+
+    const maxTotal = Math.max(...dayData.map(d => d.total), 1);
+
+    const stats = dayData.map((d, i) => ({
+      day: dayNames[i],
+      dayShort: dayShortNames[i],
+      totalVentes: d.total,
+      count: d.count,
+      avgVente: d.count > 0 ? Math.round(d.total / d.count) : 0,
+      totalProfit: d.profit,
+      rank: 'average' as 'best' | 'good' | 'average' | 'weak' | 'worst',
+      barHeight: Math.round((d.total / maxTotal) * 100)
+    }));
+
+    // Rank days by total sales
+    const sorted = [...stats].sort((a, b) => b.totalVentes - a.totalVentes);
+    sorted.forEach((s, i) => {
+      if (i === 0) s.rank = 'best';
+      else if (i === 1) s.rank = 'good';
+      else if (i >= sorted.length - 1) s.rank = 'worst';
+      else if (i >= sorted.length - 2) s.rank = 'weak';
+      else s.rank = 'average';
+    });
+
+    // Reorder to show Monday-Sunday for Moroccan context
+    this.dayOfWeekStats = [stats[1], stats[2], stats[3], stats[4], stats[5], stats[6], stats[0]];
+  }
+
+  // ========== Stagnant Products ==========
+  private buildStagnantProducts(produits: any[], ventes: any[]) {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Count recent sales per product
+    const recentSales = new Map<string, number>();
+    ventes.forEach((v: any) => {
+      const vDate = new Date(v.date || v.created_at);
+      if (vDate >= thirtyDaysAgo && v.vente_items && Array.isArray(v.vente_items)) {
+        v.vente_items.forEach((item: any) => {
+          if (item.produit_id) {
+            recentSales.set(item.produit_id, (recentSales.get(item.produit_id) || 0) + item.quantite);
+          }
+        });
+      }
+    });
+
+    // Find stagnant products (in stock but 0 recent sales)
+    const stagnant = produits
+      .filter((p: any) => p.quantite > 0 && (!recentSales.has(p.id) || recentSales.get(p.id) === 0))
+      .map((p: any) => ({
+        nom: p.nom,
+        quantite: p.quantite,
+        capitalBloque: p.quantite * Number(p.prix_achat || 0),
+        prixVente: Number(p.prix_vente || 0)
+      }))
+      .filter(p => p.capitalBloque > 0)
+      .sort((a, b) => b.capitalBloque - a.capitalBloque);
+
+    this.stagnantProducts = stagnant.slice(0, 8);
+    this.totalCapitalBloque = stagnant.reduce((s, p) => s + p.capitalBloque, 0);
+  }
+
+  getDayRankClass(rank: string): string {
+    const map: Record<string, string> = {
+      'best': 'rank-best', 'good': 'rank-good',
+      'average': 'rank-avg', 'weak': 'rank-weak', 'worst': 'rank-worst'
+    };
+    return map[rank] || 'rank-avg';
+  }
+
+  getDayRankLabel(rank: string): string {
+    const map: Record<string, string> = {
+      'best': '🥇 أحسن يوم', 'good': '🥈 مزيان',
+      'average': '⚡ عادي', 'weak': '⚠️ ضعيف', 'worst': '🔴 أسوأ يوم'
+    };
+    return map[rank] || '⚡ عادي';
   }
 
   formatMAD(amount: number): string {

@@ -940,6 +940,111 @@ export class SupabaseService {
   }
 
 
+  // ══════════════════════════════════════════════════
+  //  MONTHLY RECAP NOTIFICATION (بداية الشهر الجديد)
+  // ══════════════════════════════════════════════════
+
+  /**
+   * Call this once at app startup (admin only).
+   * It checks if a monthly recap has already been sent for this month.
+   * If not, it fetches last month's stats and fires a Telegram report.
+   */
+  async checkAndSendMonthlyReport() {
+    if (!environment.telegramBotToken || !environment.telegramChatId) return;
+
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const storageKey = `monthly_report_sent_${currentMonthKey}`;
+
+    // Already sent this month? Skip.
+    if (localStorage.getItem(storageKey)) return;
+
+    // Mark as sent immediately (avoids double-send on quick reloads)
+    localStorage.setItem(storageKey, 'true');
+
+    try {
+      await this._sendMonthlyRecapTelegram();
+    } catch (e) {
+      // If it fails, remove the flag so it retries next time
+      localStorage.removeItem(storageKey);
+      console.error('Monthly recap failed:', e);
+    }
+  }
+
+  private async _sendMonthlyRecapTelegram() {
+    const now = new Date();
+
+    // ─── Last month date range ───
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthYear = lastMonthDate.getFullYear();
+    const lastMonthNum = lastMonthDate.getMonth() + 1; // 1-based
+
+    const startDate = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}-01`;
+    const endDay = new Date(lastMonthYear, lastMonthNum, 0).getDate(); // last day of last month
+    const endDate = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+    const monthNames: { [key: number]: string } = {
+      1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+      5: 'ماي', 6: 'يونيو', 7: 'يوليوز', 8: 'غشت',
+      9: 'شتنبر', 10: 'أكتوبر', 11: 'نونبر', 12: 'دجنبر'
+    };
+    const monthLabel = `${monthNames[lastMonthNum]} ${lastMonthYear}`;
+    const currentMonthLabel = `${monthNames[now.getMonth() + 1]} ${now.getFullYear()}`;
+
+    // ─── Fetch last month data ───
+    const [ventesRes, reparationsRes, depensesRes, avancesRes, creditsRes] = await Promise.all([
+      this.supabase.from('ventes').select('montant_total, profit_total').gte('date', startDate).lte('date', endDate),
+      this.supabase.from('revenus_reparation').select('montant').gte('date', startDate).lte('date', endDate),
+      this.supabase.from('depenses').select('montant').gte('date', startDate).lte('date', endDate),
+      this.supabase.from('avances').select('montant').gte('date', startDate).lte('date', endDate),
+      this.supabase.from('credits').select('montant').gte('date', startDate).lte('date', endDate),
+    ]);
+
+    const totalVentes = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+    const totalProfit = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
+    const totalReparations = (reparationsRes.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
+    const totalDepenses = (depensesRes.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+    const totalAvances = (avancesRes.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
+    const totalCredits = (creditsRes.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+
+    const ca = totalVentes + totalReparations;
+    const beneficeNet = totalProfit + totalReparations - totalDepenses;
+    const nbVentes = (ventesRes.data || []).length;
+    const nbReparations = (reparationsRes.data || []).length;
+
+    const beneficeSign = beneficeNet >= 0 ? '+' : '';
+    const beneficeEmoji = beneficeNet >= 0 ? '📈' : '📉';
+
+    const message =
+      `🗓️ <b>تقرير نهاية الشهر</b>\n` +
+      `✨ <i>مبروك، بدا شهر جديد!</i>\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `📅 <b>ملخص شهر ${monthLabel}</b>\n\n` +
+      `🛒 <b>المبيعات:</b>  <code>${totalVentes.toFixed(2)} د.م</code>  <i>(${nbVentes} بيعة)</i>\n` +
+      `🔧 <b>الإصلاحات:</b>  <code>${totalReparations.toFixed(2)} د.م</code>  <i>(${nbReparations} إصلاح)</i>\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `📊 <b>رقم المعاملات (CA):</b>  <code>${ca.toFixed(2)} د.م</code>\n` +
+      `💸 <b>المصاريف:</b>  <code>${totalDepenses.toFixed(2)} د.م</code>\n` +
+      `📝 <b>الديون المضافة:</b>  <code>${totalCredits.toFixed(2)} د.م</code>\n` +
+      `💰 <b>الدفع (Avances):</b>  <code>${totalAvances.toFixed(2)} د.م</code>\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `${beneficeEmoji} <b>الربح الصافي:</b>  <code>${beneficeSign}${beneficeNet.toFixed(2)} د.م</code>\n\n` +
+      `🚀 <b>شهر ${currentMonthLabel} يبدا اليوم — بالتوفيق! 💪</b>`;
+
+    const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: environment.telegramChatId,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+    if (!resp.ok) throw new Error(`Telegram monthly report error: ${resp.status}`);
+    console.log('✅ Monthly recap sent to Telegram!');
+  }
+
   // ==================== Daily Quick Stats (Header) ====================
   async getDailyQuickStats(userId?: string) {
     const today = new Date().toISOString().split('T')[0];

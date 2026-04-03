@@ -214,6 +214,11 @@ export class AppComponent implements OnInit, OnDestroy {
       // Reload stats immediately with the correct role logic
       this.loadQuickStats();
 
+      // ─── Monthly recap: fire once per session when admin role confirmed ───
+      if (role === 'admin') {
+        setTimeout(() => this.supabase.checkAndSendMonthlyReport(), 5000);
+      }
+
       // Auto redirect employee to sales page if they try to access root
       if (role === 'employee' && (this.router.url === '/' || this.router.url === '')) {
         this.router.navigate(['/ventes']);
