@@ -1049,6 +1049,21 @@ export class SupabaseService {
   async getDailyQuickStats(userId?: string) {
     const today = new Date().toISOString().split('T')[0];
     
+    // Check if the cash register was already closed today
+    const { data: cloture } = await this.supabase
+      .from('clotures_caisse')
+      .select('id')
+      .eq('date', today)
+      .limit(1);
+
+    if (cloture && cloture.length > 0) {
+      return {
+        caisse: 0,
+        ventes: 0,
+        rib7: 0
+      };
+    }
+
     let ventesQuery = this.supabase.from('ventes').select('montant_total, profit_total').eq('date', today);
     let revenusQuery = this.supabase.from('revenus_reparation').select('montant').eq('date', today);
     let depensesQuery = this.supabase.from('depenses').select('montant').eq('date', today);
