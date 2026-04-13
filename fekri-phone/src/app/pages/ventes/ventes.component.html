@@ -67,8 +67,8 @@
         }
         <div class="mvr-items-count">{{ v.vente_items?.length || 0 }} منتجات</div>
       </div>
-
-      <div class="mvr-actions">
+    @if (userRole === 'admin') {
+            <div class="mvr-actions">
         <!-- Edit Button -->
         <button class="mvr-btn-edit" (click)="editVente(v)" title="تعديل هذه البيعة" style="margin-left: 8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -88,6 +88,8 @@
           </svg>
         </button>
       </div>
+        }
+  
     </div>
     }
   </div>
