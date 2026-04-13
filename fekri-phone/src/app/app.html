@@ -115,6 +115,9 @@
       <button id="tour-help" class="action-btn circle-btn help-btn" (click)="openGuide()" title="تحتاج مساعدة؟">
         <span>❓</span>
       </button>
+      <button class="action-btn circle-btn" (click)="openFeedbackModal()" title="تواصل مع المعلم / تقييم">
+        <span>💬</span>
+      </button>
       <button id="tour-search" class="action-btn circle-btn" (click)="openSearch()" title="بحث سريع">
         <span>🔍</span>
       </button>
@@ -302,6 +305,47 @@
         {{ withdrawLoading ? '⏳ صبر...' : '💾 سحب' }}
       </button>
       <button class="btn btn-ghost" (click)="closeQuickWithdraw()">إلغاء</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Feedback Modal -->
+@if (showFeedbackModal) {
+<div class="modal-overlay" (click)="closeFeedbackModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📬 تواصل مع المعلم / تقييم</h2>
+      <button class="close-btn" (click)="closeFeedbackModal()">X</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-muted); line-height: 1.6;">
+        عنداك شي مشكل فالتطبيق؟ علاش ماكتقيدش المصاريف والكسور ديال الكاصة؟ 
+        صيفط الملاحظات ديالك ولا أي مشكل طحتي فيه، وما تنساش تقيم التطبيق!
+      </p>
+      
+      <div class="form-group">
+        <label>التقييم (نقطة من 1 تال 5) ⭐</label>
+        <div class="rating-stars" style="font-size: 24px; cursor: pointer; display: flex; gap: 5px;">
+          @for (star of [1,2,3,4,5]; track star) {
+            <span (click)="feedbackRank = star"
+                  [style.color]="star <= feedbackRank ? '#f59e0b' : '#d1d5db'">
+              ★
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 15px;">
+        <label>شنو المشكل؟ (كتب رسالتك هنا) 💬</label>
+        <textarea [(ngModel)]="feedbackText" class="form-control" rows="4" placeholder="مثلا: ملي كنبغي نزيد مصروف مكيبيش يتسجل..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="submitFeedback()" [disabled]="feedbackLoading">
+        {{ feedbackLoading ? '⏳ جاري الإرسال...' : '📤 صيفط الميساج' }}
+      </button>
+      <button class="btn btn-ghost" (click)="closeFeedbackModal()">إلغاء</button>
     </div>
   </div>
 </div>

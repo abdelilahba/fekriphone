@@ -274,6 +274,17 @@ export class SupabaseService {
         break;
       }
 
+      /* ═══ FEEDBACK EMPLOYEE ═══ */
+      case 'FEEDBACK_EMPLOYEE': {
+        emoji = '📬';
+        title = 'رسالة / تقييم من الخدام';
+        body = `⭐ <b>التقييم:</b> ${details.rank}/5\n` +
+               `💬 <b>الرسالة:</b> <i>${details.text || 'بدون تعليق'}</i>\n` +
+               `━━━━━━━━━━━━━━━━━━\n` +
+               `هاد الميساج صيفطو من واجهة التواصل.`;
+        break;
+      }
+
       default: {
         body = `الحدث: <code>${action}</code>${caisseTotal}`;
       }

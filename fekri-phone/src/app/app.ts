@@ -643,6 +643,44 @@ export class AppComponent implements OnInit, OnDestroy {
   withdrawLoading = false;
   withdrawError = '';
 
+  // --- Feedback ---
+  showFeedbackModal = false;
+  feedbackRank = 5;
+  feedbackText = '';
+  feedbackLoading = false;
+
+  openFeedbackModal() {
+    this.feedbackRank = 5;
+    this.feedbackText = '';
+    this.showFeedbackModal = true;
+  }
+
+  closeFeedbackModal() {
+    this.showFeedbackModal = false;
+  }
+
+  async submitFeedback() {
+    this.feedbackLoading = true;
+    try {
+      const uid = this.auth.currentUser?.id;
+      await this.supabase.logActivity('FEEDBACK_EMPLOYEE', {
+        rank: this.feedbackRank,
+        text: this.feedbackText.trim()
+      }, uid);
+      this.feedbackLoading = false;
+      this.closeFeedbackModal();
+      Swal.fire({
+        title: 'وصلات! ✅',
+        text: 'شكرا بزاف على التقييم ديالك والملاحظات!',
+        icon: 'success',
+        confirmButtonColor: 'var(--primary)',
+        confirmButtonText: 'مزيان'
+      });
+    } catch(e) {
+      this.feedbackLoading = false;
+    }
+  }
+
   openQuickWithdraw() {
     if (this.userRole !== 'admin') return;
     this.withdrawAmount = null;
