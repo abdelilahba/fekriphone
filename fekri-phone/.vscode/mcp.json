@@ -4,6 +4,12 @@
     "angular-cli": {
       "command": "npx",
       "args": ["-y", "@angular/cli", "mcp"]
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=zdvqqzplcuklajlnhgpt&read_only=true"
     }
   }
 }
+
+

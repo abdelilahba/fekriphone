@@ -289,25 +289,29 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async showUpdateMessage() {
-    const seen = localStorage.getItem('update_msg_v1_1_seen');
+    const seen = localStorage.getItem('update_msg_v1_2_danger');
     if (!seen) {
       setTimeout(async () => {
         await Swal.fire({
-          title: '🎉 تحديث جديد في التطبيق!',
+          title: '⚠️ تنبيه هام واعتذار 🚨',
           html: `
             <div style="text-align: right; line-height: 1.8; font-size: 15px;">
-              <b>شنو الجديد؟</b><br>
-              1️⃣ <b>الكريدي فالمبيعات:</b> دابا ملي تبيع شي حاجة، تقدر تكتب شحال عطاك الكليان بالضبط فـ (المبلغ المؤدى)، والباقي غيتسجل كريدي أوتوماتيكيا!<br>
-              2️⃣ <b>تسجيل الكليان أوتوماتيك:</b> ملي تبغي تقيد كريدي (سواء فالبيع ولا فصفحة الديون)، يكفي تكتب سميت الكليان. الا ماكانش مسجل غيتسجل بوحدو بلا ما تمشي تزيدو بيدك.<br>
-              3️⃣ <b>الحساب د الكاصة مقاد:</b> دابا الكاصة (الفوق) كتحسب غير الفلوس الكاش لي دخلات بصح باش ميوقعش غلط مع الكريدي!
+              <b>نعتذر على المشكل ديال البارح 🙏</b><br>
+              البارح وقع مشكل فاش كيفتح الخدام نقطة البيع (POS) كيبدل التاريخ، و المبيعات ماكيطلعوش ف نهارهم (تلاحو مثلا ف 09/04/2026).<br>
+              🔴 <b>المرجو عدم لمس أو تغيير التاريخ</b> فاش كتبيعو! خليوه أوطوماتيك باش الحساب ديال الصندوق ميتخربقش.<br><br>
+              <hr style="margin: 15px 0;">
+              <b>💡 شرح إضافة كريدي يدوي (من صفحة الديون):</b><br>
+              دابا ملي تبغي تزيد كريدي جديد من غير البيع، غتلقا إختيار ضروري الفوق:<br>
+              👉 <b>سلف كاش (أخد فلوس من الصندوق):</b> الكليان خذا فلوس كاش من المحل. هاد المبلغ غادي <b>ينقص من الصندوق</b> د اليوم.<br>
+              👉 <b>بيع بالكريدي (غير سلعة):</b> الكليان دا غير سلعة بالكريدي، يعني ماداش الفلوس الكاش. <b>الصندوق غيبقى هو هاداك</b> وماغادي ينقص منو والو.
             </div>
           `,
-          icon: 'info',
+          icon: 'warning',
           confirmButtonText: 'فهمت، شكرا! 👍',
-          confirmButtonColor: '#9b30ff',
+          confirmButtonColor: '#d33',
           showCloseButton: true
         });
-        localStorage.setItem('update_msg_v1_1_seen', 'true');
+        localStorage.setItem('update_msg_v1_2_danger', 'true');
       }, 1500); // Wait a bit until layout fully loads
     }
   }

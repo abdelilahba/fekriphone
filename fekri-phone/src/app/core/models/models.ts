@@ -23,6 +23,7 @@ export interface Produit {
 export interface Vente {
   id: string;
   montant_total: number;
+  montant_paye: number;
   profit_total: number;
   date: string;
   user_id?: string;
@@ -84,6 +85,7 @@ export interface Credit {
   montant_paye: number;
   est_paye: boolean;
   date: string;
+  type_credit: 'vente' | 'produit' | 'cash';
   created_at: string;
   updated_at: string;
   // Joined

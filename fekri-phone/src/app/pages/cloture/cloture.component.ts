@@ -16,24 +16,24 @@ import Swal from 'sweetalert2';
 export class ClotureComponent implements OnInit {
   loading$ = new BehaviorSubject<boolean>(true);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
-  
+
   // Stats
   ventesTotal = 0;
   reparationsTotal = 0;
   avancesTotal = 0;
   depensesTotal = 0;
   montantTheorique = 0;
-  
+
   // Form
   montantReel: number | null = null;
   note = '';
   ecart = 0;
   showResult = false;
-  
+
   // History
   historique: any[] = [];
   showHistorique = false;
-  
+
   // State
   alreadyClosed = false;
   todayCloture: any = null;
@@ -49,10 +49,10 @@ export class ClotureComponent implements OnInit {
 
       // Get daily stats
       const stats = await this.supabase.getDailyQuickStats();
-      
+
       // Get individual totals for display
       const [ventes, revenus, depenses, avances] = await Promise.all([
-        this.supabase['supabase'].from('ventes').select('montant_total').eq('date', today),
+        this.supabase['supabase'].from('ventes').select('montant_total, montant_paye').eq('date', today),
         this.supabase['supabase'].from('revenus_reparation').select('montant').eq('date', today),
         this.supabase['supabase'].from('depenses').select('montant').eq('date', today),
         this.supabase['supabase'].from('avances').select('montant').eq('date', today)
@@ -70,7 +70,7 @@ export class ClotureComponent implements OnInit {
         .select('*')
         .eq('date', today)
         .limit(1);
-      
+
       if (existing && existing.length > 0) {
         this.alreadyClosed = true;
         this.todayCloture = existing[0];
@@ -106,7 +106,7 @@ export class ClotureComponent implements OnInit {
 
     const ecartAbs = Math.abs(this.ecart);
     const ecartType = this.ecart < 0 ? 'نقص ❌' : this.ecart > 0 ? 'زيادة ✅' : 'مقاد 100% ✅';
-    
+
     const result = await Swal.fire({
       title: 'تأكيد إقفال الصندوق',
       html: `
@@ -164,7 +164,7 @@ export class ClotureComponent implements OnInit {
   }
 
   formatMAD(a: number): string { return Number(a).toLocaleString('ar-MA') + ' د.م'; }
-  
+
   formatDate(d: string): string {
     return new Date(d).toLocaleDateString('ar-MA', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
   }

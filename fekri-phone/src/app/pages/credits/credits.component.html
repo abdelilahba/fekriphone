@@ -46,11 +46,18 @@
             <div class="credit-card card" [class.paid]="c.est_paye">
               <div class="credit-header">
                 <h3>👤 {{ c.nom_client }}</h3>
-                <span class="badge" [class]="c.est_paye ? 'badge-success' : 'badge-danger'">
-                  {{ c.est_paye ? 'تخلص ✅' : 'ما تخلصش ❌' }}
-                </span>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  @if (c.type_credit === 'cash') {
+                    <span class="badge badge-warning" title="دين فلوس كاش (ينقص الصندوق)">💵 كاش</span>
+                  } @else if (c.type_credit === 'vente') {
+                    <span class="badge badge-info" title="كريدي من بيعة">🛒 بيعة</span>
+                  }
+                  <span class="badge" [class]="c.est_paye ? 'badge-success' : 'badge-danger'">
+                    {{ c.est_paye ? 'تخلص ✅' : 'ما تخلصش ❌' }}
+                  </span>
+                </div>
               </div>
-              
+
               <p class="credit-desc">{{ c.description }}</p>
               @if (c.telephone_client) { <span class="phone">📞 {{ c.telephone_client }}</span> }
 
@@ -83,7 +90,7 @@
             </div>
           }
         </div>
-        
+
         <div class="pagination" style="margin-top: 16px;">
           <button class="pagination-btn nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6" /></svg>
@@ -130,6 +137,12 @@
           </div>
           <div class="form-group"><label>الوصف (شنو خدا بالكريدي) *</label>
             <input type="text" [(ngModel)]="form.description" class="form-control" placeholder="مثلا: iPhone 15"></div>
+          <div class="form-group"><label>نوع الدين</label>
+            <select [(ngModel)]="form.type_credit" class="form-control">
+              <option value="produit">📦 منتج (الزبون خدا سلعة وما خلصش)</option>
+              <option value="cash">💵 فلوس كاش (عطيتيه فلوس)</option>
+            </select>
+          </div>
           <div class="form-row">
             <div class="form-group"><label>المبلغ الكلي (د.م) *</label><input type="number" [(ngModel)]="form.montant" class="form-control" min="0"></div>
             <div class="form-group"><label>اللي دفع دابا (د.م)</label><input type="number" [(ngModel)]="form.montant_paye" class="form-control" min="0" [disabled]="editMode"></div>

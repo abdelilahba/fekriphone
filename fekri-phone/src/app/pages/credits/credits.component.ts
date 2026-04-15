@@ -35,22 +35,22 @@ export class CreditsComponent implements OnInit {
   allClients: Client[] = [];
   creditHistory: any[] = [];
 
-  form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: '' };
+  form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, type_credit: 'produit' as 'produit' | 'cash', date: '' };
   payForm = { id: '', montant_a_payer: 0, reste: 0, date: '' };
-  
+
   private currentUserId: string | null = null;
   private userRole: string = 'employee';
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
-  async ngOnInit() { 
+  async ngOnInit() {
     this.auth.user$.subscribe(user => {
       this.currentUserId = user ? user.id : null;
     });
     this.auth.userRole$.subscribe(async role => {
       this.userRole = role;
       await this.loadClients();
-      await this.loadData(); 
+      await this.loadData();
     });
   }
 
@@ -108,21 +108,22 @@ export class CreditsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, type_credit: 'produit', date: new Date().toISOString().split('T')[0] };
     this.showModal = true;
   }
 
   openEdit(c: Credit) {
     this.editMode = true;
-    this.form = { 
-      id: c.id, 
-      client_id: c.client_id || '', 
-      nom_client: c.nom_client, 
-      telephone_client: c.telephone_client || '', 
-      description: c.description, 
-      montant: c.montant, 
-      montant_paye: c.montant_paye, 
-      date: c.date 
+    this.form = {
+      id: c.id,
+      client_id: c.client_id || '',
+      nom_client: c.nom_client,
+      telephone_client: c.telephone_client || '',
+      description: c.description,
+      montant: c.montant,
+      montant_paye: c.montant_paye,
+      type_credit: (c.type_credit === 'vente' ? 'produit' : c.type_credit || 'produit') as 'produit' | 'cash',
+      date: c.date
     };
     this.showModal = true;
   }
@@ -156,26 +157,27 @@ export class CreditsComponent implements OnInit {
     try {
       let finalClientId = this.form.client_id || null;
       let existingClient = this.allClients.find(c => c.nom.toLowerCase() === this.form.nom_client.trim().toLowerCase());
-        
+
       if (existingClient) {
         finalClientId = existingClient.id;
       } else {
-        const newClient = await this.supabase.addClient({ 
-          nom: this.form.nom_client.trim(), 
-          telephone: this.form.telephone_client || null 
+        const newClient = await this.supabase.addClient({
+          nom: this.form.nom_client.trim(),
+          telephone: this.form.telephone_client || null
         });
         finalClientId = newClient.id;
       }
 
       const data: any = {
         client_id: finalClientId,
-        nom_client: this.form.nom_client.trim(), 
-        telephone_client: this.form.telephone_client, 
-        description: this.form.description, 
-        montant: this.form.montant, 
+        nom_client: this.form.nom_client.trim(),
+        telephone_client: this.form.telephone_client,
+        description: this.form.description,
+        montant: this.form.montant,
         montant_paye: this.form.montant_paye,
-        est_paye: Number(this.form.montant_paye) >= Number(this.form.montant), 
-        date: this.form.date 
+        type_credit: this.form.type_credit as string,
+        est_paye: Number(this.form.montant_paye) >= Number(this.form.montant),
+        date: this.form.date
       };
 
       if (this.editMode) {
@@ -195,16 +197,16 @@ export class CreditsComponent implements OnInit {
     try {
       const credit = this.allCredits.find(c => c.id === this.payForm.id);
       if (!credit) return;
-      
+
       const nouveauMontant = Number(credit.montant_paye) + Number(this.payForm.montant_a_payer);
-      
+
       await this.supabase.addPaiement(this.payForm.id, Number(this.payForm.montant_a_payer), this.payForm.date);
-      
-      await this.supabase.updateCredit(this.payForm.id, { 
-        montant_paye: nouveauMontant, 
-        est_paye: nouveauMontant >= credit.montant 
+
+      await this.supabase.updateCredit(this.payForm.id, {
+        montant_paye: nouveauMontant,
+        est_paye: nouveauMontant >= credit.montant
       });
-      
+
       this.showToast('تخلص بنجاح ✅', 'success');
       this.closePayModal();
       await this.loadData();

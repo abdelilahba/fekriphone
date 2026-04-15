@@ -7,6 +7,7 @@ import { LayoutService } from '../../core/services/layout.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Produit, Vente, Categorie, Client } from '../../core/models/models';
+import { getCategoryImage } from '../../core/models/category-icons';
 
 interface CartItem {
   produit_id: string;
@@ -52,10 +53,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   selectedDate: string = new Date().toISOString().split('T')[0];
   allVentesData: Vente[] = [];
   saleDate: string = new Date().toISOString().split('T')[0];
- 
+
   private cart: CartItem[] = [];
   editingVenteId: string | null = null;
- 
+
   @ViewChild('searchInput') searchInput!: ElementRef;
   private focusSearchNeedsTrigger = false;
 
@@ -67,12 +68,12 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     private layout: LayoutService
   ) { }
 
-  ngOnInit() { 
+  ngOnInit() {
     this.auth.userRole$.subscribe((role: string) => {
       this.userRole = role;
       this.cdr.detectChanges();
     });
-    this.loadData(); 
+    this.loadData();
   }
 
   ngAfterViewChecked() {
@@ -120,7 +121,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       this.allVentesData = finalVentes;
       this.categories$.next(categories);
       this.filteredProduits$.next([...produits]);
-      
+
       this.filterByDate();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
@@ -130,16 +131,22 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   }
 
   filterByDate() {
+
+
     let filtered = this.allVentesData;
+
+
     if (this.selectedDate) {
       filtered = filtered.filter(v => (v.date.split(' ')[0] || v.date) === this.selectedDate);
     }
+    console.log(filtered);
+
     this.ventes$.next(filtered);
-    
+
     // Total for filtered items
     const total = filtered.reduce((s: number, v: any) => s + Number(v.montant_total), 0);
     this.totalMois$.next(total);
-    
+
     this.currentPage = 1;
     this.paginateVentes();
   }
@@ -192,7 +199,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.searchTerm = '';
     this.activeCategory = '';
     this.filteredProduits$.next([...this.allProduits]);
-    
+
     // Set payment fields if applicable
     this.montantPaye = null;
     this.montantRecu = null;
@@ -266,6 +273,15 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     return cat?.icone || '📦';
   }
 
+  getCategoryImageForProduct(p: Produit): string {
+    const cat = this.categories.find(c => c.id === p.categorie_id);
+    return getCategoryImage(cat?.icone || 'other');
+  }
+
+  getCategoryImagePath(icone: string): string {
+    return getCategoryImage(icone || 'other');
+  }
+
   async addToCart(p: Produit) {
     // If product has no price, ask the employee to enter it
     if (!p.prix_vente || p.prix_vente === 0) {
@@ -283,7 +299,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         confirmButtonColor: 'var(--primary)',
         heightAuto: false
       });
-      
+
       if (price === undefined || price === null || price === '') return;
       p.prix_vente = Number(price);
     }
@@ -382,10 +398,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     // We only trigger upsell if cart has items, but not too many to avoid annoying the user
     if (this.cart.length === 0 || this.cart.length > 4) return;
 
-    const hasPhone = this.cart.some(item => 
-      item.prix_unitaire >= 800 || 
-      (item.nom && item.nom.toLowerCase().includes('iphone')) || 
-      (item.nom && item.nom.toLowerCase().includes('samsung')) || 
+    const hasPhone = this.cart.some(item =>
+      item.prix_unitaire >= 800 ||
+      (item.nom && item.nom.toLowerCase().includes('iphone')) ||
+      (item.nom && item.nom.toLowerCase().includes('samsung')) ||
       (item.nom && item.nom.toLowerCase().includes('redmi'))
     );
 
@@ -410,8 +426,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         };
         return; // Don't check other scenarios
       }
-    } 
-    
+    }
+
     // Scenario 2: Charger = Suggest Cable
     const hasChargeur = this.cart.some(item => item.nom && (item.nom.toLowerCase().includes('chargeur') || item.nom.toLowerCase().includes('شاحن')));
     if (hasChargeur) {
@@ -489,9 +505,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   async confirmVente() {
     if (this.cart.length === 0) { this.showToast('السلة فارغة!', 'error'); return; }
-    
+
     const total = this.totalCart;
     const reste = this.resteAPayer;
+    const montantPaye = total - reste; // Cash actually received
 
     if (reste > 0 && !this.nomClient.trim()) {
       this.showToast('المرجو إدخال إسم الزبون للكريدي!', 'error');
@@ -502,18 +519,18 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
       const uid = this.auth.currentUser?.id;
       if (this.editingVenteId) {
-        await this.supabase.updateVente(this.editingVenteId, total, profitTotal, this.cart, uid, this.saleDate);
+        await this.supabase.updateVente(this.editingVenteId, total, montantPaye, profitTotal, this.cart, uid, this.saleDate);
         this.editingVenteId = null;
       } else {
-        await this.supabase.addVente(total, profitTotal, this.cart, uid, this.saleDate);
+        await this.supabase.addVente(total, montantPaye, profitTotal, this.cart, uid, this.saleDate);
       }
-      
+
       if (reste > 0) {
         const finalDesc = this.descriptionCredit.trim() || this.defaultCreditDescription;
-        
+
         let client = this.clients.find(c => c.nom.toLowerCase() === this.nomClient.trim().toLowerCase());
         let clientId = client ? client.id : null;
-        
+
         if (!clientId) {
            const newClient = await this.supabase.addClient({ nom: this.nomClient.trim() });
            clientId = newClient.id;
@@ -526,6 +543,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
           montant: reste,
           montant_paye: 0,
           est_paye: false,
+          type_credit: 'vente',
           date: new Date().toISOString().split('T')[0]
         }, uid);
       }
@@ -537,7 +555,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         this.cart = [];
         this.cart$.next([]);
         this.updateCartTotal();
-        this.montantRecu = null; 
+        this.montantRecu = null;
         this.montantPaye = null;
         this.nomClient = '';
         this.descriptionCredit = '';
@@ -558,8 +576,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         <title>توصيل البيع</title>
         <style>
           @page { margin: 0; }
-          body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0; padding: 10px; width: 80mm; font-size: 11px; color: #000;
             line-height: 1.4;
           }
@@ -627,7 +645,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
           <span>${reste} د.م</span>
         </div>
         ` : ''}
-        
+
         <div class="barcode-container">
           <div class="barcode-line"></div>
           <div>شكراً على زيارتكم!</div>
@@ -653,7 +671,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       doc.open();
       doc.write(html);
       doc.close();
-      
+
       iframe.onload = () => {
         setTimeout(() => {
           iframe.contentWindow?.focus();

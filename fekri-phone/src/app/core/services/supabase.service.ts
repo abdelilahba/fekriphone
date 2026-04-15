@@ -134,7 +134,7 @@ export class SupabaseService {
           .select('name')
           .eq('id', userId)
           .single();
-        
+
         const userName = profile?.name || 'موظف';
         this.sendTelegramNotification(userName, action, details);
       }
@@ -436,12 +436,13 @@ export class SupabaseService {
     return data;
   }
 
-  async addVente(montantTotal: number, profitTotal: number, items: any[], userId?: string, dateStr?: string) {
+  async addVente(montantTotal: number, montantPaye: number, profitTotal: number, items: any[], userId?: string, dateStr?: string) {
     const { data: vente, error: venteError } = await this.supabase
       .from('ventes')
-      .insert({ 
-        montant_total: montantTotal, 
-        profit_total: profitTotal, 
+      .insert({
+        montant_total: montantTotal,
+        montant_paye: montantPaye,
+        profit_total: profitTotal,
         user_id: userId,
         date: dateStr || new Date().toISOString()
       })
@@ -465,9 +466,9 @@ export class SupabaseService {
     if (itemsError) throw itemsError;
 
     // Log the activity with full item details to show in telegram
-    await this.logActivity('BI3A_JADIDA', { 
-      vente_id: vente.id, 
-      montant: montantTotal, 
+    await this.logActivity('BI3A_JADIDA', {
+      vente_id: vente.id,
+      montant: montantTotal,
       items_count: items.length,
       items: items.map((i: any) => ({
         nom: i.nom,
@@ -520,7 +521,7 @@ export class SupabaseService {
           .eq('id', item.produit_id);
       }
     }
-    
+
     await this.logActivity('BI3A', { montant: montantTotal, items: items.length }, userId);
 
     this.refreshService.triggerRefresh();
@@ -552,14 +553,14 @@ export class SupabaseService {
       .from('ventes')
       .delete()
       .eq('id', id);
-      
+
     if (error) throw error;
 
     await this.logActivity('MS7_BI3A', { vente_id: id }, userId);
     this.refreshService.triggerRefresh();
   }
 
-  async updateVente(id: string, montantTotal: number, profitTotal: number, newItems: any[], userId?: string, dateStr?: string) {
+  async updateVente(id: string, montantTotal: number, montantPaye: number, profitTotal: number, newItems: any[], userId?: string, dateStr?: string) {
     // 1. Fetch old items to restore stock
     const { data: oldItems, error: oldItemsError } = await this.supabase
       .from('vente_items')
@@ -582,7 +583,7 @@ export class SupabaseService {
     await this.supabase.from('vente_items').delete().eq('vente_id', id);
 
     // 3. Update the vente totals
-    const updatePayload: any = { montant_total: montantTotal, profit_total: profitTotal };
+    const updatePayload: any = { montant_total: montantTotal, montant_paye: montantPaye, profit_total: profitTotal };
     if (dateStr) updatePayload.date = dateStr;
 
     const { error: venteError } = await this.supabase
@@ -643,9 +644,9 @@ export class SupabaseService {
       .single();
     if (error) throw error;
 
-    await this.logActivity('ZID_ISLAH', { 
-      description: revenu.description, 
-      montant: revenu.montant 
+    await this.logActivity('ZID_ISLAH', {
+      description: revenu.description,
+      montant: revenu.montant
     }, userId);
 
     this.refreshService.triggerRefresh();
@@ -660,7 +661,7 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
-    
+
     this.refreshService.triggerRefresh();
     return data;
   }
@@ -694,9 +695,9 @@ export class SupabaseService {
       .single();
     if (error) throw error;
 
-    await this.logActivity('ZID_MASROUF', { 
-      description: depense.description, 
-      montant: depense.montant 
+    await this.logActivity('ZID_MASROUF', {
+      description: depense.description,
+      montant: depense.montant
     }, userId);
 
     this.refreshService.triggerRefresh();
@@ -711,7 +712,7 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
-    
+
     this.refreshService.triggerRefresh();
     return data;
   }
@@ -745,9 +746,9 @@ export class SupabaseService {
       .single();
     if (error) throw error;
 
-    await this.logActivity('ZID_AVANCE', { 
-      description: avance.description, 
-      montant: avance.montant 
+    await this.logActivity('ZID_AVANCE', {
+      description: avance.description,
+      montant: avance.montant
     }, userId);
 
     this.refreshService.triggerRefresh();
@@ -762,7 +763,7 @@ export class SupabaseService {
       .select()
       .single();
     if (error) throw error;
-    
+
     this.refreshService.triggerRefresh();
     return data;
   }
@@ -792,7 +793,12 @@ export class SupabaseService {
   }
 
   async addCredit(credit: any, userId?: string) {
-    const dataToInsert = userId ? { ...credit, user_id: userId } : credit;
+    // Default type_credit to 'produit' if not specified
+    const creditWithType = {
+      ...credit,
+      type_credit: credit.type_credit || 'produit'
+    };
+    const dataToInsert = userId ? { ...creditWithType, user_id: userId } : creditWithType;
     const { data, error } = await this.supabase
       .from('credits')
       .insert(dataToInsert)
@@ -800,7 +806,7 @@ export class SupabaseService {
       .single();
     if (error) throw error;
 
-    await this.logActivity('ZID_CREDIT', { nom: credit.nom_client, montant: credit.montant }, userId);
+    await this.logActivity('ZID_CREDIT', { nom: credit.nom_client, montant: credit.montant, type: creditWithType.type_credit }, userId);
     this.refreshService.triggerRefresh();
     return data;
   }
@@ -858,6 +864,28 @@ export class SupabaseService {
   }
 
   async deleteClient(id: string) {
+    // 1. Get all credits for this client
+    const { data: credits, error: creditsError } = await this.supabase
+      .from('credits')
+      .select('id')
+      .eq('client_id', id);
+
+    if (!creditsError && credits && credits.length > 0) {
+      // 2. Delete all credit_paiements for each credit
+      const creditIds = credits.map(c => c.id);
+      await this.supabase
+        .from('credit_paiements')
+        .delete()
+        .in('credit_id', creditIds);
+
+      // 3. Delete all credits for this client
+      await this.supabase
+        .from('credits')
+        .delete()
+        .eq('client_id', id);
+    }
+
+    // 4. Finally delete the client
     const { error } = await this.supabase
       .from('clients')
       .delete()
@@ -1059,7 +1087,7 @@ export class SupabaseService {
   // ==================== Daily Quick Stats (Header) ====================
   async getDailyQuickStats(userId?: string) {
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Check if the cash register was already closed today
     const { data: cloture } = await this.supabase
       .from('clotures_caisse')
@@ -1075,43 +1103,46 @@ export class SupabaseService {
       };
     }
 
-    let ventesQuery = this.supabase.from('ventes').select('montant_total, profit_total').eq('date', today);
+    // Fetch montant_paye (cash actually received) for ventes
+    let ventesQuery = this.supabase.from('ventes').select('montant_total, montant_paye, profit_total').eq('date', today);
     let revenusQuery = this.supabase.from('revenus_reparation').select('montant').eq('date', today);
     let depensesQuery = this.supabase.from('depenses').select('montant').eq('date', today);
     let avancesQuery = this.supabase.from('avances').select('montant').eq('date', today);
-    let creditsQuery = this.supabase.from('credits').select('montant').eq('date', today);
+    // Only subtract CASH credits (money given to client as loan)
+    let creditsCashQuery = this.supabase.from('credits').select('montant').eq('date', today).eq('type_credit', 'cash');
     let paiementsQuery = this.supabase.from('credit_paiements').select('montant').eq('date', today);
 
     if (userId) {
       ventesQuery = ventesQuery.eq('user_id', userId);
       revenusQuery = revenusQuery.eq('user_id', userId);
-      // Depenses are optional for employees, but if they make an expense, it should be deducted from their drawer
       depensesQuery = depensesQuery.eq('user_id', userId);
       avancesQuery = avancesQuery.eq('user_id', userId);
-      creditsQuery = creditsQuery.eq('user_id', userId);
+      creditsCashQuery = creditsCashQuery.eq('user_id', userId);
     }
 
     // Note: credit_paiements does not have user_id, it is a global cash inflow when client pays.
-    
-    const [ventes, revenus, depenses, avances, credits, paiements] = await Promise.all([
+
+    const [ventes, revenus, depenses, avances, creditsCash, paiements] = await Promise.all([
       ventesQuery,
       revenusQuery,
       depensesQuery,
       avancesQuery,
-      creditsQuery,
+      creditsCashQuery,
       paiementsQuery
     ]);
 
+    // Use montant_paye for caisse (cash actually received), not montant_total
+    const ventesMontantPaye = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_paye || 0), 0);
     const ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
     const ventesProfitTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
     const avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
-    const creditsTotal = (credits.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+    const creditsCashTotal = (creditsCash.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
     const paiementsTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
 
     return {
-      caisse: ventesTotal + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsTotal,
+      caisse: ventesMontantPaye + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsCashTotal,
       ventes: ventesTotal + reparationsTotal,
       rib7: ventesProfitTotal + reparationsTotal - depensesTotal
     };

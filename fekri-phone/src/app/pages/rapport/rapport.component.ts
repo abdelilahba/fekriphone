@@ -89,11 +89,17 @@ export class RapportComponent implements OnInit {
     const dayAvances = avances.filter((a: any) => a.date === dateStr);
     const dayPaiements = paiements.filter((p: any) => p.date === dateStr);
 
+    // Only cash credits (money given as loan) subtract from caisse
+    const dayCreditsCash = dayCredits.filter((c: any) => c.type_credit === 'cash');
+
     const ventesTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+    // Use montant_paye for caisse (cash actually received)
+    const ventesMontantPaye = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_paye || v.montant_total || 0), 0);
     const ventesProfitTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const reparationsTotal = dayRevenus.reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = dayDepenses.reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
     const creditsTotal = dayCredits.reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+    const creditsCashTotal = dayCreditsCash.reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
     const avancesTotal = dayAvances.reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
     const paiementsTotal = dayPaiements.reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
 
@@ -114,7 +120,7 @@ export class RapportComponent implements OnInit {
       paiementsCount: dayPaiements.length,
       paiementsTotal,
       benefice: ventesProfitTotal + reparationsTotal - depensesTotal,
-      caisse: ventesTotal + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsTotal,
+      caisse: ventesMontantPaye + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsCashTotal,
       ventesList: dayVentes,
       reparationsList: dayRevenus,
       depensesList: dayDepenses,
@@ -277,7 +283,7 @@ export class RapportComponent implements OnInit {
       });
       csv += '\n';
     }
-    
+
     // Paiements detail
     if (report.paiementsList.length > 0) {
       csv += '--- تفاصيل أداء الديون الكاش ---\n';
