@@ -518,13 +518,11 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     try {
       const profitTotal = this.cart.reduce((s, i) => s + i.profit, 0);
       const uid = this.auth.currentUser?.id;
-      const clientNameToSave = this.nomClient.trim() || undefined;
-
       if (this.editingVenteId) {
-        await this.supabase.updateVente(this.editingVenteId, total, montantPaye, profitTotal, this.cart, uid, this.saleDate, clientNameToSave);
+        await this.supabase.updateVente(this.editingVenteId, total, montantPaye, profitTotal, this.cart, uid, this.saleDate);
         this.editingVenteId = null;
       } else {
-        await this.supabase.addVente(total, montantPaye, profitTotal, this.cart, uid, this.saleDate, clientNameToSave);
+        await this.supabase.addVente(total, montantPaye, profitTotal, this.cart, uid, this.saleDate);
       }
 
       if (reste > 0) {
