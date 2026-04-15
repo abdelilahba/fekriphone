@@ -7,7 +7,7 @@ import { LayoutService } from '../../core/services/layout.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Produit, Vente, Categorie, Client } from '../../core/models/models';
-import { getCategoryImage } from '../../core/models/category-icons';
+import { resolveCategoryImage } from '../../core/models/category-icons';
 
 interface CartItem {
   produit_id: string;
@@ -56,6 +56,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   private cart: CartItem[] = [];
   editingVenteId: string | null = null;
+  readonly resolveImg = resolveCategoryImage;
 
   @ViewChild('searchInput') searchInput!: ElementRef;
   private focusSearchNeedsTrigger = false;
@@ -275,11 +276,11 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   getCategoryImageForProduct(p: Produit): string {
     const cat = this.categories.find(c => c.id === p.categorie_id);
-    return getCategoryImage(cat?.icone || 'other');
+    return this.resolveImg(cat?.icone || 'other');
   }
 
   getCategoryImagePath(icone: string): string {
-    return getCategoryImage(icone || 'other');
+    return this.resolveImg(icone || 'other');
   }
 
   async addToCart(p: Produit) {

@@ -165,8 +165,9 @@
             ⚠️ قلّ الستوك
           </button>
           @for (cat of categories$ | async; track cat.id) {
-          <button class="cat-btn" [class.active]="activeCategory === cat.id && !showLowStock" (click)="filterByCategory(cat.id)">
-            {{ cat.icone }} {{ cat.nom }}
+          <button class="cat-btn" [class.active]="activeCategory === cat.id && !showLowStock" (click)="filterByCategory(cat.id)" style="display: flex; align-items: center; gap: 8px;">
+            <img [src]="resolveImg(cat.icone || '')" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: white; padding: 2px;" alt=""> 
+            {{ cat.nom }}
           </button>
           }
         </div>
@@ -178,7 +179,7 @@
           <div class="product-card" (click)="incrementCartByProductId(p.id)" [class.selected]="getCartQty(p.id) > 0"
             [class.out-of-stock]="p.quantite <= 0">
             <div class="card-visual">
-              <div class="product-emoji" [title]="p.nom">{{ getCategoryIcon(p) }}</div>
+              <img [src]="resolveImg(getCategoryIcon(p))" class="product-img" [title]="p.nom" alt="">
               @if (getCartQty(p.id) > 0) {
               <div class="qty-badge-action remove" (click)="$event.stopPropagation(); decrementCartByProductId(p.id)">−
               </div>
@@ -216,7 +217,10 @@
             <div class="cart-item-top">
               <span class="cart-item-index">{{ i + 1 }}</span>
               <div class="cart-item-info">
-                <div class="cart-item-name">{{ item.icone }} {{ item.nom }}</div>
+                <div class="cart-item-name" style="display: flex; align-items: center; gap: 8px;">
+                  <img [src]="resolveImg(item.icone)" style="width: 20px; height: 20px; object-fit: contain;" alt="">
+                  {{ item.nom }}
+                </div>
                 <div class="cart-item-price-edit">
                   <input type="number" [(ngModel)]="item.prix_unitaire" (ngModelChange)="updateCartItem(item)"
                     class="cart-inline-input" min="0">

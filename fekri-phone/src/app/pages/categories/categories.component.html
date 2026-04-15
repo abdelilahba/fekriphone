@@ -24,7 +24,7 @@
           @for (c of categories; track c.id) {
             <div class="category-card card">
               <div class="category-info">
-                <span class="category-icon">{{ c.icone || '📦' }}</span>
+                <img [src]="resolveImg(c.icone || '')" class="category-icon-img" alt="" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px; margin-right: 12px; background: #f8fafc; padding: 4px;" />
                 <h3>{{ c.nom }}</h3>
               </div>
               <div class="actions">
@@ -54,16 +54,17 @@
           </div>
           <div class="form-group">
             <label>الأيقونة</label>
-            <div class="icon-picker">
-              @for (icon of iconOptions; track icon.emoji) {
-                <button type="button" class="icon-option" [class.selected]="form.icone === icon.emoji" (click)="form.icone = icon.emoji">
-                  <span class="icon-emoji">{{ icon.emoji }}</span>
-                  <span class="icon-label">{{ icon.label }}</span>
+            <div class="icon-picker" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
+              @for (icon of iconOptions; track icon.id) {
+                <button type="button" class="icon-option" [class.selected]="form.icone === icon.image" (click)="form.icone = icon.image" style="display: flex; flex-direction: column; align-items: center; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; cursor: pointer; transition: all 0.2s;">
+                  <img [src]="icon.image" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 8px;" alt="">
+                  <span class="icon-label" style="font-size: 10px; text-align: center; color: #475569;">{{ icon.labelAr }}</span>
                 </button>
               }
             </div>
-            <div class="selected-icon-preview">
-              الأيقونة المختارة: <span>{{ form.icone }}</span>
+            <div class="selected-icon-preview" style="margin-top: 15px; display: flex; align-items: center; gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+              <span style="color: #64748b; font-size: 14px;">الصورة المختارة:</span>
+              <img [src]="resolveImg(form.icone)" style="width: 40px; height: 40px; object-fit: contain; border-radius: 6px; background: white; padding: 2px;">
             </div>
           </div>
         </div>

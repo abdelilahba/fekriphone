@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AIService } from '../../components/ai-assistant/ai-assistant';
 import { Produit, Categorie } from '../../core/models/models';
+import { resolveCategoryImage } from '../../core/models/category-icons';
 import Swal from 'sweetalert2';
 import * as JsBarcodeModule from 'jsbarcode';
 const JsBarcode = (JsBarcodeModule as any).default || JsBarcodeModule;
@@ -48,6 +49,7 @@ export class ProduitsComponent implements OnInit {
 
   // Fast Inventory Sync
   isQuickInventoryMode = false;
+  readonly resolveImg = resolveCategoryImage;
 
   toggleQuickInventory() {
     this.isQuickInventoryMode = !this.isQuickInventoryMode;

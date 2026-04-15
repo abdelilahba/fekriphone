@@ -458,8 +458,8 @@
 /* --- Product Grid --- */
 .pos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  grid-auto-rows: 180px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-auto-rows: min-content;
   align-content: start;
   gap: 12px;
   overflow-y: auto;
@@ -518,31 +518,26 @@
 }
 
 .card-visual {
-  background: linear-gradient(145deg, var(--bg-main), var(--primary-light));
-  height: 90px;
-  min-height: 90px;
+  background: white;
+  height: 140px;
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-light);
 }
 
-.product-emoji {
-  font-size: 40px;
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(155, 48, 255, 0.1);
-  transition: transform 0.2s;
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-.product-card:hover .product-emoji {
+.product-card:hover .product-img {
   transform: scale(1.1);
 }
 

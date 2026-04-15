@@ -6,6 +6,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import Swal from 'sweetalert2';
 import { Categorie } from '../../core/models/models';
 
+import { CATEGORY_ICONS, resolveCategoryImage } from '../../core/models/category-icons';
+
 @Component({
   selector: 'app-categories',
   standalone: true,
@@ -19,29 +21,12 @@ export class CategoriesComponent implements OnInit {
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
   showModal = false;
   editMode = false;
-  form = { id: '', nom: '', icone: '📦' };
+  form = { id: '', nom: '', icone: 'assets/categories/other.png' };
 
-  iconOptions = [
-    { emoji: '📲', label: 'هواتف ذكية (جديد ومستعمل)' },
-    { emoji: '🎧', label: 'أكسسوارات هواتف (Accessoires)' },
-    { emoji: '⚡', label: 'شواحن (شارجورات كوامل / روسان)' },
-    { emoji: '🔌', label: 'كابلات (Type-C, iPhone, V8)' },
-    { emoji: '🔋', label: 'بطاريات وباور بانك (Powerbank)' },
-    { emoji: '🛡️', label: 'بوشيطات وكفرات (Pochettes)' },
-    { emoji: '💎', label: 'حماية الشاشة (أنتي كاس، جيلاتين)' },
-    { emoji: '⌚', label: 'ماڭانات ذكية (Smartwatch / براسلي)' },
-    { emoji: '🚘', label: 'أكسسوارات سيارات (سيبورة، طرونسميتور)' },
-    { emoji: '💾', label: 'كارط ميموار وكلي USB' },
-    { emoji: '📡', label: 'راوتر / ويفي 4G/5G' },
-    { emoji: '💻', label: 'حواسيب وأكسسوارات' },
-    { emoji: '🎮', label: 'ألعاب (مانيطات، كاسك ڭايمينڭ...)' },
-    { emoji: '📸', label: 'رينغ لايت / تريپود للـ TikTok' },
-    { emoji: '🎤', label: 'ميكروفونات (للستريمرز وصناع المحتوى)' },
-    { emoji: '🔊', label: 'بافلات وبافات بلوتوث' },
-    { emoji: '⚙️', label: 'قطع غيار (أفيشور، كونيكتور، ناب...)' },
-    { emoji: '🛠️', label: 'ماطريال الصيانة (كاوية، لاصق، تورنوفيس)' },
-    { emoji: '📦', label: 'أخرى (منوعات)' },
-  ];
+  iconOptions = CATEGORY_ICONS; // Using our new professional images
+
+  // Utility to expose logic to template
+  readonly resolveImg = resolveCategoryImage;
 
   constructor(private supabase: SupabaseService) { }
 

@@ -117,7 +117,10 @@
               <tbody>
                 @for (p of paginatedProduits$ | async; track p.id) {
                   <tr>
-                    <td class="product-name">{{ p.nom }}</td>
+                    <td class="product-name" style="display: flex; align-items: center; gap: 10px;">
+                      <img [src]="resolveImg(getCategoryIcon(p.categorie_id))" style="width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: #f8fafc; padding: 2px;" alt="">
+                      {{ p.nom }}
+                    </td>
                     <td>{{ getCategoryName(p.categorie_id) }}</td>
                     <td>{{ formatMAD(p.prix_achat) }}</td>
                     <td class="prix-vente">{{ formatMAD(p.prix_vente) }}</td>
@@ -337,7 +340,7 @@
         </div>
         <div class="modal-body">
           <div class="detail-top">
-            <span class="detail-icon">{{ getCategoryIcon(selectedProduct.categorie_id) }}</span>
+            <img [src]="resolveImg(getCategoryIcon(selectedProduct.categorie_id))" style="width: 64px; height: 64px; object-fit: contain; border-radius: 12px; background: #f8fafc; padding: 8px; margin-right: 15px;" alt="">
             <div>
               <h3 class="detail-name">{{ selectedProduct.nom }}</h3>
               <span class="detail-cat">{{ getCategoryName(selectedProduct.categorie_id) }}</span>
@@ -512,13 +515,20 @@
                           }
                         </td>
                         <td>
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                             @if (p.categorie_id) {
+                               <img [src]="resolveImg(getCategoryIcon(p.categorie_id))" style="width: 20px; height: 20px; object-fit: contain;" alt="">
+                             }
+                             @if (p.isExisting) {
+                               <span class="badge badge-warning">📦 موجود</span>
+                             } @else {
+                               <span class="badge badge-success">🆕 جديد</span>
+                             }
+                          </div>
                           @if (p.isExisting) {
-                            <span class="badge badge-warning">📦 موجود</span>
                             <small class="existing-info"
                               >ستوك: {{ p.existingStock }} | +{{ p.quantite }} جديد</small
                             >
-                          } @else {
-                            <span class="badge badge-success">🆕 جديد</span>
                           }
                         </td>
                       </tr>
