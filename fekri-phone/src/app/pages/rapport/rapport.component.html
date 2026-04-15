@@ -163,7 +163,7 @@
           <tr>
             <th>#</th>
             <th>المجموع</th>
-            <th colspan="2">حالة الأداء (كاش/باقي)</th>
+            <th>الحالة</th>
             <th>الربح</th>
             <th>التفاصيل</th>
           </tr>
@@ -173,11 +173,14 @@
           <tr>
             <td>{{ i + 1 }}</td>
             <td class="amount" style="font-weight: bold;">{{ formatMAD(v.montant_total) }}</td>
-            <td colspan="2">
+            <td>
               @if (v.montant_total > (v.montant_paye || 0)) {
-                <div style="font-size: 11px;">
-                  <span style="color: var(--success);">خلص: {{ formatMAD(v.montant_paye || 0) }}</span> | 
-                  <span style="color: var(--danger); font-weight: bold;">باقي: {{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</span>
+                <div style="font-size: 11px; padding: 4px 6px; border-radius: 6px; background: linear-gradient(135deg, #fff5f5, #ffe0e0); border: 1px solid #fca5a5;">
+                  @if (v.nom_client) {
+                    <div style="font-weight: 700; color: #7c3aed;">👤 {{ v.nom_client }}</div>
+                  }
+                  <span style="color: #16a34a;">💵 {{ formatMAD(v.montant_paye || 0) }}</span>
+                  <span style="color: #dc2626; font-weight: 700;"> 📛 -{{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</span>
                 </div>
               }
             </td>
