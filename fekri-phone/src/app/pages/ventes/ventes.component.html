@@ -68,8 +68,6 @@
             <div class="mvr-paye" style="color: var(--success);">✅ خلص: {{ formatMAD(v.montant_paye || 0) }}</div>
             <div class="mvr-reste" style="color: var(--danger); font-weight: bold;">⚠️ باقي: {{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</div>
           </div>
-        } @else {
-          <div class="mvr-paye-complet" style="font-size: 11px; color: var(--success); margin-top: 4px; font-weight: 600;">✨ بيعة مكتملة</div>
         }
 
         @if (userRole === 'admin') {

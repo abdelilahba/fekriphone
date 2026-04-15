@@ -179,8 +179,6 @@
                   <span style="color: var(--success);">خلص: {{ formatMAD(v.montant_paye || 0) }}</span> | 
                   <span style="color: var(--danger); font-weight: bold;">باقي: {{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</span>
                 </div>
-              } @else {
-                <span class="badge badge-success" style="font-size: 10px;">✨ بيع مكتمل</span>
               }
             </td>
             <td class="amount success" style="color: var(--success); font-weight: bold;">{{ formatMAD(v.profit_total) }}</td>
