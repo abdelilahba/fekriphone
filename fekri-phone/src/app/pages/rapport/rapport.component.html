@@ -162,7 +162,9 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>المبلغ</th>
+            <th>المجموع</th>
+            <th>خلص (كاش)</th>
+            <th>الباقي (كريدي)</th>
             <th>الربح</th>
             <th>التفاصيل</th>
           </tr>
@@ -171,9 +173,10 @@
           @for (v of report.ventesList; track v.id; let i = $index) {
           <tr>
             <td>{{ i + 1 }}</td>
-            <td class="amount success">{{ formatMAD(v.montant_total) }}</td>
-            <td class="amount success" style="color: var(--success); font-weight: bold;">{{ formatMAD(v.profit_total) }}
-            </td>
+            <td class="amount" style="font-weight: bold;">{{ formatMAD(v.montant_total) }}</td>
+            <td class="amount success">{{ formatMAD(v.montant_paye || 0) }}</td>
+            <td class="amount danger" style="font-weight: bold;">{{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</td>
+            <td class="amount success" style="color: var(--success); font-weight: bold;">{{ formatMAD(v.profit_total) }}</td>
             <td>
               @if (v.vente_items) {
               @for (item of v.vente_items; track item.id) {

@@ -61,7 +61,15 @@
         @if (userRole === 'admin') {
           <div class="mvr-creator" title="مول البيعة">👤 {{ v.profiles?.name || '---' }}</div>
         }
-        <div class="mvr-price">{{ formatMAD(v.montant_total) }}</div>
+        <div class="mvr-price" title="المجموع الكلي">💰 {{ formatMAD(v.montant_total) }}</div>
+        
+        <div class="mvr-payment-details" style="font-size: 11px; margin-top: 4px;">
+          <div class="mvr-paye" style="color: var(--success);">✅ خلص: {{ formatMAD(v.montant_paye || 0) }}</div>
+          @if (v.montant_total - (v.montant_paye || 0) > 0) {
+            <div class="mvr-reste" style="color: var(--danger); font-weight: bold;">⚠️ باقي: {{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</div>
+          }
+        </div>
+
         @if (userRole === 'admin') {
           <div class="mvr-profit">الربح: {{ formatMAD(v.profit_total) }}</div>
         }
