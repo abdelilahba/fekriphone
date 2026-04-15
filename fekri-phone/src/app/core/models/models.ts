@@ -26,6 +26,7 @@ export interface Vente {
   montant_paye: number;
   profit_total: number;
   date: string;
+  nom_client?: string;
   user_id?: string;
   created_at: string;
   // Joined

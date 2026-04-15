@@ -162,6 +162,7 @@
         <thead>
           <tr>
             <th>#</th>
+            <th>الزبون</th>
             <th>المجموع</th>
             <th>خلص (كاش)</th>
             <th>الباقي (كريدي)</th>
@@ -173,15 +174,20 @@
           @for (v of report.ventesList; track v.id; let i = $index) {
           <tr>
             <td>{{ i + 1 }}</td>
+            <td>{{ v.nom_client || '—' }}</td>
             <td class="amount" style="font-weight: bold;">{{ formatMAD(v.montant_total) }}</td>
             <td class="amount success">{{ formatMAD(v.montant_paye || 0) }}</td>
             <td class="amount danger" style="font-weight: bold;">{{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</td>
             <td class="amount success" style="color: var(--success); font-weight: bold;">{{ formatMAD(v.profit_total) }}</td>
             <td>
-              @if (v.vente_items) {
-              @for (item of v.vente_items; track item.id) {
-              <span class="item-badge">{{ item.produits?.nom || 'منتج' }} × {{ item.quantite }}</span>
-              }
+              @if (v.montant_total > (v.montant_paye || 0)) {
+                @if (v.vente_items) {
+                  @for (item of v.vente_items; track item.id) {
+                    <span class="item-badge">{{ item.produits?.nom || 'منتج' }} × {{ item.quantite }}</span>
+                  }
+                }
+              } @else {
+                <span class="badge badge-success">بيع مكتمل ✅</span>
               }
             </td>
           </tr>

@@ -46,20 +46,26 @@
         </div>
 
         <div class="mvr-products">
-          @if (v.vente_items && v.vente_items.length > 0) {
-          @for (item of v.vente_items; track item.id) {
-          <div class="mvr-product-badge">
-            <span class="mpb-name">{{ item.produits?.nom || 'منتج' }}</span>
-            <span class="mpb-qty">{{ item.quantite }}</span>
-          </div>
-          }
+          @if (v.montant_total > (v.montant_paye || 0)) {
+            @if (v.vente_items && v.vente_items.length > 0) {
+              @for (item of v.vente_items; track item.id) {
+                <div class="mvr-product-badge">
+                  <span class="mpb-name">{{ item.produits?.nom || 'منتج' }}</span>
+                  <span class="mpb-qty">{{ item.quantite }}</span>
+                </div>
+              }
+            }
           }
         </div>
       </div>
 
       <div class="mvr-summary">
         @if (userRole === 'admin') {
-          <div class="mvr-creator" title="مول البيعة">👤 {{ v.profiles?.name || '---' }}</div>
+          <div class="mvr-creator" title="مول البيعة">👤 {{ v.profiles?.name || '---' }} {{ v.nom_client ? '| 👤 ' + v.nom_client : '' }}</div>
+        } @else {
+          @if (v.nom_client) {
+            <div class="mvr-creator">👤 {{ v.nom_client }}</div>
+          }
         }
         <div class="mvr-price" title="المجموع الكلي">💰 {{ formatMAD(v.montant_total) }}</div>
         
