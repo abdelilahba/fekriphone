@@ -163,8 +163,7 @@
           <tr>
             <th>#</th>
             <th>المجموع</th>
-            <th>خلص (كاش)</th>
-            <th>الباقي (كريدي)</th>
+            <th colspan="2">حالة الأداء (كاش/باقي)</th>
             <th>الربح</th>
             <th>التفاصيل</th>
           </tr>
@@ -174,8 +173,16 @@
           <tr>
             <td>{{ i + 1 }}</td>
             <td class="amount" style="font-weight: bold;">{{ formatMAD(v.montant_total) }}</td>
-            <td class="amount success">{{ formatMAD(v.montant_paye || 0) }}</td>
-            <td class="amount danger" style="font-weight: bold;">{{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</td>
+            <td colspan="2">
+              @if (v.montant_total > (v.montant_paye || 0)) {
+                <div style="font-size: 11px;">
+                  <span style="color: var(--success);">خلص: {{ formatMAD(v.montant_paye || 0) }}</span> | 
+                  <span style="color: var(--danger); font-weight: bold;">باقي: {{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</span>
+                </div>
+              } @else {
+                <span class="badge badge-success" style="font-size: 10px;">✨ بيع مكتمل</span>
+              }
+            </td>
             <td class="amount success" style="color: var(--success); font-weight: bold;">{{ formatMAD(v.profit_total) }}</td>
             <td>
               @if (v.vente_items) {

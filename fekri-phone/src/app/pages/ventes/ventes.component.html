@@ -63,12 +63,14 @@
         }
         <div class="mvr-price" title="المجموع الكلي">💰 {{ formatMAD(v.montant_total) }}</div>
         
-        <div class="mvr-payment-details" style="font-size: 11px; margin-top: 4px;">
-          <div class="mvr-paye" style="color: var(--success);">✅ خلص: {{ formatMAD(v.montant_paye || 0) }}</div>
-          @if (v.montant_total - (v.montant_paye || 0) > 0) {
+        @if (v.montant_total > (v.montant_paye || 0)) {
+          <div class="mvr-payment-details" style="font-size: 11px; margin-top: 4px; background: rgba(0,0,0,0.03); padding: 4px 8px; border-radius: 6px; border-right: 3px solid var(--danger);">
+            <div class="mvr-paye" style="color: var(--success);">✅ خلص: {{ formatMAD(v.montant_paye || 0) }}</div>
             <div class="mvr-reste" style="color: var(--danger); font-weight: bold;">⚠️ باقي: {{ formatMAD(v.montant_total - (v.montant_paye || 0)) }}</div>
-          }
-        </div>
+          </div>
+        } @else {
+          <div class="mvr-paye-complet" style="font-size: 11px; color: var(--success); margin-top: 4px; font-weight: 600;">✨ بيعة مكتملة</div>
+        }
 
         @if (userRole === 'admin') {
           <div class="mvr-profit">الربح: {{ formatMAD(v.profit_total) }}</div>
