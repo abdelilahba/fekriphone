@@ -94,7 +94,7 @@ export class RapportComponent implements OnInit {
 
     const ventesTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
     // Use montant_paye for caisse (cash actually received)
-    const ventesMontantPaye = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_paye || v.montant_total || 0), 0);
+    const ventesMontantPaye = dayVentes.reduce((s: number, v: any) => s + Number(v.montant_paye || 0), 0);
     const ventesProfitTotal = dayVentes.reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
     const reparationsTotal = dayRevenus.reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = dayDepenses.reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
