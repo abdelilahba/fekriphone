@@ -209,3 +209,83 @@
   .mini-stat-value { font-size: 12px; }
   .theorique-value { font-size: 26px; }
 }
+
+/* ========== Popup Caisse ========== */
+.popup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+}
+
+.popup-content {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: scaleUp 0.3s ease;
+  overflow: hidden;
+}
+
+.popup-header {
+  background: linear-gradient(135deg, #1e3a5f, #0f172a);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.popup-header h3 {
+  margin: 0; font-size: 1.1rem; font-weight: 800; font-family: inherit;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none; color: white; border-radius: 8px;
+  width: 32px; height: 32px; font-weight: bold; cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-btn:hover { background: rgba(255, 255, 255, 0.4); }
+
+.popup-body { padding: 24px; }
+
+.darija-text {
+  font-size: 14px; line-height: 1.6; color: #374151;
+  background: #f8fafc; padding: 14px; border-radius: 12px;
+  margin-bottom: 20px; border-right: 4px solid #3b82f6;
+  font-weight: 600;
+}
+
+.formula-box {
+  background: white; border: 2px solid #e2e8f0;
+  border-radius: 12px; padding: 16px; margin-bottom: 24px;
+}
+
+.formula-row {
+  display: flex; justify-content: space-between;
+  margin-bottom: 10px; font-size: 13px; font-weight: 700;
+}
+
+.formula-row.positive span:first-child { color: #16a34a; }
+.formula-row.negative span:first-child { color: #dc2626; }
+.formula-row.positive span:last-child { color: #15803d; font-weight: 800; }
+.formula-row.negative span:last-child { color: #b91c1c; font-weight: 800; }
+
+.formula-divider {
+  height: 2px; background: #e2e8f0; margin: 12px 0;
+}
+
+.formula-row.result { margin-bottom: 0; font-size: 16px; margin-top: 10px; }
+.formula-row.result strong:first-child { color: #1e293b; font-weight: 900; }
+.total-result { color: #0284c7; font-size: 18px; font-weight: 900; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

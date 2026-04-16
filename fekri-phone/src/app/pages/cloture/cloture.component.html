@@ -24,6 +24,59 @@
   <!-- === MAIN CLOTURE VIEW === -->
   @if (!showHistorique) {
 
+  <!-- Caisse Popup (Darija) -->
+  @if (showCaissePopup) {
+    <div class="popup-overlay" (click)="toggleCaissePopup()">
+      <div class="popup-content caisse-popup" (click)="$event.stopPropagation()">
+        <div class="popup-header">
+          <h3>💡 كيفاش كنحسبو لاكيس (الصندوق)؟</h3>
+          <button class="close-btn" (click)="toggleCaissePopup()">✕</button>
+        </div>
+        <div class="popup-body">
+          <p class="darija-text">
+            خويا، راه المبيعات اللي كتشوف الفوق فيها حتى <strong>الكريدي</strong> (كليان دا سلعة وباقي ما خلصش).<br>
+            الصندوق كيتزاد فيه غير الفلوس الكاش (أو تسبيق/خلاص دين)، وكيتنقص منو المصاريف أو السلف النقدي.
+          </p>
+          
+          <div class="formula-box">
+            <div class="formula-row positive">
+              <span>🟢 مبيعات "كاش"</span>
+              <span>{{ formatMAD(ventesCash) }}</span>
+            </div>
+            <div class="formula-row positive">
+              <span>🟢 إصلاحات</span>
+              <span>{{ formatMAD(reparationsTotal) }}</span>
+            </div>
+            <div class="formula-row positive">
+              <span>🟢 دفعات وعربون</span>
+              <span>{{ formatMAD(avancesTotal) }}</span>
+            </div>
+            <div class="formula-row positive">
+              <span>🟢 خلاص الديون السابقة</span>
+              <span>{{ formatMAD(paiementsTotal) }}</span>
+            </div>
+            <div class="formula-divider"></div>
+            <div class="formula-row negative">
+              <span>🔴 المصاريف</span>
+              <span>- {{ formatMAD(depensesTotal) }}</span>
+            </div>
+            <div class="formula-row negative">
+              <span>🔴 سلف كاش (للزبائن)</span>
+              <span>- {{ formatMAD(creditsCashTotal) }}</span>
+            </div>
+            <div class="formula-divider"></div>
+            <div class="formula-row result">
+              <strong>= الفلوس لي خاص تلقا :</strong>
+              <strong class="total-result">{{ formatMAD(montantTheorique) }}</strong>
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-100" style="padding: 12px; font-size: 16px;" (click)="toggleCaissePopup()">فهمت، شكرا!</button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Already Closed Banner -->
   @if (alreadyClosed && todayCloture) {
   <div class="already-closed-banner">
@@ -45,7 +98,10 @@
       <div class="mini-stat-icon" style="background: #dcfce7; color: #16a34a;">🛒</div>
       <div class="mini-stat-info">
         <span class="mini-stat-value">{{ formatMAD(ventesTotal) }}</span>
-        <span class="mini-stat-label">مبيعات</span>
+        <span class="mini-stat-label">المبيعات الإجمالية</span>
+        <div style="font-size: 11px; font-weight: 700; color: #6b7280; margin-top: 4px;">
+          كاش: {{ formatMAD(ventesCash) }}<br>كريدي: {{ formatMAD(ventesCredit) }}
+        </div>
       </div>
     </div>
     <div class="mini-stat-card">
@@ -73,9 +129,14 @@
 
   <!-- Theorique Total -->
   <div class="theorique-card">
-    <div class="theorique-label">💵 الحساب النظري (اللي خصو يكون فالصندوق)</div>
+    <div class="theorique-label">
+      💵 الحساب النظري (اللي خصو يكون فالصندوق)
+      <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e1; margin-right: 12px; border-radius: 8px; font-weight: 700;" (click)="toggleCaissePopup()">كيفاش حسبناها؟ ❓</button>
+    </div>
     <div class="theorique-value">{{ formatMAD(montantTheorique) }}</div>
-    <div class="theorique-formula">= مبيعات + إصلاحات + دفعات - مصاريف</div>
+    <div class="theorique-formula">
+      = مبيعات (كاش) + إصلاحات + دفع وتسبيق + خلاص دين القديم — مصاريف — سلف كاش
+    </div>
   </div>
 
   <!-- Input Card -->

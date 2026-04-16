@@ -23,12 +23,17 @@ export class ClotureComponent implements OnInit {
   avancesTotal = 0;
   depensesTotal = 0;
   montantTheorique = 0;
+  ventesCash = 0;
+  ventesCredit = 0;
+  paiementsTotal = 0;
+  creditsCashTotal = 0;
 
   // Form
   montantReel: number | null = null;
   note = '';
   ecart = 0;
   showResult = false;
+  showCaissePopup = false;
 
   // History
   historique: any[] = [];
@@ -51,17 +56,34 @@ export class ClotureComponent implements OnInit {
       const stats = await this.supabase.getDailyQuickStats();
 
       // Get individual totals for display
-      const [ventes, revenus, depenses, avances] = await Promise.all([
+      const [ventes, revenus, depenses, avances, paiements, creditsCash] = await Promise.all([
         this.supabase['supabase'].from('ventes').select('montant_total, montant_paye').eq('date', today),
         this.supabase['supabase'].from('revenus_reparation').select('montant').eq('date', today),
         this.supabase['supabase'].from('depenses').select('montant').eq('date', today),
-        this.supabase['supabase'].from('avances').select('montant').eq('date', today)
+        this.supabase['supabase'].from('avances').select('montant').eq('date', today),
+        this.supabase['supabase'].from('credit_paiements').select('montant').eq('date', today),
+        this.supabase['supabase'].from('credits').select('montant').eq('date', today).eq('type_credit', 'cash')
       ]);
 
+      let ventesTotalCash = 0;
+      let ventesTotalCredit = 0;
+
+      (ventes.data || []).forEach((v: any) => {
+        const montant = Number(v.montant_total || 0);
+        const paye = (v.montant_paye !== undefined && v.montant_paye !== null) ? Number(v.montant_paye) : montant;
+        ventesTotalCash += paye;
+        ventesTotalCredit += (montant - paye);
+      });
+
       this.ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+      this.ventesCash = ventesTotalCash;
+      this.ventesCredit = ventesTotalCredit;
+
       this.reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
       this.avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
       this.depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+      this.paiementsTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      this.creditsCashTotal = (creditsCash.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
       this.montantTheorique = stats.caisse;
 
       // Check if already closed today
@@ -161,6 +183,10 @@ export class ClotureComponent implements OnInit {
 
   toggleHistorique() {
     this.showHistorique = !this.showHistorique;
+  }
+
+  toggleCaissePopup() {
+    this.showCaissePopup = !this.showCaissePopup;
   }
 
   formatMAD(a: number): string { return Number(a).toLocaleString('ar-MA') + ' د.م'; }
