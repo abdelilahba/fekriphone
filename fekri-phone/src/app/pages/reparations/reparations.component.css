@@ -91,3 +91,66 @@
   color: var(--danger);
   font-size: 16px;
 }
+
+/* Credit badge in repair table */
+.credit-row {
+  background: rgba(245, 158, 11, 0.04) !important;
+}
+
+.credit-badge-row {
+  margin-top: 6px;
+}
+
+.credit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+
+.credit-badge-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.credit-badge-paid {
+  background: rgba(16, 185, 129, 0.10);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.credit-amount {
+  font-weight: 800;
+  color: var(--danger, #ef4444);
+  margin-inline-start: 4px;
+}
+
+.credit-badge-paid .credit-amount {
+  color: #047857;
+}
+
+:host-context(.dark-theme) .credit-badge-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+:host-context(.dark-theme) .credit-badge-paid {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+:host-context(.dark-theme) .credit-row {
+  background: rgba(245, 158, 11, 0.06) !important;
+}
+
+:host-context(.dark-theme) .credit-amount {
+  color: #f87171;
+}

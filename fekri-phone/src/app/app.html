@@ -98,11 +98,6 @@
       }
     </div>
 
-    <!-- Personalized Welcome for Employee/Admin -->
-    <div class="welcome-msg-top" *ngIf="welcomeMessage && userRole !== 'admin'" id="tour-welcome">
-      {{ welcomeMessage }}
-      <button class="welcome-close-btn" (click)="welcomeMessage = ''" title="إغلاق">X</button>
-    </div>
 
     <div class="top-bar-right">
       <!-- PWA Install Button -->

@@ -65,8 +65,8 @@ export class CreditsComponent implements OnInit {
   async loadData() {
     try {
       this.loading$.next(true);
-      const userIdToFetch = this.userRole === 'admin' ? undefined : (this.currentUserId || undefined);
-      const credits = await this.supabase.getCredits(userIdToFetch);
+      // All users (admin + employee) see all credits — credits are client-facing data
+      const credits = await this.supabase.getCredits();
       this.allCredits = credits;
       this.applyFilter();
     } catch (error) {

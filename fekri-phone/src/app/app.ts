@@ -124,7 +124,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { path: '/pieces', icon: '⚙️', label: 'قطع الغيار', exact: false, roles: ['admin'] },
     { path: '/ventes', icon: '🛒', label: 'المبيعات', exact: false, roles: ['admin', 'employee'] },
     { path: '/reparations', icon: '🔧', label: 'مداخيل الإصلاح', exact: false, roles: ['admin', 'employee'] },
-    { path: '/depenses', icon: '💸', label: 'المصاريف', exact: false, roles: ['admin'] },
+    { path: '/depenses', icon: '💸', label: 'المصاريف', exact: false, roles: ['admin', 'employee'] },
     { path: '/avances', icon: '💰', label: 'دفع (أربكة)', exact: false, roles: ['admin', 'employee'] },
     { path: '/pertes', icon: '💔', label: 'المنتجات التالفة', exact: false, roles: ['admin'] },
     { path: '/credits', icon: '📋', label: 'الديون', exact: false, roles: ['admin', 'employee'] },
@@ -289,30 +289,29 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async showUpdateMessage() {
-    const seen = localStorage.getItem('update_msg_v1_2_danger');
+    const seen = localStorage.getItem('update_msg_v1_3_features');
     if (!seen) {
       setTimeout(async () => {
         await Swal.fire({
-          title: '⚠️ تنبيه هام واعتذار 🚨',
+          title: '✨ تحديث جديد — مزيانة!',
           html: `
-            <div style="text-align: right; line-height: 1.8; font-size: 15px;">
-              <b>نعتذر على المشكل ديال البارح 🙏</b><br>
-              البارح وقع مشكل فاش كيفتح الخدام نقطة البيع (POS) كيبدل التاريخ، و المبيعات ماكيطلعوش ف نهارهم (تلاحو مثلا ف 09/04/2026).<br>
-              🔴 <b>المرجو عدم لمس أو تغيير التاريخ</b> فاش كتبيعو! خليوه أوطوماتيك باش الحساب ديال الصندوق ميتخربقش.<br><br>
-              <hr style="margin: 15px 0;">
-              <b>💡 شرح إضافة كريدي يدوي (من صفحة الديون):</b><br>
-              دابا ملي تبغي تزيد كريدي جديد من غير البيع، غتلقا إختيار ضروري الفوق:<br>
-              👉 <b>سلف كاش (أخد فلوس من الصندوق):</b> الكليان خذا فلوس كاش من المحل. هاد المبلغ غادي <b>ينقص من الصندوق</b> د اليوم.<br>
-              👉 <b>بيع بالكريدي (غير سلعة):</b> الكليان دا غير سلعة بالكريدي، يعني ماداش الفلوس الكاش. <b>الصندوق غيبقى هو هاداك</b> وماغادي ينقص منو والو.
+            <div style="text-align: right; line-height: 2; font-size: 14px;">
+              <b>🆕 شنو الجديد في هاد الإصدار:</b><br><br>
+              ✅ <b>الخدام واش يشوف الديون كاملة:</b><br>
+              دابا الخدام كيشوف كاع الديون ديال الزبناء، ويقدر يزيد، يعدل ويخلص.<br><br>
+              🔧 <b>الإصلاح مع كريدي كيبان اسم الزبون والمبلغ:</b><br>
+              إلى الزبون دفع شي حاجة بالكريدي في إصلاح، كيطلع شارة <b>💳 كريدي</b> مع اسمو والباقي مباشرة فالليستة.<br><br>
+              💸 <b>الخدام واش يدخل المصاريف:</b><br>
+              دابا الخدام عنده الحق يزيد مصروف من صفحة المصاريف.<br>
             </div>
           `,
-          icon: 'warning',
-          confirmButtonText: 'فهمت، شكرا! 👍',
-          confirmButtonColor: '#d33',
+          icon: 'success',
+          confirmButtonText: 'فهمت، شكراً! 👍',
+          confirmButtonColor: 'var(--primary)',
           showCloseButton: true
         });
-        localStorage.setItem('update_msg_v1_2_danger', 'true');
-      }, 1500); // Wait a bit until layout fully loads
+        localStorage.setItem('update_msg_v1_3_features', 'true');
+      }, 1500);
     }
   }
 

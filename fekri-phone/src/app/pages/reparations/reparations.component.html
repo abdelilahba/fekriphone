@@ -46,8 +46,24 @@
       </thead>
       <tbody>
         @for (r of paginatedRevenus$ | async; track r.id) {
-        <tr>
-          <td class="desc-cell">{{ r.description }}</td>
+        <tr [class.credit-row]="getCreditInfo(r)">
+          <td class="desc-cell">
+            {{ r.description }}
+            @if (getCreditInfo(r); as creditInfo) {
+              <div class="credit-badge-row">
+                @if (!creditInfo.est_paye) {
+                  <span class="credit-badge credit-badge-pending">
+                    💳 كريدي — 👤 {{ creditInfo.nom_client }}
+                    <span class="credit-amount">الباقي: {{ formatMAD(getCreditReste(creditInfo)) }}</span>
+                  </span>
+                } @else {
+                  <span class="credit-badge credit-badge-paid">
+                    ✅ تخلص — 👤 {{ creditInfo.nom_client }}
+                  </span>
+                }
+              </div>
+            }
+          </td>
           @if (userRole === 'admin') {
             <td><span class="user-badge">{{ r.profiles?.name || '---' }}</span></td>
           }

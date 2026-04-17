@@ -35,7 +35,7 @@ export const routes: Routes = [
   {
     path: 'depenses',
     loadComponent: () => import('./pages/depenses/depenses.component').then(m => m.DepensesComponent),
-    canActivate: [authGuard, adminGuard]
+    canActivate: [authGuard]
   },
   {
     path: 'avances',

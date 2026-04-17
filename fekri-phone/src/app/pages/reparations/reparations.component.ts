@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
-import { RevenuReparation, Client } from '../../core/models/models';
+import { RevenuReparation, Client, Credit } from '../../core/models/models';
 
 @Component({
   selector: 'app-reparations',
@@ -36,6 +36,9 @@ export class ReparationsComponent implements OnInit {
   clients: Client[] = [];
   filteredClients: Client[] = [];
 
+  // Credit info map: key = description|date, value = credit info
+  creditMap: Map<string, { nom_client: string; montant: number; montant_paye: number; est_paye: boolean }> = new Map();
+
   form = { id: '', description: '', montant: 0, date: '' };
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
@@ -46,6 +49,7 @@ export class ReparationsComponent implements OnInit {
     });
     this.loadData();
     this.loadClients();
+    this.loadCreditsForRepairs();
   }
 
   async loadClients() {
@@ -181,6 +185,7 @@ export class ReparationsComponent implements OnInit {
       this.closeModal();
       await this.loadData();
       await this.loadClients();
+      await this.loadCreditsForRepairs();
     } catch (error) {
       this.showToast('وقع مشكل', 'error');
     }
@@ -203,9 +208,43 @@ export class ReparationsComponent implements OnInit {
       await this.supabase.deleteRevenu(r.id, uid);
       this.showToast('تمسح ✅', 'success');
       await this.loadData();
+      await this.loadCreditsForRepairs();
     } catch (error) {
       this.showToast('وقع مشكل', 'error');
     }
+  }
+
+  // Load credits linked to repairs (matched by 'إصلاح:' prefix)
+  async loadCreditsForRepairs() {
+    try {
+      const allCredits: Credit[] = await this.supabase.getCredits();
+      this.creditMap.clear();
+      for (const credit of allCredits) {
+        if (credit.description && credit.description.startsWith('إصلاح: ')) {
+          const repairDesc = credit.description.replace('إصلاح: ', '');
+          const dateKey = (credit.date || '').split(' ')[0] || credit.date;
+          const key = repairDesc + '|' + dateKey;
+          this.creditMap.set(key, {
+            nom_client: credit.nom_client,
+            montant: credit.montant,
+            montant_paye: credit.montant_paye,
+            est_paye: credit.est_paye
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error loading credits for repairs', e);
+    }
+  }
+
+  getCreditInfo(r: RevenuReparation): { nom_client: string; montant: number; montant_paye: number; est_paye: boolean } | null {
+    const dateKey = (r.date || '').split(' ')[0] || r.date;
+    const key = r.description + '|' + dateKey;
+    return this.creditMap.get(key) || null;
+  }
+
+  getCreditReste(info: { montant: number; montant_paye: number }): number {
+    return Math.max(0, Number(info.montant) - Number(info.montant_paye));
   }
 
   formatMAD(a: number): string { return Number(a).toLocaleString('ar-MA') + ' د.م'; }
