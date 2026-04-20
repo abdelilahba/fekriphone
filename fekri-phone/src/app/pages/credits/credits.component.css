@@ -147,49 +147,103 @@
 .badge-warning { background: #fef3c7; color: #d97706; }
 .badge-info { background: #dbeafe; color: #2563eb; }
 
-/* ── Credit Product Badges ── */
+/* ── Premium Modern Credit Products List ── */
+.credit-desc {
+  margin-bottom: 20px;
+  background: var(--bg-main);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
 .credit-desc-header {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: var(--text-light);
-  margin-bottom: 8px;
-  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.credit-desc-header::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
 }
 
 .credit-products-badges {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .product-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
-  background: linear-gradient(135deg, #f0f0ff, #e8ecff);
-  border: 1px solid rgba(155, 48, 255, 0.15);
-  border-radius: 20px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #4a3b7a;
-  white-space: nowrap;
-  transition: all 0.2s ease;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px rgba(155, 48, 255, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.product-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .product-badge:hover {
-  background: linear-gradient(135deg, #e8e0ff, #dde4ff);
-  border-color: rgba(155, 48, 255, 0.3);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(155, 48, 255, 0.12);
+  transform: translateX(-4px); /* Moves left since RTL */
+  border-color: var(--primary-light);
+  box-shadow: 0 4px 12px rgba(155, 48, 255, 0.08);
+}
+
+.product-badge:hover::before {
+  opacity: 1;
+}
+
+.product-badge .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+:host-context(.dark-theme) .credit-desc {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 :host-context(.dark-theme) .product-badge {
-  background: linear-gradient(135deg, #2d2350, #1e2a4a);
-  border-color: rgba(155, 48, 255, 0.25);
-  color: #c4b5fd;
+  background: #1a1024;
+  border-color: #2d1b4e;
+  color: #e8d5ff;
 }
 
-:host-context(.dark-theme) .credit-desc-header {
-  color: #a0a0b0;
+:host-context(.dark-theme) .product-badge .icon {
+  background: #2d1b4e;
+  color: #d070e0;
 }

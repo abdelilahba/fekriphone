@@ -63,7 +63,10 @@
                   <span class="credit-desc-header">{{ parseDescription(c.description).header }}</span>
                   <div class="credit-products-badges">
                     @for (item of parseDescription(c.description).items; track item) {
-                      <span class="product-badge">📦 {{ item }}</span>
+                      <div class="product-badge">
+                        <span class="icon">📦</span>
+                        <span>{{ item }}</span>
+                      </div>
                     }
                   </div>
                 } @else {
