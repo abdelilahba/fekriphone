@@ -59,10 +59,11 @@
               </div>
 
               <div class="credit-desc">
-                @if (c.description && c.description.includes('||')) {
-                  <span class="credit-desc-header">{{ parseDescription(c.description).header }}</span>
+                @let parsedDesc = parseDescription(c.description);
+                @if (parsedDesc.items.length > 0) {
+                  <span class="credit-desc-header">{{ parsedDesc.header }}</span>
                   <div class="credit-products-badges">
-                    @for (item of parseDescription(c.description).items; track item) {
+                    @for (item of parsedDesc.items; track item) {
                       <div class="product-badge">
                         <span class="icon">📦</span>
                         <span>{{ item }}</span>
