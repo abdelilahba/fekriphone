@@ -925,12 +925,30 @@ export class SupabaseService {
   }
 
   async addPaiement(creditId: string, montant: number, date?: string) {
+    // 1. Fetch original credit to calculate proportional profit
+    const { data: creditDetails, error: creditError } = await this.supabase
+      .from('credits')
+      .select('vente_montant_total, vente_profit_total')
+      .eq('id', creditId)
+      .single();
+
+    let profitRealise = 0;
+    if (!creditError && creditDetails) {
+      const vTotal = Number(creditDetails.vente_montant_total || 0);
+      const vProfit = Number(creditDetails.vente_profit_total || 0);
+      if (vTotal > 0) {
+        profitRealise = vProfit * (montant / vTotal);
+      }
+    }
+
+    // 2. Insert payment with realized profit
     const { data, error } = await this.supabase
       .from('credit_paiements')
       .insert({
         credit_id: creditId,
         montant: montant,
-        date: date || DateUtils.getWorkingDate()
+        date: date || DateUtils.getWorkingDate(),
+        profit_realise: profitRealise
       })
       .select()
       .single();
@@ -1110,25 +1128,36 @@ export class SupabaseService {
         this.supabase.from('depenses').select('montant').eq('date', dateStr),
         this.supabase.from('avances').select('montant').eq('date', dateStr),
         this.supabase.from('credits').select('montant, type_credit').eq('date', dateStr),
-        this.supabase.from('credit_paiements').select('montant').eq('date', dateStr),
+        this.supabase.from('credit_paiements').select('montant, profit_realise').eq('date', dateStr),
       ]);
 
       const totalVentes = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
       const totalMontantPaye = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.montant_paye || 0), 0);
-      const totalProfit = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
+      
+      // Proportional profit for sales
+      const totalProfitReel = (ventesRes.data || []).reduce((s: number, v: any) => {
+        const mTotal = Number(v.montant_total || 0);
+        const mPaye = Number(v.montant_paye || 0);
+        const pTotal = Number(v.profit_total || 0);
+        if (mTotal === 0) return s;
+        return s + (pTotal * (mPaye / mTotal));
+      }, 0);
+
       const totalReparations = (reparationsRes.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
       const totalDepenses = (depensesRes.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
       const totalAvances = (avancesRes.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
       const totalCredits = (creditsRes.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
       const totalCreditsCash = (creditsRes.data || []).filter((c: any) => c.type_credit === 'cash').reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+      
       const totalPaiements = (paiementsRes.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      const totalPaiementsProfit = (paiementsRes.data || []).reduce((s: number, p: any) => s + Number(p.profit_realise || 0), 0);
 
       const nbVentes = (ventesRes.data || []).length;
       const nbReparations = (reparationsRes.data || []).length;
       const nbDepenses = (depensesRes.data || []).length;
 
       const caisse = totalMontantPaye + totalReparations + totalAvances + totalPaiements - totalDepenses - totalCreditsCash;
-      const benefice = totalProfit + totalReparations - totalDepenses;
+      const benefice = totalProfitReel + totalReparations + totalPaiementsProfit - totalDepenses;
 
       const now = new Date();
       const timeStr = now.toLocaleTimeString('fr-MA', { timeZone: 'Africa/Casablanca', hour: '2-digit', minute: '2-digit' });
@@ -1203,7 +1232,7 @@ export class SupabaseService {
     let avancesQuery = this.supabase.from('avances').select('montant').eq('date', today);
     // Only subtract CASH credits (money given to client as loan)
     let creditsCashQuery = this.supabase.from('credits').select('montant').eq('date', today).eq('type_credit', 'cash');
-    let paiementsQuery = this.supabase.from('credit_paiements').select('montant').eq('date', today);
+    let paiementsQuery = this.supabase.from('credit_paiements').select('montant, profit_realise').eq('date', today);
 
     if (userId) {
       ventesQuery = ventesQuery.eq('user_id', userId);
@@ -1225,19 +1254,30 @@ export class SupabaseService {
     ]);
 
     // Use montant_paye for caisse (cash actually received), not montant_total
+    // Use montant_paye for caisse (cash actually received), not montant_total
     const ventesMontantPaye = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_paye || 0), 0);
     const ventesTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
-    const ventesProfitTotal = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
+    
+    // Profit proportionnel au cash reçu le jour de la vente
+    const ventesProfitReel = (ventes.data || []).reduce((s: number, v: any) => {
+      const montantTotal = Number(v.montant_total || 0);
+      const montantPaye = Number(v.montant_paye || 0);
+      const profitTotal = Number(v.profit_total || 0);
+      if (montantTotal === 0) return s;
+      return s + (profitTotal * (montantPaye / montantTotal));
+    }, 0);
+
     const reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
     const depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
     const avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
     const creditsCashTotal = (creditsCash.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
     const paiementsTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+    const paiementsProfitTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.profit_realise || 0), 0);
 
     return {
       caisse: ventesMontantPaye + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsCashTotal,
       ventes: ventesTotal + reparationsTotal,
-      rib7: ventesProfitTotal + reparationsTotal - depensesTotal
+      rib7: ventesProfitReel + reparationsTotal + paiementsProfitTotal - depensesTotal
     };
   }
 

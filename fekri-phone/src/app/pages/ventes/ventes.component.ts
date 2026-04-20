@@ -522,11 +522,12 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       const uid = this.auth.currentUser?.id;
       const clientNameToSave = this.nomClient.trim() || undefined;
 
+      let newVente: any = null;
       if (this.editingVenteId) {
         await this.supabase.updateVente(this.editingVenteId, total, montantPaye, profitTotal, this.cart, uid, this.saleDate, clientNameToSave);
         this.editingVenteId = null;
       } else {
-        await this.supabase.addVente(total, montantPaye, profitTotal, this.cart, uid, this.saleDate, clientNameToSave);
+        newVente = await this.supabase.addVente(total, montantPaye, profitTotal, this.cart, uid, this.saleDate, clientNameToSave);
       }
 
       if (reste > 0) {
@@ -548,7 +549,11 @@ export class VentesComponent implements OnInit, AfterViewChecked {
           montant_paye: 0,
           est_paye: false,
           type_credit: 'vente',
-          date: DateUtils.getWorkingDate()
+          date: DateUtils.getWorkingDate(),
+          // Link to vente for profit tracking on payment day
+          vente_id: newVente?.id || null,
+          vente_montant_total: total,
+          vente_profit_total: profitTotal
         }, uid);
       }
 
