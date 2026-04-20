@@ -476,8 +476,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   get defaultCreditDescription(): string {
     if (this.cart.length === 0) return '';
-    const items = this.cart.map(i => `${i.quantite}x ${i.nom}`).join(' و ');
-    return `باقي من ثمن ${items}`;
+    const items = this.cart.map(i => `${i.quantite}x ${i.nom}`).join('||');
+    return `باقي من ثمن||${items}`;
   }
 
   get totalCart(): number {

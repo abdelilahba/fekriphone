@@ -220,7 +220,13 @@ export class CreditsComponent implements OnInit {
       return;
     }
     const reste = this.getReste(c);
-    const message = `السلام عليكم ${c.nom_client}, بغيت نفكرك فالدين اللي بيناتنا (${c.description}). الباقي هو ${reste} د.م. شكرا.`;
+    // Clean description: replace || with readable format
+    let desc = c.description || '';
+    if (desc.includes('||')) {
+      const parsed = this.parseDescription(desc);
+      desc = parsed.header + ': ' + parsed.items.join(' و ');
+    }
+    const message = `السلام عليكم ${c.nom_client}, بغيت نفكرك فالدين اللي بيناتنا (${desc}). الباقي هو ${reste} د.م. شكرا.`;
     const url = `https://wa.me/212${c.telephone_client.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   }
@@ -245,6 +251,23 @@ export class CreditsComponent implements OnInit {
   }
 
   getReste(c: Credit): number { return Number(c.montant) - Number(c.montant_paye); }
+
+  /**
+   * Parse credit description into header + product badges.
+   * New format: "باقي من ثمن||1x product1||2x product2"
+   * Legacy format: "باقي من ثمن 1x product1 و 1x product2" (plain text)
+   */
+  parseDescription(desc: string): { header: string; items: string[] } {
+    if (!desc) return { header: '', items: [] };
+    if (desc.includes('||')) {
+      const parts = desc.split('||').map(s => s.trim()).filter(s => s.length > 0);
+      const header = parts[0];
+      const items = parts.slice(1);
+      return { header, items };
+    }
+    // Legacy: no separator, return as plain text
+    return { header: desc, items: [] };
+  }
 
   formatMAD(a: number): string { return Number(a).toLocaleString('ar-MA') + ' د.م'; }
   showToast(msg: string, type: string) {

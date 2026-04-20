@@ -146,3 +146,50 @@
 .badge-danger { background: var(--danger-light); color: var(--danger); }
 .badge-warning { background: #fef3c7; color: #d97706; }
 .badge-info { background: #dbeafe; color: #2563eb; }
+
+/* ── Credit Product Badges ── */
+.credit-desc-header {
+  display: block;
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.credit-products-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.product-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #f0f0ff, #e8ecff);
+  border: 1px solid rgba(155, 48, 255, 0.15);
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4a3b7a;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.product-badge:hover {
+  background: linear-gradient(135deg, #e8e0ff, #dde4ff);
+  border-color: rgba(155, 48, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(155, 48, 255, 0.12);
+}
+
+:host-context(.dark-theme) .product-badge {
+  background: linear-gradient(135deg, #2d2350, #1e2a4a);
+  border-color: rgba(155, 48, 255, 0.25);
+  color: #c4b5fd;
+}
+
+:host-context(.dark-theme) .credit-desc-header {
+  color: #a0a0b0;
+}

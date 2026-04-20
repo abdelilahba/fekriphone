@@ -58,7 +58,18 @@
                 </div>
               </div>
 
-              <p class="credit-desc">{{ c.description }}</p>
+              <div class="credit-desc">
+                @if (c.description && c.description.includes('||')) {
+                  <span class="credit-desc-header">{{ parseDescription(c.description).header }}</span>
+                  <div class="credit-products-badges">
+                    @for (item of parseDescription(c.description).items; track item) {
+                      <span class="product-badge">📦 {{ item }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span>{{ c.description }}</span>
+                }
+              </div>
               @if (c.telephone_client) { <span class="phone">📞 {{ c.telephone_client }}</span> }
 
               <div class="credit-amounts">
