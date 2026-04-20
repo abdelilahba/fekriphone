@@ -6,6 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Credit, Client } from '../../core/models/models';
+import { DateUtils } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-credits',
@@ -108,7 +109,7 @@ export class CreditsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, type_credit: 'produit', date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', client_id: '', nom_client: '', telephone_client: '', description: '', montant: 0, montant_paye: 0, type_credit: 'produit', date: DateUtils.getWorkingDate() };
     this.showModal = true;
   }
 
@@ -130,7 +131,7 @@ export class CreditsComponent implements OnInit {
 
   openPay(c: Credit) {
     const reste = Number(c.montant) - Number(c.montant_paye);
-    this.payForm = { id: c.id, montant_a_payer: reste, reste, date: new Date().toISOString().split('T')[0] };
+    this.payForm = { id: c.id, montant_a_payer: reste, reste, date: DateUtils.getWorkingDate() };
     this.showPayModal = true;
   }
 

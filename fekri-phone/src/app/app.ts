@@ -8,6 +8,7 @@ import { SupabaseService } from './core/services/supabase.service';
 import { LayoutService } from './core/services/layout.service';
 import { RefreshService } from './core/services/refresh.service';
 import { AiAssistant } from './components/ai-assistant/ai-assistant';
+import { DateUtils } from './core/utils/date.utils';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import Swal from 'sweetalert2';
@@ -289,28 +290,50 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async showUpdateMessage() {
-    const seen = localStorage.getItem('update_msg_v1_3_features');
+    const seen = localStorage.getItem('update_msg_v1_4_cloture');
     if (!seen) {
       setTimeout(async () => {
         await Swal.fire({
-          title: '✨ تحديث جديد — مزيانة!',
+          title: '🔒 تحديث مهم — سدان الصندوق!',
           html: `
-            <div style="text-align: right; line-height: 2; font-size: 14px;">
-              <b>🆕 شنو الجديد في هاد الإصدار:</b><br><br>
-              ✅ <b>الخدام واش يشوف الديون كاملة:</b><br>
-              دابا الخدام كيشوف كاع الديون ديال الزبناء، ويقدر يزيد، يعدل ويخلص.<br><br>
-              🔧 <b>الإصلاح مع كريدي كيبان اسم الزبون والمبلغ:</b><br>
-              إلى الزبون دفع شي حاجة بالكريدي في إصلاح، كيطلع شارة <b>💳 كريدي</b> مع اسمو والباقي مباشرة فالليستة.<br><br>
-              💸 <b>الخدام واش يدخل المصاريف:</b><br>
-              دابا الخدام عنده الحق يزيد مصروف من صفحة المصاريف.<br>
+            <div style="text-align: right; line-height: 2.2; font-size: 14px; direction: rtl;">
+              <div style="background: linear-gradient(135deg, #f0f0ff, #e8f5e9); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+                <b style="font-size: 15px;">🆕 شنو تبدل دابا؟</b>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #9b30ff; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                ⏭️ <b>بعد ما تسد الصندوق، السيستيم كيدوز ليوم الجديد:</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  يعني إلى سديتي الصندوق الليلة مثلاً، <b>كاع الصفحات</b> (البيعات، المصاريف، الإصلاحات...) 
+                  كيولي التاريخ ديالهم هو <b>الغدا</b> أوتوماتيكياً ✅<br>
+                  أي بيعة ولا مصروف تدخلو من بعد → كيتسجل فنهار الغدا مباشرة.
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #22c55e; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                📋 <b>تقرير اليوم كيتصيفط لتيليغرام وقت السدّان:</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  فاش كتسد الصندوق، <b>تقرير يومي كامل</b> كيتصيفط للمعلم على تيليغرام فيه:
+                  البيعات، الإصلاحات، المصاريف، الديون، الربح، الصندوق... كولشي! 📊
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #3b82f6; border-radius: 8px; padding: 12px;">
+                🕐 <b>الوقت ديال تيليغرام ولا صحيح:</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  دابا كاع الإشعارات كيبينوا <b>الساعة الصحيحة ديال المغرب</b> 🇲🇦 
+                  (كان قبل كيبقى كيخبط فالوقت).
+                </span>
+              </div>
             </div>
           `,
-          icon: 'success',
-          confirmButtonText: 'فهمت، شكراً! 👍',
-          confirmButtonColor: 'var(--primary)',
-          showCloseButton: true
+          icon: 'info',
+          confirmButtonText: 'واخا، فهمت! 👍',
+          confirmButtonColor: '#9b30ff',
+          showCloseButton: true,
+          width: 520
         });
-        localStorage.setItem('update_msg_v1_3_features', 'true');
+        localStorage.setItem('update_msg_v1_4_cloture', 'true');
       }, 1500);
     }
   }
@@ -711,7 +734,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     try {
       const depense = {
-        date: new Date().toISOString().split('T')[0],
+        date: DateUtils.getWorkingDate(),
         description: this.withdrawReason.trim(),
         montant: this.withdrawAmount,
         categorie: 'سحب سريع ⚡'

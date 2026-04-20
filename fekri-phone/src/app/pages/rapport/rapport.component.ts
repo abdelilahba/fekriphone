@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { DateUtils } from '../../core/utils/date.utils';
 
 interface DayReport {
   date: string;
@@ -47,7 +48,7 @@ export class RapportComponent implements OnInit {
   constructor(private supabase: SupabaseService) { }
 
   ngOnInit() {
-    this.selectedDate = this.formatDate(new Date());
+    this.selectedDate = DateUtils.getWorkingDate();
     this.loadReport();
   }
 
@@ -135,7 +136,7 @@ export class RapportComponent implements OnInit {
   }
 
   goToday() {
-    this.selectedDate = this.formatDate(new Date());
+    this.selectedDate = DateUtils.getWorkingDate();
     this.loadReport();
   }
 

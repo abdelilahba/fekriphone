@@ -6,6 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { RevenuReparation, Client, Credit } from '../../core/models/models';
+import { DateUtils } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-reparations',
@@ -26,7 +27,7 @@ export class ReparationsComponent implements OnInit {
   totalPages = 1;
   paginatedRevenus$ = new BehaviorSubject<RevenuReparation[]>([]);
   userRole = 'admin';
-  selectedDate: string = new Date().toISOString().split('T')[0];
+  selectedDate: string = DateUtils.getWorkingDate();
   allRevenusData: RevenuReparation[] = [];
 
   // Credit fields
@@ -122,7 +123,7 @@ export class ReparationsComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', description: '', montant: 0, date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', description: '', montant: 0, date: DateUtils.getWorkingDate() };
     this.isCredit = false;
     this.montantPaye = null;
     this.nomClient = '';
@@ -176,7 +177,7 @@ export class ReparationsComponent implements OnInit {
             montant: this.resteCredit,
             montant_paye: 0,
             est_paye: false,
-            date: this.form.date || new Date().toISOString().split('T')[0]
+            date: this.form.date || DateUtils.getWorkingDate()
           }, uid);
         }
 

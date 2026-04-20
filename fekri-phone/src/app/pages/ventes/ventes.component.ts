@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Produit, Vente, Categorie, Client } from '../../core/models/models';
 import { resolveCategoryImage } from '../../core/models/category-icons';
+import { DateUtils } from '../../core/utils/date.utils';
 
 interface CartItem {
   produit_id: string;
@@ -50,9 +51,9 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   totalPages = 1;
   paginatedVentes$ = new BehaviorSubject<Vente[]>([]);
   userRole = 'admin';
-  selectedDate: string = new Date().toISOString().split('T')[0];
+  selectedDate: string = DateUtils.getWorkingDate();
   allVentesData: Vente[] = [];
-  saleDate: string = new Date().toISOString().split('T')[0];
+  saleDate: string = DateUtils.getWorkingDate();
 
   private cart: CartItem[] = [];
   editingVenteId: string | null = null;
@@ -177,7 +178,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
     this.montantPaye = null;
     this.nomClient = '';
     this.descriptionCredit = '';
-    this.saleDate = this.selectedDate || new Date().toISOString().split('T')[0];
+    this.saleDate = this.selectedDate || DateUtils.getWorkingDate();
     this.cdr.detectChanges();
   }
 
@@ -547,7 +548,7 @@ export class VentesComponent implements OnInit, AfterViewChecked {
           montant_paye: 0,
           est_paye: false,
           type_credit: 'vente',
-          date: new Date().toISOString().split('T')[0]
+          date: DateUtils.getWorkingDate()
         }, uid);
       }
 

@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import Swal from 'sweetalert2';
 import { Perte } from '../../core/models/models';
+import { DateUtils } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-pertes',
@@ -62,7 +63,7 @@ export class PertesComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', produit_nom: '', description: '', montant_perte: 0, quantite: 1, raison: '', date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', produit_nom: '', description: '', montant_perte: 0, quantite: 1, raison: '', date: DateUtils.getWorkingDate() };
     this.showModal = true;
   }
 

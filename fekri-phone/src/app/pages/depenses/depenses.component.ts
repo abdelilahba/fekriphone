@@ -6,6 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Depense } from '../../core/models/models';
+import { DateUtils } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-depenses',
@@ -63,7 +64,7 @@ export class DepensesComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', description: '', montant: 0, categorie: '', date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', description: '', montant: 0, categorie: '', date: DateUtils.getWorkingDate() };
     this.showModal = true;
   }
 

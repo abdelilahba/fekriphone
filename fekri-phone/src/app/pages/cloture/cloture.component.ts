@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
+import { DateUtils } from '../../core/utils/date.utils';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -50,7 +51,7 @@ export class ClotureComponent implements OnInit {
   async loadData() {
     try {
       this.loading$.next(true);
-      const today = new Date().toISOString().split('T')[0];
+      const today = DateUtils.getWorkingDate();
 
       // Get daily stats
       const stats = await this.supabase.getDailyQuickStats();
@@ -151,7 +152,7 @@ export class ClotureComponent implements OnInit {
 
     try {
       const uid = this.auth.currentUser?.id;
-      const today = new Date().toISOString().split('T')[0];
+      const today = DateUtils.getWorkingDate();
 
       // Insert cloture
       const { error } = await this.supabase['supabase']
@@ -174,8 +175,19 @@ export class ClotureComponent implements OnInit {
         note: this.note
       }, uid);
 
+      // Send the daily recap report to Telegram (before switching to next day)
+      await this.supabase.sendDailyRecapTelegram(today, {
+        montant_theorique: this.montantTheorique,
+        montant_reel: this.montantReel!,
+        ecart: this.ecart,
+        note: this.note || undefined
+      });
+
+      DateUtils.setClosed();
       this.showToast('تم إقفال الصندوق بنجاح ✅', 'success');
-      await this.loadData();
+      
+      // We must reload window to refresh all dates across app
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       this.showToast('وقع مشكل فالحفظ', 'error');
     }

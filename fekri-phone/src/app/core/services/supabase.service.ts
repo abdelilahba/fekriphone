@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { RefreshService } from './refresh.service';
 import { environment } from '../../../environments/environment';
+import { DateUtils } from '../utils/date.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -85,7 +86,7 @@ export class SupabaseService {
 
     for (const item of queue) {
       try {
-        const delayedLabel = `\n\n⏰ <i>(إشعار متأخر من ${new Date(item.timestamp).toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' })})</i>`;
+        const delayedLabel = `\n\n⏰ <i>(إشعار متأخر من ${new Date(item.timestamp).toLocaleTimeString('fr-MA', { timeZone: 'Africa/Casablanca', hour: '2-digit', minute: '2-digit' })})</i>`;
         const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
         const resp = await fetch(url, {
           method: 'POST',
@@ -147,8 +148,8 @@ export class SupabaseService {
   private async sendTelegramNotification(userName: string, action: string, details: any) {
     // ─── Timestamp ───
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' });
-    const dateStr = now.toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-MA', { timeZone: 'Africa/Casablanca', hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('fr-MA', { timeZone: 'Africa/Casablanca', day: '2-digit', month: '2-digit', year: 'numeric' });
 
     // ─── Caisse ───
     let caisseTotal = '';
@@ -445,7 +446,7 @@ export class SupabaseService {
         profit_total: profitTotal,
         user_id: userId,
         nom_client: nomClient || null,
-        date: dateStr || new Date().toISOString()
+        date: dateStr || DateUtils.getWorkingDate()
       })
       .select()
       .single();
@@ -929,7 +930,7 @@ export class SupabaseService {
       .insert({
         credit_id: creditId,
         montant: montant,
-        date: date || new Date().toISOString().split('T')[0]
+        date: date || DateUtils.getWorkingDate()
       })
       .select()
       .single();
@@ -1085,9 +1086,100 @@ export class SupabaseService {
     console.log('✅ Monthly recap sent to Telegram!');
   }
 
+  // ══════════════════════════════════════════════════
+  //  DAILY RECAP TELEGRAM (يتصيفط وقت سدان الصندوق)
+  // ══════════════════════════════════════════════════
+
+  /**
+   * Called after cloture (cash register close).
+   * Sends a full daily recap to Telegram with all totals.
+   */
+  async sendDailyRecapTelegram(dateStr: string, clotureDetails: {
+    montant_theorique: number;
+    montant_reel: number;
+    ecart: number;
+    note?: string;
+  }) {
+    if (!environment.telegramBotToken || !environment.telegramChatId) return;
+
+    try {
+      // Fetch all data for the day
+      const [ventesRes, reparationsRes, depensesRes, avancesRes, creditsRes, paiementsRes] = await Promise.all([
+        this.supabase.from('ventes').select('montant_total, montant_paye, profit_total').eq('date', dateStr),
+        this.supabase.from('revenus_reparation').select('montant').eq('date', dateStr),
+        this.supabase.from('depenses').select('montant').eq('date', dateStr),
+        this.supabase.from('avances').select('montant').eq('date', dateStr),
+        this.supabase.from('credits').select('montant, type_credit').eq('date', dateStr),
+        this.supabase.from('credit_paiements').select('montant').eq('date', dateStr),
+      ]);
+
+      const totalVentes = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.montant_total || 0), 0);
+      const totalMontantPaye = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.montant_paye || 0), 0);
+      const totalProfit = (ventesRes.data || []).reduce((s: number, v: any) => s + Number(v.profit_total || 0), 0);
+      const totalReparations = (reparationsRes.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
+      const totalDepenses = (depensesRes.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+      const totalAvances = (avancesRes.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
+      const totalCredits = (creditsRes.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+      const totalCreditsCash = (creditsRes.data || []).filter((c: any) => c.type_credit === 'cash').reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+      const totalPaiements = (paiementsRes.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+
+      const nbVentes = (ventesRes.data || []).length;
+      const nbReparations = (reparationsRes.data || []).length;
+      const nbDepenses = (depensesRes.data || []).length;
+
+      const caisse = totalMontantPaye + totalReparations + totalAvances + totalPaiements - totalDepenses - totalCreditsCash;
+      const benefice = totalProfit + totalReparations - totalDepenses;
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('fr-MA', { timeZone: 'Africa/Casablanca', hour: '2-digit', minute: '2-digit' });
+
+      const ecartVal = clotureDetails.ecart || 0;
+      const ecartLabel = ecartVal === 0 ? '✅ مريڭل 100%' : ecartVal < 0 ? `❌ ناقص ${Math.abs(ecartVal)} د.م` : `💡 زيادة ${ecartVal} د.م`;
+
+      const message =
+        `📋 <b>تقرير يومي — سدان الصندوق</b>\n` +
+        `📅 <i>${dateStr} — ${timeStr}</i>\n` +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
+
+        `🛒 <b>المبيعات:</b>  <code>${totalVentes.toFixed(2)} د.م</code>  <i>(${nbVentes} بيعة)</i>\n` +
+        `🔧 <b>الإصلاحات:</b>  <code>${totalReparations.toFixed(2)} د.م</code>  <i>(${nbReparations} إصلاح)</i>\n` +
+        `💰 <b>دفع (أربكة):</b>  <code>${totalAvances.toFixed(2)} د.م</code>\n` +
+        `✅ <b>أداء الديون:</b>  <code>${totalPaiements.toFixed(2)} د.م</code>\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `💸 <b>المصاريف:</b>  <code>${totalDepenses.toFixed(2)} د.م</code>  <i>(${nbDepenses})</i>\n` +
+        `📝 <b>ديون جداد:</b>  <code>${totalCredits.toFixed(2)} د.م</code>\n` +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
+
+        `💵 <b>الصندوق النظري:</b>  <code>${clotureDetails.montant_theorique.toFixed(2)} د.م</code>\n` +
+        `🏦 <b>الصندوق الحقيقي:</b>  <code>${clotureDetails.montant_reel.toFixed(2)} د.م</code>\n` +
+        `📊 <b>الفرق:</b>  ${ecartLabel}\n` +
+        (clotureDetails.note ? `📝 <b>ملاحظة:</b> <i>${clotureDetails.note}</i>\n` : '') +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
+
+        `${benefice >= 0 ? '📈' : '📉'} <b>الربح الصافي:</b>  <code>${benefice >= 0 ? '+' : ''}${benefice.toFixed(2)} د.م</code>\n` +
+        `💵 <b>الصندوق:</b>  <code>${caisse.toFixed(2)} د.م</code>\n\n` +
+        `🔒 <i>تم سدان الصندوق بنجاح</i>`;
+
+      const url = `https://api.telegram.org/bot${environment.telegramBotToken}/sendMessage`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: environment.telegramChatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      if (!resp.ok) throw new Error(`Telegram daily report error: ${resp.status}`);
+      console.log('✅ Daily recap sent to Telegram!');
+    } catch (e) {
+      console.error('Daily recap Telegram failed:', e);
+    }
+  }
+
   // ==================== Daily Quick Stats (Header) ====================
   async getDailyQuickStats(userId?: string) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = DateUtils.getWorkingDate();
 
     // Check if the cash register was already closed today
     const { data: cloture } = await this.supabase

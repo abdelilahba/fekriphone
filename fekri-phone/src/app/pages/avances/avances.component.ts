@@ -6,6 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 import { Avance } from '../../core/models/models';
+import { DateUtils } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-avances',
@@ -19,7 +20,7 @@ export class AvancesComponent implements OnInit {
   loading$ = new BehaviorSubject<boolean>(true);
   totalJour$ = new BehaviorSubject<number>(0);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
-  selectedDate: string = new Date().toISOString().split('T')[0];
+  selectedDate: string = DateUtils.getWorkingDate();
   allAvancesData: Avance[] = [];
   showModal = false;
   editMode = false;
@@ -71,7 +72,7 @@ export class AvancesComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
-    this.form = { id: '', description: '', montant: 0, categorie: '', date: new Date().toISOString().split('T')[0] };
+    this.form = { id: '', description: '', montant: 0, categorie: '', date: DateUtils.getWorkingDate() };
     this.showModal = true;
   }
 
