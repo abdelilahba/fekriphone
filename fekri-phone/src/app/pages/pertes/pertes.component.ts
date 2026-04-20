@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import Swal from 'sweetalert2';
-import { Perte } from '../../core/models/models';
+import { Perte, Produit } from '../../core/models/models';
 import { DateUtils } from '../../core/utils/date.utils';
 
 @Component({
@@ -26,6 +26,9 @@ export class PertesComponent implements OnInit {
   totalPages = 1;
   paginatedPertes$ = new BehaviorSubject<Perte[]>([]);
 
+  produits: Produit[] = [];
+  selectedProduitId: string = '';
+
   raisonsPertes = ['منتج مكسور', 'تيليفون معطل', 'شاشة مكسورة', 'عيب المصنع', 'ضرر أثناء النقل', 'أخرى'];
   form = { id: '', produit_nom: '', description: '', montant_perte: 0, quantite: 1, raison: '', date: '' };
 
@@ -36,8 +39,12 @@ export class PertesComponent implements OnInit {
   async loadData() {
     try {
       this.loading$.next(true);
-      const pertes = await this.supabase.getPertes();
+      const [pertes, produits] = await Promise.all([
+        this.supabase.getPertes(),
+        this.supabase.getProduits()
+      ]);
       this.pertes$.next(pertes);
+      this.produits = produits;
       const now = new Date();
       const total = pertes
         .filter((p: any) => { const date = new Date(p.date); return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear(); })
@@ -63,14 +70,37 @@ export class PertesComponent implements OnInit {
 
   openAdd() {
     this.editMode = false;
+    this.selectedProduitId = '';
     this.form = { id: '', produit_nom: '', description: '', montant_perte: 0, quantite: 1, raison: '', date: DateUtils.getWorkingDate() };
     this.showModal = true;
   }
 
   openEdit(p: Perte) {
     this.editMode = true;
+    this.selectedProduitId = '';
     this.form = { id: p.id, produit_nom: p.produit_nom, description: p.description || '', montant_perte: p.montant_perte, quantite: p.quantite, raison: p.raison || '', date: p.date };
     this.showModal = true;
+  }
+
+  onProduitSelect() {
+    if (!this.selectedProduitId) {
+      if (!this.editMode) {
+        this.form.produit_nom = '';
+        this.form.montant_perte = 0;
+      }
+      return;
+    }
+    const p = this.produits.find(pr => pr.id === this.selectedProduitId);
+    if (p) {
+      this.form.produit_nom = p.nom;
+      this.form.montant_perte = (p.prix_achat || 0) * this.form.quantite;
+    }
+  }
+
+  onQuantiteChange() {
+    if (this.selectedProduitId) {
+      this.onProduitSelect(); // Recalculate amount if tied to a product
+    }
   }
 
   closeModal() { this.showModal = false; }
@@ -94,7 +124,18 @@ export class PertesComponent implements OnInit {
         this.showToast('تعدلات بنجاح ✅', 'success');
       } else {
         await this.supabase.addPerte(data);
-        this.showToast('تسجلات بنجاح ✅', 'success');
+        // Decrease stock
+        if (this.selectedProduitId && this.form.quantite > 0) {
+           const pItem = this.produits.find(pr => pr.id === this.selectedProduitId);
+           if (pItem) {
+             const { error } = await (this.supabase as any).supabase.rpc('decrement_stock', { p_id: this.selectedProduitId, p_qty: this.form.quantite });
+             if (error) {
+               console.warn("RPC failed, doing manual decrement");
+               await (this.supabase as any).supabase.from('produits').update({ quantite: pItem.quantite - this.form.quantite }).eq('id', this.selectedProduitId);
+             }
+           }
+        }
+        this.showToast('تسجلات وتنقسات من الستوك ✅', 'success');
       }
       this.closeModal();
       await this.loadData();

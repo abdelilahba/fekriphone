@@ -79,8 +79,18 @@
   <div class="modal-content">
     <h2>{{ editMode ? '✏️ تعديل الخسارة' : '💔 سجل خسارة جديدة' }}</h2>
     <div class="form-group">
-      <label>اسم المنتج</label>
-      <input type="text" [(ngModel)]="form.produit_nom" class="form-control" placeholder="مثلا: Samsung A15">
+      <label>اسم المنتج (من الستوك أو اكتبو يدويا)</label>
+      <select [(ngModel)]="selectedProduitId" (ngModelChange)="onProduitSelect()" class="form-control" style="margin-bottom: 8px;">
+        <option value="">-- اكتب السمية يدويا (ماراحش ينقص من الستوك) --</option>
+        @for (p of produits; track p.id) {
+          <option [value]="p.id">{{ p.nom }} (باقي: {{ p.quantite }})</option>
+        }
+      </select>
+      @if (!selectedProduitId) {
+        <input type="text" [(ngModel)]="form.produit_nom" class="form-control" placeholder="مثلا: Samsung A15">
+      } @else {
+        <div style="font-size: 12px; color: var(--success); font-weight: 700;">✅ غادي تنقص هاد الكمية من الستوك أوتوماتيكيا</div>
+      }
     </div>
     <div class="form-group">
       <label>سبب الخسارة</label>
@@ -94,7 +104,7 @@
     <div class="form-row">
       <div class="form-group">
         <label>الكمية</label>
-        <input type="number" [(ngModel)]="form.quantite" class="form-control" min="1">
+        <input type="number" [(ngModel)]="form.quantite" (ngModelChange)="onQuantiteChange()" class="form-control" min="1">
       </div>
       <div class="form-group">
         <label>مبلغ الخسارة (د.م)</label>
