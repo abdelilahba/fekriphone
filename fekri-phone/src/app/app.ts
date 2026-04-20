@@ -290,39 +290,38 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async showUpdateMessage() {
-    const seen = localStorage.getItem('update_msg_v1_4_cloture');
+    const seen = localStorage.getItem('update_msg_v1_5_pertes_stock');
     if (!seen) {
       setTimeout(async () => {
         await Swal.fire({
-          title: '🔒 تحديث مهم — سدان الصندوق!',
+          title: '💔 تحديث جديد — إدارة المنتجات التالفة!',
           html: `
             <div style="text-align: right; line-height: 2.2; font-size: 14px; direction: rtl;">
               <div style="background: linear-gradient(135deg, #f0f0ff, #e8f5e9); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
-                <b style="font-size: 15px;">🆕 شنو تبدل دابا؟</b>
+                <b style="font-size: 15px;">🆕 شنو تبدل فالخسائر (Pertes)؟</b>
               </div>
 
-              <div style="background: #fff; border-right: 4px solid #9b30ff; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-                ⏭️ <b>بعد ما تسد الصندوق، السيستيم كيدوز ليوم الجديد:</b><br>
+              <div style="background: #fff; border-right: 4px solid #ef4444; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                📦 <b>ارتباط مع الستوك:</b><br>
                 <span style="color: #555; font-size: 13px;">
-                  يعني إلى سديتي الصندوق الليلة مثلاً، <b>كاع الصفحات</b> (البيعات، المصاريف، الإصلاحات...) 
-                  كيولي التاريخ ديالهم هو <b>الغدا</b> أوتوماتيكياً ✅<br>
-                  أي بيعة ولا مصروف تدخلو من بعد → كيتسجل فنهار الغدا مباشرة.
+                  فاش تبغي تقيد شي منتج خاسر/تالف، دابا غيطلعلك <b>عزّلو من الستوك</b> لي عندك.<br>
+                  ماشي بالضرورة تمشي لصفحة "المنتجات" عاد تنقصو، السيسطيم غيديرها بوحدو ليوم! ✅
                 </span>
               </div>
 
-              <div style="background: #fff; border-right: 4px solid #22c55e; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-                📋 <b>تقرير اليوم كيتصيفط لتيليغرام وقت السدّان:</b><br>
+              <div style="background: #fff; border-right: 4px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                💰 <b>الحساب أوطوماتيك:</b><br>
                 <span style="color: #555; font-size: 13px;">
-                  فاش كتسد الصندوق، <b>تقرير يومي كامل</b> كيتصيفط للمعلم على تيليغرام فيه:
-                  البيعات، الإصلاحات، المصاريف، الديون، الربح، الصندوق... كولشي! 📊
+                  غير تختار المنتج شحال ضاع منو، <b>مبلغ الخسارة</b> غادي يتعمر بوحدو 
+                  (على حساب شحال باش شريتيه النهار الأول).
                 </span>
               </div>
 
               <div style="background: #fff; border-right: 4px solid #3b82f6; border-radius: 8px; padding: 12px;">
-                🕐 <b>الوقت ديال تيليغرام ولا صحيح:</b><br>
+                ✍️ <b>تقييد يدوي مازال خدام:</b><br>
                 <span style="color: #555; font-size: 13px;">
-                  دابا كاع الإشعارات كيبينوا <b>الساعة الصحيحة ديال المغرب</b> 🇲🇦 
-                  (كان قبل كيبقى كيخبط فالوقت).
+                  يلا كان شي منتج ماكاينش فالستوك، مزال بامكانك <b>تكتبو غير بيدك</b> 
+                  وعمر مبلغ الخسارة، وماراح يتنقص حتى حاجة من الستوك. 🛡️
                 </span>
               </div>
             </div>
@@ -333,7 +332,7 @@ export class AppComponent implements OnInit, OnDestroy {
           showCloseButton: true,
           width: 520
         });
-        localStorage.setItem('update_msg_v1_4_cloture', 'true');
+        localStorage.setItem('update_msg_v1_5_pertes_stock', 'true');
       }, 1500);
     }
   }
