@@ -82,24 +82,26 @@ export class PertesComponent implements OnInit {
     this.showModal = true;
   }
 
-  onProduitSelect() {
-    if (!this.selectedProduitId) {
+  onProduitNameChange() {
+    if (!this.form.produit_nom) {
       if (!this.editMode) {
-        this.form.produit_nom = '';
+        this.selectedProduitId = '';
         this.form.montant_perte = 0;
       }
       return;
     }
-    const p = this.produits.find(pr => pr.id === this.selectedProduitId);
+    const p = this.produits.find(pr => pr.nom.toLowerCase() === this.form.produit_nom.trim().toLowerCase());
     if (p) {
-      this.form.produit_nom = p.nom;
+      this.selectedProduitId = p.id;
       this.form.montant_perte = (p.prix_achat || 0) * this.form.quantite;
+    } else {
+      this.selectedProduitId = '';
     }
   }
 
   onQuantiteChange() {
     if (this.selectedProduitId) {
-      this.onProduitSelect(); // Recalculate amount if tied to a product
+      this.onProduitNameChange(); // Recalculate amount if tied to a product
     }
   }
 
