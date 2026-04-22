@@ -48,9 +48,9 @@
         <div class="mvr-products">
           @if (v.vente_items && v.vente_items.length > 0) {
           @for (item of v.vente_items; track item.id) {
-          <div class="mvr-product-badge">
+          <div class="mvr-product-badge" [title]="item.produits?.nom || 'منتج'">
+            <span class="mpb-qty">{{ item.quantite }} ×</span>
             <span class="mpb-name">{{ item.produits?.nom || 'منتج' }}</span>
-            <span class="mpb-qty">{{ item.quantite }}</span>
           </div>
           }
           }
