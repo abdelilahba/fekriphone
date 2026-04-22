@@ -20,6 +20,9 @@ export class DepensesComponent implements OnInit {
   loading$ = new BehaviorSubject<boolean>(true);
   totalJour$ = new BehaviorSubject<number>(0);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
+  
+  allDepenses: Depense[] = [];
+  selectedDate: string = '';
   showModal = false;
   editMode = false;
   currentPage = 1;
@@ -38,19 +41,30 @@ export class DepensesComponent implements OnInit {
     try {
       this.loading$.next(true);
       const depenses = await this.supabase.getDepenses();
-      const today = DateUtils.getWorkingDate();
-      const dailyDepenses = depenses.filter((d: any) => d.date === today);
-      this.depenses$.next(dailyDepenses);
-      
-      const total = dailyDepenses.reduce((s: number, d: any) => s + Number(d.montant), 0);
-      this.totalJour$.next(total);
-      this.currentPage = 1;
-      this.paginate();
+      this.allDepenses = depenses;
+      if (!this.selectedDate) {
+        this.selectedDate = DateUtils.getWorkingDate();
+      }
+      this.applyFilter();
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
       this.loading$.next(false);
     }
+  }
+
+  applyFilter() {
+    let filtered = this.allDepenses;
+    if (this.selectedDate) {
+      filtered = this.allDepenses.filter(d => d.date === this.selectedDate);
+    }
+    
+    this.depenses$.next(filtered);
+    const total = filtered.reduce((s: number, d: any) => s + Number(d.montant), 0);
+    this.totalJour$.next(total);
+    
+    this.currentPage = 1;
+    this.paginate();
   }
 
   paginate() {

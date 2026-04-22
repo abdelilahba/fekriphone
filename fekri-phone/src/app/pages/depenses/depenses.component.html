@@ -14,8 +14,13 @@
     <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">💸</div>
     <div class="stat-info">
       <h3>{{ formatMAD((totalJour$ | async) || 0) }}</h3>
-      <p>مجموع المصاريف هاد النهار</p>
+      <p>مجموع المصاريف — {{ selectedDate }}</p>
     </div>
+  </div>
+
+  <div class="date-filter-row">
+    <label>📅 فلتر بالتاريخ:</label>
+    <input type="date" [(ngModel)]="selectedDate" (ngModelChange)="applyFilter()" class="form-control date-input">
   </div>
 
   @if (loading$ | async) {
