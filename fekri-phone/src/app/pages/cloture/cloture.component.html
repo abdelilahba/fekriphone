@@ -57,10 +57,6 @@
             </div>
             <div class="formula-divider"></div>
             <div class="formula-row negative">
-              <span>🔴 المصاريف</span>
-              <span>- {{ formatMAD(depensesTotal) }}</span>
-            </div>
-            <div class="formula-row negative">
               <span>🔴 سلف كاش (للزبائن)</span>
               <span>- {{ formatMAD(creditsCashTotal) }}</span>
             </div>
@@ -121,7 +117,7 @@
     <div class="mini-stat-card">
       <div class="mini-stat-icon" style="background: #fee2e2; color: #dc2626;">💸</div>
       <div class="mini-stat-info">
-        <span class="mini-stat-value">- {{ formatMAD(depensesTotal) }}</span>
+        <span class="mini-stat-value">{{ formatMAD(depensesTotal) }}</span>
         <span class="mini-stat-label">مصاريف</span>
       </div>
     </div>
@@ -135,7 +131,7 @@
     </div>
     <div class="theorique-value">{{ formatMAD(montantTheorique) }}</div>
     <div class="theorique-formula">
-      = مبيعات (كاش) + إصلاحات + دفع وتسبيق + خلاص دين القديم — مصاريف — سلف كاش
+      = مبيعات (كاش) + إصلاحات + دفع وتسبيق + خلاص دين القديم — سلف كاش
     </div>
   </div>
 
