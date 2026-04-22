@@ -1156,7 +1156,7 @@ export class SupabaseService {
       const nbReparations = (reparationsRes.data || []).length;
       const nbDepenses = (depensesRes.data || []).length;
 
-      const caisse = totalMontantPaye + totalReparations + totalAvances + totalPaiements - totalCreditsCash;
+      const caisse = totalMontantPaye + totalReparations + totalAvances + totalPaiements - totalDepenses - totalCreditsCash;
       const benefice = totalProfitReel + totalReparations + totalPaiementsProfit - totalDepenses;
 
       const now = new Date();
@@ -1275,7 +1275,7 @@ export class SupabaseService {
     const paiementsProfitTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.profit_realise || 0), 0);
 
     return {
-      caisse: ventesMontantPaye + reparationsTotal + avancesTotal + paiementsTotal - creditsCashTotal,
+      caisse: ventesMontantPaye + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsCashTotal,
       ventes: ventesTotal + reparationsTotal,
       rib7: ventesProfitReel + reparationsTotal + paiementsProfitTotal - depensesTotal
     };
