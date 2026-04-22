@@ -18,7 +18,7 @@ import { DateUtils } from '../../core/utils/date.utils';
 export class DepensesComponent implements OnInit {
   depenses$ = new BehaviorSubject<Depense[]>([]);
   loading$ = new BehaviorSubject<boolean>(true);
-  totalMois$ = new BehaviorSubject<number>(0);
+  totalJour$ = new BehaviorSubject<number>(0);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
   showModal = false;
   editMode = false;
@@ -38,12 +38,12 @@ export class DepensesComponent implements OnInit {
     try {
       this.loading$.next(true);
       const depenses = await this.supabase.getDepenses();
-      this.depenses$.next(depenses);
-      const now = new Date();
-      const total = depenses
-        .filter((d: any) => { const date = new Date(d.date); return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear(); })
-        .reduce((s: number, d: any) => s + Number(d.montant), 0);
-      this.totalMois$.next(total);
+      const today = DateUtils.getWorkingDate();
+      const dailyDepenses = depenses.filter((d: any) => d.date === today);
+      this.depenses$.next(dailyDepenses);
+      
+      const total = dailyDepenses.reduce((s: number, d: any) => s + Number(d.montant), 0);
+      this.totalJour$.next(total);
       this.currentPage = 1;
       this.paginate();
     } catch (error) {
