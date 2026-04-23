@@ -162,7 +162,31 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   goToPage(p: number) { this.currentPage = p; this.paginateVentes(); }
   getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
 
-  openVente() {
+  async openVente() {
+    // Check if register is closed and prompt for mode
+    if (DateUtils.isClosed() && !DateUtils.hasChoiceBeenMade()) {
+      const result = await Swal.fire({
+        title: 'الصندوق مسدود!',
+        text: 'الصندوق ديال اليوم تسد. واش بغيتي تقيد هاد البيعة فاليوم لي فات ولا فاليوم الجديد؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '📅 تقييد فاليوم لي فات',
+        cancelButtonText: '🔄 تقييد فاليوم الجديد',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#3b82f6',
+        reverseButtons: true
+      });
+
+      if (result.isConfirmed) {
+        DateUtils.setPreviousDayMode();
+        window.location.reload(); 
+        return;
+      } else {
+        // User explicitly chose "New Day" mode
+        DateUtils.setNewDayMode();
+      }
+    }
+
     this.cart = [];
     this.cart$.next([]);
     this.cartTotal$.next(0);

@@ -89,7 +89,18 @@
         الفرق: <b [class.ecart-negatif]="todayCloture.ecart < 0" [class.ecart-positif]="todayCloture.ecart >= 0">{{ formatMAD(todayCloture.ecart) }}</b>
       </p>
     </div>
+    <div class="banner-actions">
+      <button class="btn" [class.btn-warning]="!isInPreviousDayMode" [class.btn-success]="isInPreviousDayMode" (click)="toggleDayMode()">
+        {{ isInPreviousDayMode ? '🔄 رجوع لليوم الجديد' : '📅 نزيد حاجة فهاد النهار' }}
+      </button>
+    </div>
   </div>
+
+  @if (isInPreviousDayMode) {
+    <div class="mode-indicator">
+      ⚠️ <b>نتا دابا فوضع "اليوم السابق":</b> أي حاجة غاتقيدها غاتمشي للحساب لي تسد.
+    </div>
+  }
   }
 
   <!-- Daily Summary Cards -->

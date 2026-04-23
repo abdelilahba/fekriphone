@@ -76,7 +76,30 @@ export class DepensesComponent implements OnInit {
   goToPage(p: number) { this.currentPage = p; this.paginate(); }
   getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
 
-  openAdd() {
+  async openAdd() {
+    // Check if register is closed and prompt for mode
+    if (DateUtils.isClosed() && !DateUtils.hasChoiceBeenMade()) {
+      const result = await Swal.fire({
+        title: 'الصندوق مسدود!',
+        text: 'الصندوق ديال اليوم تسد. واش بغيتي تقيد هاد المصروف فاليوم لي فات ولا فاليوم الجديد؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '📅 تقييد فاليوم لي فات',
+        cancelButtonText: '🔄 تقييد فاليوم الجديد',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#3b82f6',
+        reverseButtons: true
+      });
+
+      if (result.isConfirmed) {
+        DateUtils.setPreviousDayMode();
+        window.location.reload(); 
+        return;
+      } else {
+        DateUtils.setNewDayMode();
+      }
+    }
+
     this.editMode = false;
     this.form = { id: '', description: '', montant: 0, categorie: '', date: DateUtils.getWorkingDate() };
     this.showModal = true;

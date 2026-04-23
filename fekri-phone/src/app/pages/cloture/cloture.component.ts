@@ -43,6 +43,7 @@ export class ClotureComponent implements OnInit {
   // State
   alreadyClosed = false;
   todayCloture: any = null;
+  isInPreviousDayMode = false;
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
@@ -94,9 +95,10 @@ export class ClotureComponent implements OnInit {
         .eq('date', today)
         .limit(1);
 
-      if (existing && existing.length > 0) {
-        this.alreadyClosed = true;
-        this.todayCloture = existing[0];
+      this.alreadyClosed = !!(existing && existing.length > 0);
+      if (this.alreadyClosed) {
+        this.todayCloture = existing![0];
+        this.isInPreviousDayMode = DateUtils.isInPreviousDayMode();
       }
 
       // Load history
@@ -210,5 +212,29 @@ export class ClotureComponent implements OnInit {
   showToast(msg: string, type: string) {
     this.toastMessage$.next({ message: msg, type });
     setTimeout(() => this.toastMessage$.next(null), 3000);
+  }
+
+  async toggleDayMode() {
+    if (this.isInPreviousDayMode) {
+      DateUtils.clearPreviousDayMode();
+    } else {
+      const result = await Swal.fire({
+        title: 'الرجوع لليوم السابق؟',
+        text: 'بينما نتا فاليوم السابق، أي حاجة غاتقيد غاتمشي للحساب ديال هاد النهار لي سديتي.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'أيه، نرجع لليوم السابق',
+        cancelButtonText: 'لا، خليني فاليوم الجديد',
+        confirmButtonColor: '#10b981'
+      });
+      if (result.isConfirmed) {
+        DateUtils.setPreviousDayMode();
+      } else {
+        return;
+      }
+    }
+    this.isInPreviousDayMode = DateUtils.isInPreviousDayMode();
+    this.showToast('تم تغيير وضع التاريخ بنجاح ✅', 'success');
+    setTimeout(() => window.location.reload(), 1000);
   }
 }

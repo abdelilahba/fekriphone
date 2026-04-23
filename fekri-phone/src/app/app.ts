@@ -290,50 +290,66 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async showUpdateMessage() {
-    const seen = localStorage.getItem('update_msg_v1_5_pertes_stock');
-    if (!seen) {
+    // Previous update messages (already seen)
+    const seenOld = localStorage.getItem('update_msg_v1_5_pertes_stock');
+
+    // New: Day choice after closure
+    const seenNew = localStorage.getItem('update_msg_v2_cloture_day_choice');
+    if (!seenNew) {
       setTimeout(async () => {
         await Swal.fire({
-          title: '💔 تحديث جديد — إدارة المنتجات التالفة!',
+          title: '🔒 تحديث جديد — اختيار اليوم بعد سدان الصندوق!',
           html: `
             <div style="text-align: right; line-height: 2.2; font-size: 14px; direction: rtl;">
-              <div style="background: linear-gradient(135deg, #f0f0ff, #e8f5e9); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
-                <b style="font-size: 15px;">🆕 شنو تبدل فالخسائر (Pertes)؟</b>
+              <div style="background: linear-gradient(135deg, #e0f2fe, #f0fdf4); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+                <b style="font-size: 15px;">🆕 شنو تبدل فسدان الصندوق؟</b>
               </div>
 
-              <div style="background: #fff; border-right: 4px solid #ef4444; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-                📦 <b>ارتباط مع الستوك:</b><br>
+              <div style="background: #fff; border-right: 4px solid #10b981; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                📅 <b>نسيتي شي حاجة؟ مابقيتيش مشكل!</b><br>
                 <span style="color: #555; font-size: 13px;">
-                  فاش تبغي تقيد شي منتج خاسر/تالف، دابا غيطلعلك <b>عزّلو من الستوك</b> لي عندك.<br>
-                  ماشي بالضرورة تمشي لصفحة "المنتجات" عاد تنقصو، السيسطيم غيديرها بوحدو ليوم! ✅
+                  يلا <b>سديتي الصندوق</b> ولقيتي باللي نسيتي تقيد شي بيعة ولا مصروف ولا إصلاح،
+                  دابا السيسطيم <b>غايسولك</b>: واش بغيتي تقيدها فاليوم لي فات (لي عاد سديتي)
+                  ولا تبدا فاليوم الجديد.
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                🧠 <b>السيسطيم ذكي — كيسولك مرة وحدة!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  غير تختار <b>مرة وحدة</b> واش بغيتي تخدم فالنهار لي فات ولا الجديد،
+                  السيسطيم غايبقى <b>عاقل</b> على الاختيار ديالك ومابقاش يصدعك بالسؤال
+                  حتى تسد الصندوق نهار آخر.
                 </span>
               </div>
 
               <div style="background: #fff; border-right: 4px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-                💰 <b>الحساب أوطوماتيك:</b><br>
+                🔄 <b>تقدر تبدل رأيك!</b><br>
                 <span style="color: #555; font-size: 13px;">
-                  غير تختار المنتج شحال ضاع منو، <b>مبلغ الخسارة</b> غادي يتعمر بوحدو 
-                  (على حساب شحال باش شريتيه النهار الأول).
+                  إلى بغيتي تبدل الاختيار، سير لصفحة <b>\"سدان الصندوق\"</b>
+                  وغاتلقا تماك واحد <b>البوتون</b> لي كيخليك ترجع لليوم لي فات
+                  ولا تكمل فاليوم الجديد.
                 </span>
               </div>
 
-              <div style="background: #fff; border-right: 4px solid #3b82f6; border-radius: 8px; padding: 12px;">
-                ✍️ <b>تقييد يدوي مازال خدام:</b><br>
+              <div style="background: #fff; border-right: 4px solid #8b5cf6; border-radius: 8px; padding: 12px;">
+                ✅ <b>الحسابات ديما مريكلة!</b><br>
                 <span style="color: #555; font-size: 13px;">
-                  يلا كان شي منتج ماكاينش فالستوك، مزال بامكانك <b>تكتبو غير بيدك</b> 
-                  وعمر مبلغ الخسارة، وماراح يتنقص حتى حاجة من الستوك. 🛡️
+                  بهاد الطريقة، <b>حتى حاجة مارادي تقيد فنهار غلط</b>.
+                  سواء بيعة، مصروف، إصلاح، عربون، دين ولا خسارة —
+                  كولشي غايمشي للبلاصة الصحيحة! 💯
                 </span>
               </div>
             </div>
           `,
           icon: 'info',
           confirmButtonText: 'واخا، فهمت! 👍',
-          confirmButtonColor: '#9b30ff',
+          confirmButtonColor: '#10b981',
           showCloseButton: true,
-          width: 520
+          width: 540
         });
-        localStorage.setItem('update_msg_v1_5_pertes_stock', 'true');
-      }, 1500);
+        localStorage.setItem('update_msg_v2_cloture_day_choice', 'true');
+      }, 2000);
     }
   }
 
@@ -706,8 +722,30 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  openQuickWithdraw() {
+  async openQuickWithdraw() {
     if (this.userRole !== 'admin') return;
+
+    if (DateUtils.isClosed() && !DateUtils.hasChoiceBeenMade()) {
+      const result = await Swal.fire({
+        title: 'الصندوق مسدود!',
+        text: 'الصندوق ديال اليوم تسد. واش بغيتي تقيد هاد السحب فاليوم لي فات ولا فاليوم الجديد؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '📅 تقييد فاليوم لي فات',
+        cancelButtonText: '🔄 تقييد فاليوم الجديد',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#3b82f6',
+        reverseButtons: true
+      });
+      if (result.isConfirmed) {
+        DateUtils.setPreviousDayMode();
+        window.location.reload();
+        return;
+      } else {
+        DateUtils.setNewDayMode();
+      }
+    }
+
     this.withdrawAmount = null;
     this.withdrawReason = '';
     this.withdrawError = '';
