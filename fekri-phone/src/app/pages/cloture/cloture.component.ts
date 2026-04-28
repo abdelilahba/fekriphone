@@ -334,12 +334,12 @@ export class ClotureComponent implements OnInit {
         return map;
       };
 
-      const ventesMap = sumByDate(ventesData.data, 'montant_paye');
-      const repMap = sumByDate(repData.data, 'montant');
-      const depMap = sumByDate(depData.data, 'montant');
-      const avancesMap = sumByDate(avancesData.data, 'montant');
-      const creditsMap = sumByDate(creditsCashData.data, 'montant');
-      const paiementsMap = sumByDate(paiementsData.data, 'montant');
+      const ventesMap = sumByDate(ventesData.data || [], 'montant_paye');
+      const repMap = sumByDate(repData.data || [], 'montant');
+      const depMap = sumByDate(depData.data || [], 'montant');
+      const avancesMap = sumByDate(avancesData.data || [], 'montant');
+      const creditsMap = sumByDate(creditsCashData.data || [], 'montant');
+      const paiementsMap = sumByDate(paiementsData.data || [], 'montant');
 
       // Active dates = any date with at least some transaction
       const activeDates = new Set<string>();
