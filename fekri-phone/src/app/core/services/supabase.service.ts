@@ -537,6 +537,8 @@ export class SupabaseService {
     await this.logActivity('BI3A', { montant: montantTotal, items: items.length }, userId);
 
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if transactions were added after closure
+    this.recalculateClotureIfExists().catch(() => {});
     return vente;
   }
 
@@ -570,6 +572,8 @@ export class SupabaseService {
 
     await this.logActivity('MS7_BI3A', { vente_id: id }, userId);
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if transactions were removed after closure
+    this.recalculateClotureIfExists().catch(() => {});
   }
 
   async updateVente(id: string, montantTotal: number, montantPaye: number, profitTotal: number, newItems: any[], userId?: string, dateStr?: string, nomClient?: string) {
@@ -635,6 +639,8 @@ export class SupabaseService {
 
     await this.logActivity('MODIF_BI3A', { vente_id: id, montant: montantTotal, items_count: newItems.length }, userId);
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if sale was modified after closure
+    this.recalculateClotureIfExists().catch(() => {});
   }
 
 
@@ -662,6 +668,8 @@ export class SupabaseService {
     }, userId);
 
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if repair was added after closure
+    this.recalculateClotureIfExists().catch(() => {});
     return data;
   }
 
@@ -687,6 +695,8 @@ export class SupabaseService {
 
     await this.logActivity('MS7_ISLAH', { revenu_id: id }, userId);
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if repair was removed after closure
+    this.recalculateClotureIfExists().catch(() => {});
   }
 
   // ==================== Dépenses ====================
@@ -713,6 +723,8 @@ export class SupabaseService {
     }, userId);
 
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if expense was added after closure
+    this.recalculateClotureIfExists().catch(() => {});
     return data;
   }
 
@@ -738,6 +750,8 @@ export class SupabaseService {
 
     await this.logActivity('MS7_MASROUF', { depense_id: id }, userId);
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if expense was removed after closure
+    this.recalculateClotureIfExists().catch(() => {});
   }
 
   // ==================== Avances (دفع - Avance sur pièces) ====================
@@ -764,6 +778,8 @@ export class SupabaseService {
     }, userId);
 
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if avance was added after closure
+    this.recalculateClotureIfExists().catch(() => {});
     return data;
   }
 
@@ -789,6 +805,8 @@ export class SupabaseService {
 
     await this.logActivity('MS7_AVANCE', { avance_id: id }, userId);
     this.refreshService.triggerRefresh();
+    // Recalculate cloture if avance was removed after closure
+    this.recalculateClotureIfExists().catch(() => {});
   }
 
   async getCredits(userId?: string) {
@@ -1289,6 +1307,67 @@ export class SupabaseService {
       ventes: ventesTotal + reparationsTotal,
       rib7: ventesProfitReel + reparationsTotal + paiementsProfitTotal - depensesTotal
     };
+  }
+
+  /**
+   * Recalculates the theoretical caisse for a given date and updates
+   * the cloture record if one exists. This ensures that transactions
+   * added AFTER a cloture are reflected in the cloture history.
+   * Fire-and-forget: errors are silently caught.
+   */
+  async recalculateClotureIfExists(dateStr?: string) {
+    try {
+      const targetDate = dateStr || DateUtils.getWorkingDate();
+
+      // Check if a cloture exists for this date
+      const { data: cloture } = await this.supabase
+        .from('clotures_caisse')
+        .select('*')
+        .eq('date', targetDate)
+        .limit(1);
+
+      if (!cloture || cloture.length === 0) return; // No cloture, nothing to update
+
+      const existing = cloture[0];
+
+      // Recalculate theoretical amount from ALL transactions of this day
+      const [ventes, revenus, depenses, avances, creditsCash, paiements] = await Promise.all([
+        this.supabase.from('ventes').select('montant_paye').eq('date', targetDate),
+        this.supabase.from('revenus_reparation').select('montant').eq('date', targetDate),
+        this.supabase.from('depenses').select('montant').eq('date', targetDate),
+        this.supabase.from('avances').select('montant').eq('date', targetDate),
+        this.supabase.from('credits').select('montant').eq('date', targetDate).eq('type_credit', 'cash'),
+        this.supabase.from('credit_paiements').select('montant').eq('date', targetDate)
+      ]);
+
+      const ventesCash = (ventes.data || []).reduce((s: number, v: any) => s + Number(v.montant_paye || 0), 0);
+      const reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
+      const depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+      const avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
+      const creditsCashTotal = (creditsCash.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
+      const paiementsTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+
+      const newTheorique = ventesCash + reparationsTotal + avancesTotal + paiementsTotal - depensesTotal - creditsCashTotal;
+
+      // Only update if the theoretical amount actually changed
+      if (newTheorique !== existing.montant_theorique) {
+        const newEcart = existing.montant_reel - newTheorique;
+        await this.supabase
+          .from('clotures_caisse')
+          .update({
+            montant_theorique: newTheorique,
+            ecart: newEcart,
+            note: existing.note
+              ? existing.note + ' [محدّث تلقائيا]'
+              : '[محدّث تلقائيا بعد إضافة عمليات جديدة]'
+          })
+          .eq('id', existing.id);
+
+        console.log(`📝 Cloture ${targetDate} updated: ${existing.montant_theorique} → ${newTheorique}`);
+      }
+    } catch (e) {
+      console.warn('recalculateClotureIfExists error (ignored):', e);
+    }
   }
 
   // ==================== Commandes Fournisseur ====================
