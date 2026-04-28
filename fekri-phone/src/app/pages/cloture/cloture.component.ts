@@ -42,7 +42,7 @@ export class ClotureComponent implements OnInit {
   showHistorique = false;
 
   // Unclosed days
-  unclosedDays: { date: string; label: string }[] = [];
+  unclosedDays: { date: string; label: string; caisse: number }[] = [];
 
   // State
   alreadyClosed = false;
@@ -299,7 +299,6 @@ export class ClotureComponent implements OnInit {
   private async loadUnclosedDays() {
     try {
       const dates: string[] = [];
-      const todayStr = DateUtils.getTodayStr();
       for (let i = 1; i <= 30; i++) {
         const d = new Date();
         const tzDate = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Casablanca' }));
@@ -316,30 +315,54 @@ export class ClotureComponent implements OnInit {
 
       const closedSet = new Set((closedData || []).map((r: any) => r.date));
 
-      // Also check which dates had any activity (at least 1 vente or 1 reparation)
-      const { data: venteDates } = await this.supabase['supabase']
-        .from('ventes')
-        .select('date')
-        .in('date', dates);
-      const { data: repDates } = await this.supabase['supabase']
-        .from('revenus_reparation')
-        .select('date')
-        .in('date', dates);
-
-      const activeDates = new Set([
-        ...(venteDates || []).map((v: any) => v.date),
-        ...(repDates || []).map((r: any) => r.date)
+      // Fetch all transactions for these dates to calculate caisse per day
+      const [ventesData, repData, depData, avancesData, creditsCashData, paiementsData] = await Promise.all([
+        this.supabase['supabase'].from('ventes').select('date, montant_paye').in('date', dates),
+        this.supabase['supabase'].from('revenus_reparation').select('date, montant').in('date', dates),
+        this.supabase['supabase'].from('depenses').select('date, montant').in('date', dates),
+        this.supabase['supabase'].from('avances').select('date, montant').in('date', dates),
+        this.supabase['supabase'].from('credits').select('date, montant').in('date', dates).eq('type_credit', 'cash'),
+        this.supabase['supabase'].from('credit_paiements').select('date, montant').in('date', dates)
       ]);
+
+      // Build a caisse map per date
+      const sumByDate = (rows: any[], field: string) => {
+        const map = new Map<string, number>();
+        (rows || []).forEach((r: any) => {
+          map.set(r.date, (map.get(r.date) || 0) + Number(r[field] || 0));
+        });
+        return map;
+      };
+
+      const ventesMap = sumByDate(ventesData.data, 'montant_paye');
+      const repMap = sumByDate(repData.data, 'montant');
+      const depMap = sumByDate(depData.data, 'montant');
+      const avancesMap = sumByDate(avancesData.data, 'montant');
+      const creditsMap = sumByDate(creditsCashData.data, 'montant');
+      const paiementsMap = sumByDate(paiementsData.data, 'montant');
+
+      // Active dates = any date with at least some transaction
+      const activeDates = new Set<string>();
+      [ventesMap, repMap, depMap, avancesMap].forEach(m => m.forEach((v, k) => { if (v > 0) activeDates.add(k); }));
 
       // Unclosed = has activity but no cloture
       this.unclosedDays = dates
         .filter(d => activeDates.has(d) && !closedSet.has(d))
-        .map(d => ({
-          date: d,
-          label: new Date(d + 'T12:00:00').toLocaleDateString('ar-MA', {
-            weekday: 'long', day: 'numeric', month: 'long'
-          })
-        }));
+        .map(d => {
+          const caisse = (ventesMap.get(d) || 0)
+            + (repMap.get(d) || 0)
+            + (avancesMap.get(d) || 0)
+            + (paiementsMap.get(d) || 0)
+            - (depMap.get(d) || 0)
+            - (creditsMap.get(d) || 0);
+          return {
+            date: d,
+            label: new Date(d + 'T12:00:00').toLocaleDateString('ar-MA', {
+              weekday: 'long', day: 'numeric', month: 'long'
+            }),
+            caisse
+          };
+        });
     } catch (e) {
       console.warn('loadUnclosedDays error:', e);
     }

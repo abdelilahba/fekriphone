@@ -153,10 +153,14 @@
   text-overflow: ellipsis;
 }
 
-.unclosed-day-date {
-  font-size: 11px;
-  color: #9ca3af;
-  font-family: monospace;
+.unclosed-day-caisse {
+  font-size: 12px;
+  font-weight: 800;
+  color: #059669;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 20px;
+  padding: 2px 10px;
   flex-shrink: 0;
 }
 
