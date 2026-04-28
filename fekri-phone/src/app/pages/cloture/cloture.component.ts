@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -41,6 +41,9 @@ export class ClotureComponent implements OnInit {
   historique: any[] = [];
   showHistorique = false;
 
+  // Unclosed days
+  unclosedDays: { date: string; label: string }[] = [];
+
   // State
   alreadyClosed = false;
   todayCloture: any = null;
@@ -53,7 +56,8 @@ export class ClotureComponent implements OnInit {
   constructor(
     private supabase: SupabaseService,
     private auth: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -129,6 +133,9 @@ export class ClotureComponent implements OnInit {
         .order('date', { ascending: false })
         .limit(30);
       this.historique = hist || [];
+
+      // Load unclosed days (last 30 days)
+      await this.loadUnclosedDays();
 
     } catch (error) {
       this.showToast('خطأ فالتحميل', 'error');
@@ -286,5 +293,60 @@ export class ClotureComponent implements OnInit {
     this.isInPreviousDayMode = DateUtils.isInPreviousDayMode();
     this.showToast('تم تغيير وضع التاريخ بنجاح ✅', 'success');
     setTimeout(() => window.location.reload(), 1000);
+  }
+
+  /** Load the last 30 days and find which ones have no cloture */
+  private async loadUnclosedDays() {
+    try {
+      const dates: string[] = [];
+      const todayStr = DateUtils.getTodayStr();
+      for (let i = 1; i <= 30; i++) {
+        const d = new Date();
+        const tzDate = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Casablanca' }));
+        tzDate.setDate(tzDate.getDate() - i);
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        dates.push(`${tzDate.getFullYear()}-${pad(tzDate.getMonth() + 1)}-${pad(tzDate.getDate())}`);
+      }
+
+      // Get all clotures for those dates
+      const { data: closedData } = await this.supabase['supabase']
+        .from('clotures_caisse')
+        .select('date')
+        .in('date', dates);
+
+      const closedSet = new Set((closedData || []).map((r: any) => r.date));
+
+      // Also check which dates had any activity (at least 1 vente or 1 reparation)
+      const { data: venteDates } = await this.supabase['supabase']
+        .from('ventes')
+        .select('date')
+        .in('date', dates);
+      const { data: repDates } = await this.supabase['supabase']
+        .from('revenus_reparation')
+        .select('date')
+        .in('date', dates);
+
+      const activeDates = new Set([
+        ...(venteDates || []).map((v: any) => v.date),
+        ...(repDates || []).map((r: any) => r.date)
+      ]);
+
+      // Unclosed = has activity but no cloture
+      this.unclosedDays = dates
+        .filter(d => activeDates.has(d) && !closedSet.has(d))
+        .map(d => ({
+          date: d,
+          label: new Date(d + 'T12:00:00').toLocaleDateString('ar-MA', {
+            weekday: 'long', day: 'numeric', month: 'long'
+          })
+        }));
+    } catch (e) {
+      console.warn('loadUnclosedDays error:', e);
+    }
+  }
+
+  goToCatchUp(dateStr: string) {
+    this.router.navigate(['/cloture'], { queryParams: { date: dateStr } });
+    setTimeout(() => window.location.reload(), 200);
   }
 }

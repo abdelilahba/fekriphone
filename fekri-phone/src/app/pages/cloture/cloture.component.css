@@ -49,6 +49,146 @@
   100% { transform: rotate(0deg); }
 }
 
+/* ========== Unclosed Days Card ========== */
+.unclosed-card {
+  background: var(--card-bg, #fff);
+  border: 2px solid #fca5a5;
+  border-radius: 16px;
+  padding: 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+  animation: slideIn 0.4s ease;
+}
+
+.unclosed-header {
+  background: linear-gradient(135deg, #fef2f2, #fff1f2);
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #fecaca;
+}
+
+.unclosed-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unclosed-icon {
+  font-size: 24px;
+}
+
+.unclosed-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #991b1b;
+}
+
+.unclosed-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+
+.unclosed-subtitle {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #b91c1c;
+  line-height: 1.5;
+}
+
+.unclosed-list {
+  padding: 8px 12px;
+}
+
+.unclosed-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background 0.2s;
+  gap: 10px;
+}
+
+.unclosed-day-row:hover {
+  background: #fef2f2;
+}
+
+.unclosed-day-row:not(:last-child) {
+  border-bottom: 1px solid #fee2e2;
+}
+
+.unclosed-day-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.unclosed-day-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  animation: pulse 2s infinite;
+}
+
+.unclosed-day-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e1b3a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unclosed-day-date {
+  font-size: 11px;
+  color: #9ca3af;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.btn-catchup {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.btn-catchup:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+@media (max-width: 480px) {
+  .unclosed-day-date { display: none; }
+  .unclosed-day-label { font-size: 12px; }
+  .btn-catchup { font-size: 11px; padding: 5px 10px; }
+}
+
 /* Stats Grid */
 .stats-grid {
   display: grid;

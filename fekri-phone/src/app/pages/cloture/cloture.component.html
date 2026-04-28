@@ -225,6 +225,33 @@
   </div>
   }
 
+  <!-- ===== UNCLOSED DAYS CARD ===== -->
+  @if (unclosedDays.length > 0 && !catchUpDate) {
+  <div class="unclosed-card">
+    <div class="unclosed-header">
+      <div class="unclosed-title">
+        <span class="unclosed-icon">🔓</span>
+        <h3>أيام ما تسداش الصندوق <span class="unclosed-count">{{ unclosedDays.length }}</span></h3>
+      </div>
+      <p class="unclosed-subtitle">هاد الأيام كانت فيها نشاط (بيعات ولا إصلاحات) ولكن ما تسد الصندوق.</p>
+    </div>
+    <div class="unclosed-list">
+      @for (day of unclosedDays; track day.date) {
+      <div class="unclosed-day-row">
+        <div class="unclosed-day-info">
+          <span class="unclosed-day-dot"></span>
+          <span class="unclosed-day-label">📅 {{ day.label }}</span>
+          <span class="unclosed-day-date">{{ day.date }}</span>
+        </div>
+        <button class="btn btn-sm btn-catchup" (click)="goToCatchUp(day.date)">
+          🔒 سد الصندوق
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
   } @else {
   <!-- === HISTORY VIEW === -->
   <div class="card">
