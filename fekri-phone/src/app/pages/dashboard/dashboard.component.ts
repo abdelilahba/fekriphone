@@ -94,6 +94,19 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }[] = [];
   totalCapitalBloque = 0;
 
+  // ── Feedbacks / Ratings ──
+  feedbacks: {
+    id: string;
+    rank: number;
+    text: string;
+    userName: string;
+    createdAt: string;
+    stars: boolean[];
+    emptyStars: boolean[];
+  }[] = [];
+  avgRating = 0;
+  feedbacksLoading = true;
+
   private charts: Chart[] = [];
 
   constructor(private supabase: SupabaseService, private auth: AuthService) { }
@@ -102,7 +115,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.auth.userRole$.subscribe(role => {
       this.userRole = role;
     });
-    this.loadStats(); 
+    this.loadStats();
+    this.loadFeedbacks();
   }
   
   ngAfterViewInit() { this.chartReady = true; }
@@ -738,5 +752,44 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   formatMAD(amount: number): string {
     return Number(amount).toLocaleString('ar-MA') + ' د.م';
+  }
+
+  async loadFeedbacks() {
+    this.feedbacksLoading = true;
+    try {
+      const data = await this.supabase.getFeedbacks();
+      this.feedbacks = (data || []).map((item: any) => {
+        const rank = Number(item.details?.rank || 0);
+        return {
+          id: item.id,
+          rank,
+          text: item.details?.text || '',
+          userName: item.profiles?.name || 'موظف',
+          createdAt: item.created_at,
+          stars: Array(rank).fill(true),
+          emptyStars: Array(5 - rank).fill(false)
+        };
+      });
+      const total = this.feedbacks.reduce((s, f) => s + f.rank, 0);
+      this.avgRating = this.feedbacks.length > 0
+        ? Math.round((total / this.feedbacks.length) * 10) / 10
+        : 0;
+    } catch (e) {
+      console.error('Feedbacks error:', e);
+    } finally {
+      this.feedbacksLoading = false;
+    }
+  }
+
+  countByRank(rank: number): number {
+    return this.feedbacks.filter(f => f.rank === rank).length;
+  }
+
+  formatDate(dateStr: string): string {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-MA', {
+      day: '2-digit', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
   }
 }

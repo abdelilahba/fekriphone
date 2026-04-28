@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -10,7 +11,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-cloture',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './cloture.component.html',
   styleUrl: './cloture.component.css'
 })
@@ -45,14 +46,34 @@ export class ClotureComponent implements OnInit {
   todayCloture: any = null;
   isInPreviousDayMode = false;
 
-  constructor(private supabase: SupabaseService, private auth: AuthService) {}
+  // Catch-up mode: closing a specific past missed day
+  catchUpDate: string | null = null;
+  catchUpDateLabel = '';
 
-  ngOnInit() { this.loadData(); }
+  constructor(
+    private supabase: SupabaseService,
+    private auth: AuthService,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit() {
+    // Check if we're in catch-up mode (closing a past missed day)
+    this.route.queryParams.subscribe(params => {
+      if (params['date']) {
+        this.catchUpDate = params['date'];
+        this.catchUpDateLabel = new Date(this.catchUpDate + 'T12:00:00').toLocaleDateString('ar-MA', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+      }
+      this.loadData();
+    });
+  }
 
   async loadData() {
     try {
       this.loading$.next(true);
-      const today = DateUtils.getWorkingDate();
+      // Use the catch-up date if provided, otherwise use normal working date
+      const today = this.catchUpDate ?? DateUtils.getWorkingDate();
 
       // Get daily stats
       const stats = await this.supabase.getDailyQuickStats();
@@ -154,7 +175,8 @@ export class ClotureComponent implements OnInit {
 
     try {
       const uid = this.auth.currentUser?.id;
-      const today = DateUtils.getWorkingDate();
+      // Use catch-up date if in catch-up mode, otherwise use normal working date
+      const today = this.catchUpDate ?? DateUtils.getWorkingDate();
 
       // Insert cloture
       const { error } = await this.supabase['supabase']
@@ -185,11 +207,39 @@ export class ClotureComponent implements OnInit {
         note: this.note || undefined
       });
 
-      DateUtils.setClosed();
+      // Only mark localStorage as closed if it's the actual working date (not a catch-up)
+      if (!this.catchUpDate) {
+        DateUtils.setClosed();
+      } else {
+        // Mark the catch-up date as closed in localStorage too
+        localStorage.setItem(`cloture_${this.catchUpDate}`, 'true');
+      }
+
       this.showToast('تم إقفال الصندوق بنجاح ✅', 'success');
-      
-      // We must reload window to refresh all dates across app
-      setTimeout(() => window.location.reload(), 1500);
+
+      if (this.catchUpDate) {
+        // After closing a past day, show a success message with option to continue
+        setTimeout(async () => {
+          await Swal.fire({
+            title: '✅ تسد بنجاح!',
+            html: `
+              <div style="text-align:right; direction:rtl; line-height:2; font-size:15px;">
+                <p>تسد صندوق <b>${this.catchUpDateLabel}</b> بنجاح! 🎉</p>
+                <p style="color:#6b7280; font-size:13px;">دابا تقدر تكمل فاليوم الجديد بلا مشكل.</p>
+              </div>
+            `,
+            icon: 'success',
+            confirmButtonText: '🏠 رجوع للرئيسية',
+            confirmButtonColor: '#10b981',
+            allowOutsideClick: false
+          });
+          // Navigate to home after closing past day
+          window.location.href = '/';
+        }, 800);
+      } else {
+        // Normal flow: reload to refresh all dates
+        setTimeout(() => window.location.reload(), 1500);
+      }
     } catch (error) {
       this.showToast('وقع مشكل فالحفظ', 'error');
     }

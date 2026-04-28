@@ -32,6 +32,15 @@ export class DateUtils {
     return `${tzDate.getFullYear()}-${pad(tzDate.getMonth() + 1)}-${pad(tzDate.getDate())}`;
   }
 
+  /** Returns yesterday's date string in Morocco timezone (YYYY-MM-DD) */
+  static getYesterdayStr(): string {
+    const d = new Date();
+    const tzDate = new Date(d.toLocaleString("en-US", {timeZone: "Africa/Casablanca"}));
+    tzDate.setDate(tzDate.getDate() - 1);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${tzDate.getFullYear()}-${pad(tzDate.getMonth() + 1)}-${pad(tzDate.getDate())}`;
+  }
+
   /** Returns true if today's cash register has been closed */
   static isClosed(): boolean {
     if (typeof localStorage === 'undefined') return false;

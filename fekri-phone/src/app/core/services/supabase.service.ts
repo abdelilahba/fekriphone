@@ -333,6 +333,16 @@ export class SupabaseService {
     return data;
   }
 
+  async getFeedbacks() {
+    const { data, error } = await this.supabase
+      .from('activity_logs')
+      .select('*, profiles(name)')
+      .eq('action', 'FEEDBACK_EMPLOYEE')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  }
+
   // ==================== Categories ====================
   async getCategories() {
     const { data, error } = await this.supabase

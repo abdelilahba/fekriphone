@@ -218,6 +218,8 @@ export class AppComponent implements OnInit, OnDestroy {
       // ─── Monthly recap: fire once per session when admin role confirmed ───
       if (role === 'admin') {
         setTimeout(() => this.supabase.checkAndSendMonthlyReport(), 5000);
+        // ─── Missed cloture reminder ───
+        setTimeout(() => this.checkMissedCloture(), 7000);
       }
 
       // Auto redirect employee to sales page if they try to access root
@@ -350,11 +352,175 @@ export class AppComponent implements OnInit, OnDestroy {
         });
         localStorage.setItem('update_msg_v2_cloture_day_choice', 'true');
       }, 2000);
+      return; // Don't show v3 at the same time
+    }
+
+    // New v3: Missed cloture catch-up reminder system
+    const seenV3 = localStorage.getItem('update_msg_v3_missed_cloture_catchup');
+    if (!seenV3) {
+      setTimeout(async () => {
+        await Swal.fire({
+          title: '⏰ تحديث جديد — تذكير الإقفال!',
+          html: `
+            <div style="text-align: right; line-height: 2.2; font-size: 14px; direction: rtl;">
+              <div style="background: linear-gradient(135deg, #fff7ed, #fef3c7); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+                <b style="font-size: 15px;">🆕 شنو تزاد فالسيسطيم؟</b>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                🔔 <b>تذكير أوتوماتيكي!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  إذا <b>نسيتي تسد الصندوق</b> شي نهار، فاش غادي تفتح التطبيق
+                  السيسطيم <b>غيعلمك أوتوماتيكيا</b> وغيبين ليك اللايستة ديال
+                  الأيام اللي ما تسداوش (حتى 7 أيام من قبل!).
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #10b981; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                📅 <b>تقدر ترجع تسد أي نهار!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  غير تختار <b>الفين نهار بغيتي تسد</b> من القائمة،
+                  السيسطيم غيحمل ليك <b>الأرقام ديال داك النهار</b>
+                  وتقدر دير الإقفال كأنك مازال فيه!
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                🏠 <b>بعد ما تسد — ترجع عادي!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  بعد ما تسد صندوق اللي نسيتي، السيسطيم <b>غيرجعك
+                  للصفحة الرئيسية</b> وتكمل خدمتك فاليوم الجديد
+                  بلا أي مشكل. كولشي مريكل!
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #8b5cf6; border-radius: 8px; padding: 12px;">
+                🙅 <b>مابقاش يصدعك!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  التذكير <b>كيبان مرة وحدة فاليوم</b>. إلا قلتي "تابع"
+                  مابقاش يعاودها ليك حتى الغد.
+                  ولكن <b>الصندوق غيبقى فاللايستة</b> حتى تسدو! 💪
+                </span>
+              </div>
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'واخا، فهمت! 👍',
+          confirmButtonColor: '#f59e0b',
+          showCloseButton: true,
+          width: 540
+        });
+        localStorage.setItem('update_msg_v3_missed_cloture_catchup', 'true');
+      }, 2000);
     }
   }
 
   ngOnDestroy() {
     if (this.statsInterval) clearInterval(this.statsInterval);
+  }
+
+  /**
+   * Checks if any of the last 7 days' cash registers were never closed.
+   * Shows a reminder once per session (keyed in localStorage).
+   * The user can choose which missed day to close, or dismiss.
+   */
+  private async checkMissedCloture() {
+    const sessionKey = `cloture_reminder_session_${DateUtils.getTodayStr()}`;
+    // Already shown this session/day — don't spam
+    if (localStorage.getItem(sessionKey)) return;
+
+    try {
+      // Build list of last 7 days (excluding today)
+      const missedDates: string[] = [];
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date();
+        const tzDate = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Casablanca' }));
+        tzDate.setDate(tzDate.getDate() - i);
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const dateStr = `${tzDate.getFullYear()}-${pad(tzDate.getMonth() + 1)}-${pad(tzDate.getDate())}`;
+        missedDates.push(dateStr);
+      }
+
+      // Check database for which of these dates have a cloture
+      const { data: closedDates } = await this.supabase['supabase']
+        .from('clotures_caisse')
+        .select('date')
+        .in('date', missedDates);
+
+      const closedSet = new Set((closedDates || []).map((r: any) => r.date));
+
+      // Find missed dates (not closed in DB and not locally marked)
+      const unclosed = missedDates.filter(d =>
+        !closedSet.has(d) && localStorage.getItem(`cloture_${d}`) !== 'true'
+      );
+
+      if (unclosed.length === 0) return;
+
+      // Mark reminder as shown for today's session
+      localStorage.setItem(sessionKey, 'true');
+
+      // Build the list HTML for display
+      const listHtml = unclosed.map(dateStr => {
+        const label = new Date(dateStr + 'T12:00:00').toLocaleDateString('ar-MA', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+        return `<li style="padding: 6px 0; border-bottom: 1px solid #f0f0f0;">📅 <b>${label}</b></li>`;
+      }).join('');
+
+      const titleText = unclosed.length === 1
+        ? '⚠️ الصندوق ما تسداش يوم!'
+        : `⚠️ ${unclosed.length} أيام الصندوق ما تسداش!`;
+
+      // Build select options for choosing which day to close
+      const selectOptions = unclosed.map(dateStr => {
+        const label = new Date(dateStr + 'T12:00:00').toLocaleDateString('ar-MA', {
+          weekday: 'long', day: 'numeric', month: 'long'
+        });
+        return `<option value="${dateStr}">${label}</option>`;
+      }).join('');
+
+      const selectHtml = unclosed.length > 1
+        ? `<div style="margin-top:14px;"><label style="font-size:13px;color:#6b7280;display:block;margin-bottom:6px;">اختار الفين نهار تبغي تسد:</label>
+           <select id="missed-date-select" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb;font-family:inherit;font-size:14px;">${selectOptions}</select></div>`
+        : `<input type="hidden" id="missed-date-select" value="${unclosed[0]}">`;
+
+      const result = await Swal.fire({
+        title: titleText,
+        html: `
+          <div style="text-align: right; direction: rtl; line-height: 1.8; font-size: 14px;">
+            <p style="color:#ef4444; font-weight:700; font-size:15px;">الأيام اللي ما تسداش الصندوق:</p>
+            <ul style="list-style:none; padding:0; margin:0 0 8px 0; text-align:right;">${listHtml}</ul>
+            <p style="color:#6b7280; font-size:13px; margin-top:10px;">
+              تقدر ترجع تسد أي نهار من هاد اللايستة.
+              <b>بعد ما تسد، تقدر تكمل فاليوم الجديد بلا مشكل.</b>
+            </p>
+            ${selectHtml}
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '🔒 نرجع نسد صندوق',
+        cancelButtonText: '⏭️ تابع باليوم الجديد',
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        allowOutsideClick: false,
+        preConfirm: () => {
+          const sel = document.getElementById('missed-date-select') as HTMLSelectElement | HTMLInputElement;
+          return sel ? sel.value : unclosed[0];
+        }
+      });
+
+      if (result.isConfirmed && result.value) {
+        const chosenDate: string = result.value;
+        // Navigate to cloture page with the specific date to close
+        this.router.navigate(['/cloture'], { queryParams: { date: chosenDate } });
+        setTimeout(() => window.location.reload(), 300);
+      }
+      // If cancelled — user wants to continue with new day, do nothing
+    } catch (e) {
+      // Silent fail — don't block app on network error
+      console.warn('checkMissedCloture error (ignored):', e);
+    }
   }
 
   async loadQuickStats() {

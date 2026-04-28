@@ -259,7 +259,6 @@
         </div>
       }
 
-      <!-- Stagnant Products -->
       @if (stagnantProducts.length > 0) {
         <div class="card stagnant-card">
           <div class="stagnant-header">
@@ -295,6 +294,83 @@
               </tbody>
             </table>
           </div>
+        </div>
+      }
+
+      <!-- ⭐ Ratings & Feedbacks Panel -->
+      @if (userRole === 'admin') {
+        <div class="card feedbacks-card">
+          <div class="feedbacks-header">
+            <div class="feedbacks-title-row">
+              <h2>⭐ تقييمات الفريق — رأيهم فالتطبيق</h2>
+              <div class="avg-rating-badge" [class.avg-high]="avgRating >= 4" [class.avg-mid]="avgRating >= 3 && avgRating < 4" [class.avg-low]="avgRating < 3 && avgRating > 0">
+                <span class="avg-number">{{ avgRating || '—' }}</span>
+                <span class="avg-label">/ 5 ⭐</span>
+                <span class="avg-count">({{ feedbacks.length }} تقييم)</span>
+              </div>
+            </div>
+
+            @if (feedbacks.length > 0) {
+              <!-- Rating distribution bars -->
+              <div class="rating-distribution">
+                @for (star of [5,4,3,2,1]; track star) {
+                  <div class="dist-row">
+                    <span class="dist-label">{{ star }} ★</span>
+                    <div class="dist-bar-wrap">
+                      <div class="dist-bar"
+                        [style.width]="feedbacks.length > 0 ? (countByRank(star) / feedbacks.length * 100) + '%' : '0%'"
+                        [class]="star >= 4 ? 'dist-green' : star === 3 ? 'dist-orange' : 'dist-red'">
+                      </div>
+                    </div>
+                    <span class="dist-count">{{ countByRank(star) }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          @if (feedbacksLoading) {
+            <div class="feedbacks-loading">
+              <span class="spinner-sm"></span>
+              <span>جاري تحميل التقييمات...</span>
+            </div>
+          } @else if (feedbacks.length === 0) {
+            <div class="feedbacks-empty">
+              <span style="font-size: 2rem;">🗳️</span>
+              <p>ماكاين تقييمات بعد — غادي تجي ملي يبعتو الموظفين!</p>
+            </div>
+          } @else {
+            <div class="feedbacks-list">
+              @for (fb of feedbacks; track fb.id) {
+                <div class="feedback-item" [class.feedback-high]="fb.rank >= 4" [class.feedback-mid]="fb.rank === 3" [class.feedback-low]="fb.rank < 3">
+                  <div class="feedback-user-row">
+                    <div class="feedback-avatar">{{ fb.userName.charAt(0).toUpperCase() }}</div>
+                    <div class="feedback-meta">
+                      <span class="feedback-username">{{ fb.userName }}</span>
+                      <span class="feedback-date">{{ formatDate(fb.createdAt) }}</span>
+                    </div>
+                    <div class="feedback-stars">
+                      @for (s of fb.stars; track $index) {
+                        <span class="star filled">★</span>
+                      }
+                      @for (s of fb.emptyStars; track $index) {
+                        <span class="star empty">★</span>
+                      }
+                      <span class="rank-num">{{ fb.rank }}/5</span>
+                    </div>
+                  </div>
+                  @if (fb.text) {
+                    <div class="feedback-text">
+                      <span class="quote-icon">💬</span>
+                      {{ fb.text }}
+                    </div>
+                  } @else {
+                    <div class="feedback-text no-text">بدون تعليق</div>
+                  }
+                </div>
+              }
+            </div>
+          }
         </div>
       }
     }

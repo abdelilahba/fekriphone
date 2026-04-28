@@ -1,3 +1,54 @@
+/* ========== Catch-up Banner ========== */
+.catchup-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 2px solid #fb923c;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  animation: slideIn 0.4s ease;
+}
+
+.catchup-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+  animation: swing 1.5s ease infinite;
+}
+
+.catchup-body {
+  flex: 1;
+}
+
+.catchup-body h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #9a3412;
+}
+
+.catchup-body p {
+  margin: 0;
+  font-size: 13px;
+  color: #c2410c;
+  line-height: 1.5;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-10px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes swing {
+  0%   { transform: rotate(0deg); }
+  20%  { transform: rotate(-15deg); }
+  40%  { transform: rotate(10deg); }
+  60%  { transform: rotate(-8deg); }
+  80%  { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
 /* Stats Grid */
 .stats-grid {
   display: grid;

@@ -12,6 +12,23 @@
     </button>
   </div>
 
+  <!-- ===== CATCH-UP MODE BANNER ===== -->
+  @if (catchUpDate) {
+  <div class="catchup-banner">
+    <div class="catchup-icon">⏰</div>
+    <div class="catchup-body">
+      <h3>وضع الإقفال المتأخر</h3>
+      <p>
+        دابا كتسد صندوق <b>{{ catchUpDateLabel }}</b> لي نسيتي تسدو.
+        بعد الإقفال، تقدر تكمل فاليوم الجديد بلا مشكل.
+      </p>
+    </div>
+    <a routerLink="/" class="btn btn-ghost" style="flex-shrink:0;">
+      🏠 رجوع
+    </a>
+  </div>
+  }
+
   @if (loading$ | async) {
   <div class="skeleton-loader">
     <div class="skeleton-row short"></div>
