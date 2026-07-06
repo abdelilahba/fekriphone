@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { RefreshService } from './refresh.service';
+import { SupabaseClientService } from './supabase-client.service';
 import { environment } from '../../../environments/environment';
 import { DateUtils } from '../utils/date.utils';
 
@@ -12,22 +13,38 @@ export class SupabaseService {
   private readonly TELEGRAM_QUEUE_KEY = 'telegram_notification_queue';
   private isFlushing = false;
 
-  constructor(private refreshService: RefreshService) {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+  // Static flag: ensure event listeners are registered only once,
+  // even if Angular hot-reloads or re-instantiates this service.
+  private static listenersRegistered = false;
+
+  constructor(
+    private refreshService: RefreshService,
+    supabaseClientService: SupabaseClientService
+  ) {
+    // Use the shared singleton — do NOT call createClient() here.
+    this.supabase = supabaseClientService.client;
 
     // ─── Offline Queue: flush pending notifications when back online ───
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !SupabaseService.listenersRegistered) {
+      SupabaseService.listenersRegistered = true;
+
       // 1. Standard online event
       window.addEventListener('online', () => {
         console.log('📶 Back online! Flushing queued Telegram notifications...');
         this.flushTelegramQueue();
       });
 
-      // 2. Flush when app becomes visible again (user switches back to app)
+      // 2. Flush when app becomes visible again (debounced to avoid spam)
+      let visibilityTimer: ReturnType<typeof setTimeout> | null = null;
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          console.log('👀 App visible again, checking Telegram queue...');
-          setTimeout(() => this.flushTelegramQueue(), 1000);
+          // Debounce: cancel any pending call before scheduling a new one
+          if (visibilityTimer) clearTimeout(visibilityTimer);
+          visibilityTimer = setTimeout(() => {
+            console.log('👀 App visible again, checking Telegram queue...');
+            this.flushTelegramQueue();
+            visibilityTimer = null;
+          }, 1000);
         }
       });
 
@@ -519,19 +536,9 @@ export class SupabaseService {
       console.error('Anomaly Detection Agent Failed:', err);
     }
 
-    // Update stock
+    // Update stock — try the RPC first (atomic), fall back to read-then-write
     for (const item of items) {
-      const { error } = await this.supabase.rpc('decrement_stock', {
-        p_id: item.produit_id,
-        p_qty: item.quantite
-      });
-      // If RPC doesn't exist, do it manually
-      if (error) {
-        await this.supabase
-          .from('produits')
-          .update({ quantite: item.stock_restant })
-          .eq('id', item.produit_id);
-      }
+      await this.decrementStock(item.produit_id, item.quantite);
     }
 
     await this.logActivity('BI3A', { montant: montantTotal, items: items.length }, userId);
@@ -624,17 +631,7 @@ export class SupabaseService {
 
     // 5. Decrement stock for new items
     for (const item of newItems) {
-      const { error: rpcError } = await this.supabase.rpc('decrement_stock', {
-        p_id: item.produit_id,
-        p_qty: item.quantite
-      });
-      if (rpcError) {
-        // Fallback if RPC doesn't exist
-        const { data: prod } = await this.supabase.from('produits').select('quantite').eq('id', item.produit_id).single();
-        if (prod) {
-          await this.supabase.from('produits').update({ quantite: prod.quantite - item.quantite }).eq('id', item.produit_id);
-        }
-      }
+      await this.decrementStock(item.produit_id, item.quantite);
     }
 
     await this.logActivity('MODIF_BI3A', { vente_id: id, montant: montantTotal, items_count: newItems.length }, userId);
@@ -1238,20 +1235,10 @@ export class SupabaseService {
   async getDailyQuickStats(userId?: string) {
     const today = DateUtils.getWorkingDate();
 
-    // Check if the cash register was already closed today
-    const { data: cloture } = await this.supabase
-      .from('clotures_caisse')
-      .select('id')
-      .eq('date', today)
-      .limit(1);
-
-    if (cloture && cloture.length > 0) {
-      return {
-        caisse: 0,
-        ventes: 0,
-        rib7: 0
-      };
-    }
+    // NOTE: We intentionally do NOT return {0,0,0} when a cloture exists.
+    // The old logic caused the header stats to show 0 on all devices that
+    // didn't have the cloture flag in localStorage (other device, PWA reinstall, etc.).
+    // The cloture page manages its own "already closed" UI state independently.
 
     // Fetch montant_paye (cash actually received) for ventes
     let ventesQuery = this.supabase.from('ventes').select('montant_total, montant_paye, profit_total').eq('date', today);
@@ -1436,5 +1423,40 @@ export class SupabaseService {
       statut: 'recue',
       date_reception: new Date().toISOString()
     });
+  }
+
+  // ══════════════════════════════════════════════════
+  //  PRIVATE HELPERS
+  // ══════════════════════════════════════════════════
+
+  /**
+   * Decrements product stock by qty.
+   * Tries the atomic Supabase RPC first; if it returns 404 (function not created yet),
+   * falls back to a safe read-then-write.
+   * Run supabase/migrations/001_decrement_stock.sql to install the RPC
+   * and eliminate the extra round-trip.
+   */
+  private async decrementStock(produitId: string, qty: number): Promise<void> {
+    const { error } = await this.supabase.rpc('decrement_stock', {
+      p_id: produitId,
+      p_qty: qty
+    });
+
+    if (error) {
+      // RPC not installed yet — safe fallback: fetch current stock then subtract
+      const { data: prod } = await this.supabase
+        .from('produits')
+        .select('quantite')
+        .eq('id', produitId)
+        .single();
+
+      if (prod) {
+        const newQty = Math.max(0, (prod.quantite || 0) - qty);
+        await this.supabase
+          .from('produits')
+          .update({ quantite: newQty, updated_at: new Date().toISOString() })
+          .eq('id', produitId);
+      }
+    }
   }
 }

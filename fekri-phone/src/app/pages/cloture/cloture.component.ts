@@ -76,20 +76,22 @@ export class ClotureComponent implements OnInit {
   async loadData() {
     try {
       this.loading$.next(true);
-      // Use the catch-up date if provided, otherwise use normal working date
       const today = this.catchUpDate ?? DateUtils.getWorkingDate();
 
-      // Get daily stats
-      const stats = await this.supabase.getDailyQuickStats();
-
-      // Get individual totals for display
-      const [ventes, revenus, depenses, avances, paiements, creditsCash] = await Promise.all([
+      // Single Promise.all — no separate getDailyQuickStats() call
+      // to avoid doubling the number of round-trips to Supabase.
+      const [ventes, revenus, depenses, avances, paiements, creditsCash, existing, hist] = await Promise.all([
         this.supabase['supabase'].from('ventes').select('montant_total, montant_paye').eq('date', today),
         this.supabase['supabase'].from('revenus_reparation').select('montant').eq('date', today),
         this.supabase['supabase'].from('depenses').select('montant').eq('date', today),
         this.supabase['supabase'].from('avances').select('montant').eq('date', today),
         this.supabase['supabase'].from('credit_paiements').select('montant').eq('date', today),
-        this.supabase['supabase'].from('credits').select('montant').eq('date', today).eq('type_credit', 'cash')
+        this.supabase['supabase'].from('credits').select('montant').eq('date', today).eq('type_credit', 'cash'),
+        this.supabase['supabase'].from('clotures_caisse').select('*').eq('date', today).limit(1),
+        this.supabase['supabase'].from('clotures_caisse')
+          .select('*, profiles!user_id(name)')
+          .order('date', { ascending: false })
+          .limit(30)
       ]);
 
       let ventesTotalCash = 0;
@@ -107,37 +109,34 @@ export class ClotureComponent implements OnInit {
       this.ventesCredit = ventesTotalCredit;
 
       this.reparationsTotal = (revenus.data || []).reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
-      this.avancesTotal = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
-      this.depensesTotal = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
-      this.paiementsTotal = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      this.avancesTotal     = (avances.data || []).reduce((s: number, a: any) => s + Number(a.montant || 0), 0);
+      this.depensesTotal    = (depenses.data || []).reduce((s: number, d: any) => s + Number(d.montant || 0), 0);
+      this.paiementsTotal   = (paiements.data || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
       this.creditsCashTotal = (creditsCash.data || []).reduce((s: number, c: any) => s + Number(c.montant || 0), 0);
-      this.montantTheorique = stats.caisse;
 
-      // Check if already closed today
-      const { data: existing } = await this.supabase['supabase']
-        .from('clotures_caisse')
-        .select('*')
-        .eq('date', today)
-        .limit(1);
+      // Compute caisse directly — no extra network call
+      this.montantTheorique =
+        ventesTotalCash +
+        this.reparationsTotal +
+        this.avancesTotal +
+        this.paiementsTotal -
+        this.depensesTotal -
+        this.creditsCashTotal;
 
-      this.alreadyClosed = !!(existing && existing.length > 0);
+      // Already closed?
+      this.alreadyClosed = !!(existing.data && existing.data.length > 0);
       if (this.alreadyClosed) {
-        this.todayCloture = existing![0];
+        this.todayCloture = existing.data![0];
         this.isInPreviousDayMode = DateUtils.isInPreviousDayMode();
       }
 
-      // Load history
-      const { data: hist } = await this.supabase['supabase']
-        .from('clotures_caisse')
-        .select('*, profiles!user_id(name)')
-        .order('date', { ascending: false })
-        .limit(30);
-      this.historique = hist || [];
+      this.historique = hist.data || [];
 
-      // Load unclosed days (last 30 days)
+      // Load unclosed days (last 7 days only to avoid 504 timeouts)
       await this.loadUnclosedDays();
 
     } catch (error) {
+      console.error('Cloture loadData error:', error);
       this.showToast('خطأ فالتحميل', 'error');
     } finally {
       this.loading$.next(false);
@@ -295,11 +294,12 @@ export class ClotureComponent implements OnInit {
     setTimeout(() => window.location.reload(), 1000);
   }
 
-  /** Load the last 30 days and find which ones have no cloture */
+  /** Load the last 7 days and find which ones have no cloture.
+   *  Limited to 7 days (not 30) to avoid 504 Gateway Timeout on Supabase. */
   private async loadUnclosedDays() {
     try {
       const dates: string[] = [];
-      for (let i = 1; i <= 30; i++) {
+      for (let i = 1; i <= 7; i++) {
         const d = new Date();
         const tzDate = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Casablanca' }));
         tzDate.setDate(tzDate.getDate() - i);
@@ -315,7 +315,7 @@ export class ClotureComponent implements OnInit {
 
       const closedSet = new Set((closedData || []).map((r: any) => r.date));
 
-      // Fetch all transactions for these dates to calculate caisse per day
+      // Fetch all transactions for these dates in one round-trip per table
       const [ventesData, repData, depData, avancesData, creditsCashData, paiementsData] = await Promise.all([
         this.supabase['supabase'].from('ventes').select('date, montant_paye').in('date', dates),
         this.supabase['supabase'].from('revenus_reparation').select('date, montant').in('date', dates),
@@ -334,11 +334,11 @@ export class ClotureComponent implements OnInit {
         return map;
       };
 
-      const ventesMap = sumByDate(ventesData.data || [], 'montant_paye');
-      const repMap = sumByDate(repData.data || [], 'montant');
-      const depMap = sumByDate(depData.data || [], 'montant');
-      const avancesMap = sumByDate(avancesData.data || [], 'montant');
-      const creditsMap = sumByDate(creditsCashData.data || [], 'montant');
+      const ventesMap   = sumByDate(ventesData.data || [], 'montant_paye');
+      const repMap      = sumByDate(repData.data || [], 'montant');
+      const depMap      = sumByDate(depData.data || [], 'montant');
+      const avancesMap  = sumByDate(avancesData.data || [], 'montant');
+      const creditsMap  = sumByDate(creditsCashData.data || [], 'montant');
       const paiementsMap = sumByDate(paiementsData.data || [], 'montant');
 
       // Active dates = any date with at least some transaction
@@ -364,7 +364,9 @@ export class ClotureComponent implements OnInit {
           };
         });
     } catch (e) {
-      console.warn('loadUnclosedDays error:', e);
+      // Non-critical: unclosed days is a convenience feature, don't crash the page
+      console.warn('loadUnclosedDays error (non-critical):', e);
+      this.unclosedDays = [];
     }
   }
 

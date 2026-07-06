@@ -147,16 +147,21 @@ export class PertesComponent implements OnInit {
         this.showToast('تعدلات بنجاح ✅', 'success');
       } else {
         await this.supabase.addPerte(data);
-        // Decrease stock
+        // Decrease stock — try RPC first, fall back to safe read-then-write
         if (this.selectedProduitId && this.form.quantite > 0) {
-           const pItem = this.produits.find(pr => pr.id === this.selectedProduitId);
-           if (pItem) {
-             const { error } = await (this.supabase as any).supabase.rpc('decrement_stock', { p_id: this.selectedProduitId, p_qty: this.form.quantite });
-             if (error) {
-               console.warn("RPC failed, doing manual decrement");
-               await (this.supabase as any).supabase.from('produits').update({ quantite: pItem.quantite - this.form.quantite }).eq('id', this.selectedProduitId);
-             }
-           }
+          const db = (this.supabase as any).supabase;
+          const { error } = await db.rpc('decrement_stock', {
+            p_id: this.selectedProduitId,
+            p_qty: this.form.quantite
+          });
+          if (error) {
+            // RPC not installed yet — safe fallback (never use stale pItem.quantite)
+            const { data: fresh } = await db.from('produits').select('quantite').eq('id', this.selectedProduitId).single();
+            if (fresh) {
+              const newQty = Math.max(0, (fresh.quantite || 0) - this.form.quantite);
+              await db.from('produits').update({ quantite: newQty }).eq('id', this.selectedProduitId);
+            }
+          }
         }
         this.showToast('تسجلات وتنقسات من الستوك ✅', 'success');
       }

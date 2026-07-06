@@ -1,8 +1,8 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
+import { SupabaseClient, User } from '@supabase/supabase-js';
+import { SupabaseClientService } from './supabase-client.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,8 +19,15 @@ export class AuthService {
   userMetadata$ = this._userMetadata$.asObservable();
   isLoading$ = this._loading$.asObservable();
 
-  constructor(private router: Router, private ngZone: NgZone) {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+  constructor(
+    private router: Router,
+    private ngZone: NgZone,
+    supabaseClientService: SupabaseClientService
+  ) {
+    // Use the shared singleton — never call createClient() here directly
+    // to avoid the "Multiple GoTrueClient instances" warning and
+    // the resulting "Invalid Refresh Token" errors.
+    this.supabase = supabaseClientService.client;
     this.initAuth();
   }
 
