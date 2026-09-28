@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import { Produit, Vente, Categorie, Client } from '../../core/models/models';
 import { resolveCategoryImage } from '../../core/models/category-icons';
 import { DateUtils } from '../../core/utils/date.utils';
+import { BarcodeScannerComponent } from '../../components/barcode-scanner/barcode-scanner.component';
 
 interface CartItem {
   produit_id: string;
@@ -26,7 +27,7 @@ interface CartItem {
 @Component({
   selector: 'app-ventes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BarcodeScannerComponent],
   templateUrl: './ventes.component.html',
   styleUrl: './ventes.component.css'
 })
@@ -43,6 +44,8 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   cartTotal$ = new BehaviorSubject<number>(0);
   toastMessage$ = new BehaviorSubject<{ message: string; type: string } | null>(null);
   showVenteModal = false;
+  showCameraScanner = false;
+  autoPrintTicket = false;
   searchTerm = '';
   activeCategory = '';
   showLowStock = false;
@@ -241,8 +244,47 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
   closeVenteModal() {
     this.showVenteModal = false;
+    this.showCameraScanner = false;
     this.layout.setPosModalState(false);
     this.layout.exitFullscreen();
+    this.cdr.detectChanges();
+  }
+
+  openCameraScanner() {
+    this.showCameraScanner = true;
+  }
+
+  closeCameraScanner() {
+    this.showCameraScanner = false;
+  }
+
+  async onBarcodeScanned(code: string) {
+    const cleanCode = (code || '').trim();
+    if (!cleanCode) return;
+
+    const found = this.allProduits.find(p =>
+      (p.code_barre && p.code_barre.trim() === cleanCode) ||
+      p.id === cleanCode
+    );
+
+    if (!found) {
+      this.showToast(`⚠️ المنتج غير موجود بالكودبار (${cleanCode})`, 'error');
+      return;
+    }
+
+    if (found.quantite <= 0) {
+      this.showToast(`❌ هاد المنتج سالا من المخزن! (${found.nom})`, 'error');
+      return;
+    }
+
+    const existing = this.cart.find(c => c.produit_id === found.id);
+    if (existing && existing.quantite >= found.quantite) {
+      this.showToast(`⚠️ وصلت للحد الأقصى فالمخزن! (${found.nom})`, 'error');
+      return;
+    }
+
+    await this.addToCart(found);
+    this.showToast(`✅ تمت إضافة: ${found.nom}`, 'success');
     this.cdr.detectChanges();
   }
 
@@ -292,6 +334,29 @@ export class VentesComponent implements OnInit, AfterViewChecked {
       }
     }
     this.filteredProduits$.next(result);
+  }
+
+  async onSearchEnter() {
+    const term = (this.searchTerm || '').trim();
+    if (!term) return;
+
+    // Direct match with douchette / barcode
+    const exactMatch = this.allProduits.find(p => p.code_barre && p.code_barre.trim().toLowerCase() === term.toLowerCase());
+    if (exactMatch) {
+      await this.addToCart(exactMatch);
+      this.searchTerm = '';
+      this.applyProductFilter();
+      this.focusSearchNeedsTrigger = true;
+      return;
+    }
+
+    const currentFiltered = this.filteredProduits$.value;
+    if (currentFiltered.length === 1) {
+      await this.addToCart(currentFiltered[0]);
+      this.searchTerm = '';
+      this.applyProductFilter();
+      this.focusSearchNeedsTrigger = true;
+    }
   }
 
   getCategoryIcon(p: Produit): string {
@@ -581,7 +646,9 @@ export class VentesComponent implements OnInit, AfterViewChecked {
         }, uid);
       }
 
-      this.printTicket(this.cart, total, this.montantPaye !== null ? this.montantPaye : total, reste);
+      if (this.autoPrintTicket) {
+        this.printTicket(this.cart, total, this.montantPaye !== null ? this.montantPaye : total, reste);
+      }
 
       this.ngZone.run(() => {
         this.showToast('تسجلت البيعة بنجاح ✅', 'success');

@@ -1,0 +1,78 @@
+<div class="scanner-backdrop" (click)="close()">
+  <div class="scanner-modal" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="scanner-header">
+      <div class="scanner-title">
+        <span class="scanner-icon">📷</span>
+        <h3>{{ title }}</h3>
+      </div>
+      <button class="scanner-close-btn" (click)="close()" title="إغلاق">✕</button>
+    </div>
+
+    <!-- Camera Controls -->
+    @if (availableCameras.length > 1) {
+    <div class="scanner-controls">
+      <label class="camera-select-label">
+        <span>🔄 الكاميرا:</span>
+        <select [value]="selectedCameraId" (change)="onCameraSelectChange($event)" class="camera-select">
+          @for (cam of availableCameras; track cam.id) {
+            <option [value]="cam.id">{{ cam.label || 'كاميرا ' + ($index + 1) }}</option>
+          }
+        </select>
+      </label>
+
+      @if (hasTorch) {
+      <button class="btn-torch" [class.active]="isTorchOn" (click)="toggleTorch()" title="تشغيل / إطفاء الفلاش">
+        ⚡ {{ isTorchOn ? 'الفلاش مشعول' : 'شعل الفلاش' }}
+      </button>
+      }
+    </div>
+    }
+
+    <!-- Viewport Area -->
+    <div class="scanner-viewport-wrap">
+      <!-- Error Message -->
+      @if (errorMessage) {
+      <div class="scanner-error">
+        <span class="error-icon">⚠️</span>
+        <p>{{ errorMessage }}</p>
+        <button class="btn-retry" (click)="initScanner()">إعادة المحاولة 🔄</button>
+      </div>
+      }
+
+      <!-- Loading Indicator -->
+      @if (isStarting && !errorMessage) {
+      <div class="scanner-loading">
+        <div class="scanner-spinner"></div>
+        <p>جاري تشغيل كاميرا الطابليط...</p>
+      </div>
+      }
+
+      <!-- Html5Qrcode video container -->
+      <div [id]="containerId" class="scanner-video-container"></div>
+
+      <!-- Laser Guide Overlay -->
+      @if (!isStarting && !errorMessage) {
+      <div class="scanner-guide-overlay">
+        <div class="scan-target-box">
+          <div class="scan-corner top-left"></div>
+          <div class="scan-corner top-right"></div>
+          <div class="scan-corner bottom-left"></div>
+          <div class="scan-corner bottom-right"></div>
+          <div class="scan-laser-line"></div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Footer Guide Note -->
+    <div class="scanner-footer">
+      <p class="scanner-hint">
+        🎯 <strong>وجّه كاميرا الطابليط نحو الباركود أو الـ QR Code</strong>
+      </p>
+      @if (continuous) {
+      <span class="scanner-badge-continuous">وضع المسح المستمر ⚡ (سكان ودوز لي موراه)</span>
+      }
+    </div>
+  </div>
+</div>

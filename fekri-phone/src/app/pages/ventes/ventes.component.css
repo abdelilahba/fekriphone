@@ -368,6 +368,32 @@
   width: 100%;
 }
 
+.btn-pos-camera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-pos-camera:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45);
+}
+
+.btn-pos-camera:active {
+  transform: translateY(0);
+}
+
 .pos-close-btn {
   background: var(--danger-light);
   color: var(--danger);

@@ -146,9 +146,12 @@
           <small style="color: var(--danger); font-size: 10px; max-width: 200px; line-height: 1.2;">⚠️ ماتقيسش التاريخ إلى بغيتي تقيد ديال اليوم (باش حساب لاكيس يكون صحيح). بدلو غي إلا نسيتي شي حاجة قديمة.</small>
         </div>
       </div>
-      <div class="pos-search" id="tour-pos-search">
-        <input #searchInput type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()"
+      <div class="pos-search" id="tour-pos-search" style="display: flex; gap: 8px; align-items: center;">
+        <input #searchInput type="text" [(ngModel)]="searchTerm" (ngModelChange)="searchProduits()" (keyup.enter)="onSearchEnter()"
           class="form-control pos-search-input" placeholder="🔍 قلّب على منتج أو إمسح بالسكانر..." autofocus>
+        <button type="button" class="btn-pos-camera" (click)="openCameraScanner()" title="مسح باركود السلعة بكاميرا الطابليط">
+          📷 سكانير
+        </button>
       </div>
       <button class="pos-close-btn" (click)="closeVenteModal()">غادر نقطة البيع ✕</button>
     </div>
@@ -328,5 +331,15 @@
       </div>
     </div>
   </div>
+  }
+
+  <!-- Camera Scanner Modal for POS / Ventes -->
+  @if (showCameraScanner) {
+    <app-barcode-scanner
+      title="سكانير كاميرا الطابليط 📷"
+      [continuous]="true"
+      (scanned)="onBarcodeScanned($event)"
+      (closed)="closeCameraScanner()">
+    </app-barcode-scanner>
   }
 </div>

@@ -46,7 +46,8 @@
             "tsConfig": "tsconfig.app.json",
             "allowedCommonJsDependencies": [
               "sweetalert2",
-              "jsbarcode"
+              "jsbarcode",
+              "qrcode"
             ],
             "assets": [
               {
@@ -68,8 +69,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "20kB",
-                  "maximumError": "30kB"
+                  "maximumWarning": "25kB",
+                  "maximumError": "40kB"
                 }
               ],
               "outputHashing": "all",

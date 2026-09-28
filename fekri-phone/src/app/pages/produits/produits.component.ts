@@ -8,12 +8,15 @@ import { Produit, Categorie } from '../../core/models/models';
 import { resolveCategoryImage } from '../../core/models/category-icons';
 import Swal from 'sweetalert2';
 import * as JsBarcodeModule from 'jsbarcode';
+import * as QRCodeModule from 'qrcode';
+import { BarcodeScannerComponent } from '../../components/barcode-scanner/barcode-scanner.component';
 const JsBarcode = (JsBarcodeModule as any).default || JsBarcodeModule;
+const QRCode = (QRCodeModule as any).default || QRCodeModule;
 
 @Component({
   selector: 'app-produits',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BarcodeScannerComponent],
   templateUrl: './produits.component.html',
   styleUrl: './produits.component.css'
 })
@@ -23,6 +26,7 @@ export class ProduitsComponent implements OnInit {
   categories$ = new BehaviorSubject<Categorie[]>([]);
   loading$ = new BehaviorSubject<boolean>(true);
   showModal = false;
+  showCameraScanner = false;
   editMode = false;
   searchTerm = '';
   filterCategorie = '';
@@ -202,34 +206,100 @@ export class ProduitsComponent implements OnInit {
     this.form.code_barre = randomEAN13.toString();
   }
 
-  printBarcode(p: Produit) {
+  openCameraScanner() {
+    this.showCameraScanner = true;
+  }
+
+  closeCameraScanner() {
+    this.showCameraScanner = false;
+  }
+
+  onBarcodeScanned(code: string) {
+    this.form.code_barre = code;
+    this.showCameraScanner = false;
+    this.showToast('تم مسح الباركود بنجاح: ' + code, 'success');
+    this.cdr.detectChanges();
+  }
+
+  async printBarcode(p: Produit) {
     if (!p.code_barre) {
       this.showToast('هاد المنتج ماعندوش باركود، دير ليه تعديل وزيد الرقم', 'error');
       return;
     }
-    const qtyStr = prompt("شحال من لصقة (Étiquette) بغيتي تطبع؟", "1");
-    if (!qtyStr) return;
-    const copies = parseInt(qtyStr, 10);
-    if (isNaN(copies) || copies <= 0) return;
-    // Create printable canvas on the fly
-    const canvas = document.createElement('canvas');
-    try {
-      JsBarcode(canvas, p.code_barre, {
-        format: "CODE128",
-        width: 1.5,
-        height: 40,
-        displayValue: true,
-        fontSize: 14,
-        margin: 5
-      });
-    } catch(err) {
-      this.showToast('الكود بار لي دخلتي ما خدامش، خصو يكون عادي (أرقام وحروف بدون مسافات)', 'error');
-      return;
+
+    const { value: printOptions } = await Swal.fire({
+      title: 'طباعة لصقة السلعة (Étiquette) 🏷️',
+      html: `
+        <div style="text-align: right; font-family: inherit; font-size: 14px;">
+          <p style="margin-bottom: 12px;"><strong>المنتج:</strong> ${p.nom}</p>
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 6px;">شكل الكود في اللصقة:</label>
+            <div style="display: flex; gap: 12px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="codeType" value="barcode" checked id="swal-type-barcode">
+                كودبار عادي (Barcode 1D)
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="codeType" value="qrcode" id="swal-type-qrcode">
+                QR Code (2D)
+              </label>
+            </div>
+          </div>
+          <div>
+            <label style="display: block; font-weight: bold; margin-bottom: 6px;">عدد اللصقات:</label>
+            <input type="number" id="swal-qty" class="swal2-input" value="1" min="1" max="100" style="width: 100px; margin: 0; padding: 6px 10px;">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '🖨️ طباعة',
+      cancelButtonText: 'إلغاء',
+      confirmButtonColor: '#7c3aed',
+      preConfirm: () => {
+        const isQr = (document.getElementById('swal-type-qrcode') as HTMLInputElement)?.checked;
+        const qty = parseInt((document.getElementById('swal-qty') as HTMLInputElement)?.value || '1', 10);
+        return {
+          type: isQr ? 'qrcode' : 'barcode',
+          copies: isNaN(qty) || qty <= 0 ? 1 : qty
+        };
+      }
+    });
+
+    if (!printOptions) return;
+    const { type, copies } = printOptions;
+
+    let dataUrl = '';
+    if (type === 'qrcode') {
+      try {
+        dataUrl = await QRCode.toDataURL(p.code_barre, {
+          width: 140,
+          margin: 1,
+          color: { dark: '#000000', light: '#ffffff' }
+        });
+      } catch (err) {
+        this.showToast('وقع مشكل في توليد QR Code', 'error');
+        return;
+      }
+    } else {
+      const canvas = document.createElement('canvas');
+      try {
+        JsBarcode(canvas, p.code_barre, {
+          format: "CODE128",
+          width: 1.5,
+          height: 40,
+          displayValue: true,
+          fontSize: 14,
+          margin: 5
+        });
+        dataUrl = canvas.toDataURL('image/png');
+      } catch (err) {
+        this.showToast('الكود بار لي دخلتي ما خدامش، خصو يكون عادي (أرقام وحروف بدون مسافات)', 'error');
+        return;
+      }
     }
 
-    const dataUrl = canvas.toDataURL('image/png');
-    
-    // Generate HTML for labels
+    // Generate HTML for label printer (standard 40mm x 30mm)
+    const imgClass = type === 'qrcode' ? 'qr-img' : 'barcode-img';
     let html = `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -249,7 +319,8 @@ export class ProduitsComponent implements OnInit {
           }
           .store-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
           .prod-name { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; max-width: 95%; text-overflow: ellipsis; margin-bottom: 2px;}
-          .barcode-img { max-width: 95%; max-height: 18mm; object-fit: contain; }
+          .barcode-img { max-width: 95%; max-height: 17mm; object-fit: contain; }
+          .qr-img { width: 18mm; height: 18mm; object-fit: contain; }
           .price { font-size: 12px; font-weight: 900; margin-top: 2px;}
         </style>
       </head>
@@ -261,7 +332,7 @@ export class ProduitsComponent implements OnInit {
         <div class="label">
           <div class="store-name">FEKRI PHONE</div>
           <div class="prod-name">${p.nom}</div>
-          <img class="barcode-img" src="${dataUrl}" />
+          <img class="${imgClass}" src="${dataUrl}" />
           <div class="price">${p.prix_vente} DHS</div>
         </div>`;
     }
