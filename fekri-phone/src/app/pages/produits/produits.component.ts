@@ -316,7 +316,7 @@ export class ProduitsComponent implements OnInit {
             page-break-after: always;
             padding: 1mm;
           }
-          .barcode-img { width: 100%; height: 100%; object-fit: fill; }
+          .barcode-img { width: 33mm; height: 18mm; object-fit: contain; }
           .qr-img { width: 18mm; height: 18mm; object-fit: contain; }
         </style>
       </head>
