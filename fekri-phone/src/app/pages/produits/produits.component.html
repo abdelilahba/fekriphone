@@ -9,6 +9,9 @@
   <div class="page-header">
     <h1>📦 المنتجات</h1>
     <div class="header-actions">
+      <button class="btn btn-secondary scan-btn" (click)="connectPrinter()" [style.background]="thermalPrint.isConnected ? '#d1fae5' : ''" [style.color]="thermalPrint.isConnected ? '#065f46' : ''">
+        {{ thermalPrint.isConnected ? '🟢 ' + thermalPrint.printerName : '🔌 وصّل الطابعة USB' }}
+      </button>
       <button class="btn btn-secondary scan-btn" (click)="toggleQuickInventory()" [class.active-mode]="isQuickInventoryMode">
         {{ isQuickInventoryMode ? '✅ سد الجرد' : '⚡ جرد سريع' }}
       </button>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AIService } from '../../components/ai-assistant/ai-assistant';
+import { ThermalPrintService } from '../../core/services/thermal-print.service';
 import { Produit, Categorie } from '../../core/models/models';
 import { resolveCategoryImage } from '../../core/models/category-icons';
 import Swal from 'sweetalert2';
@@ -76,7 +77,7 @@ export class ProduitsComponent implements OnInit {
     }
   }
 
-  constructor(private supabase: SupabaseService, private aiService: AIService, private cdr: ChangeDetectorRef) {}
+  constructor(private supabase: SupabaseService, private aiService: AIService, private cdr: ChangeDetectorRef, public thermalPrint: ThermalPrintService) {}
 
   ngOnInit() { this.loadData(); }
 
@@ -221,16 +222,34 @@ export class ProduitsComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Connect USB thermal printer (one-time setup) */
+  async connectPrinter() {
+    try {
+      await this.thermalPrint.connect();
+      this.showToast(`✅ الطابعة متوصلة: ${this.thermalPrint.printerName}`, 'success');
+    } catch (err: any) {
+      this.showToast(err.message || 'فشل الاتصال بالطابعة', 'error');
+    }
+  }
+
   async printBarcode(p: Produit) {
     if (!p.code_barre) {
       this.showToast('هاد المنتج ماعندوش باركود، دير ليه تعديل وزيد الرقم', 'error');
       return;
     }
 
+    // Build printer status text for dialog
+    const usbStatus = this.thermalPrint.isSupported
+      ? (this.thermalPrint.isConnected
+        ? `<div style="background:#d1fae5;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;">🟢 طابعة USB متوصلة: <b>${this.thermalPrint.printerName}</b> (طباعة مباشرة)</div>`
+        : `<div style="background:#fef3c7;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;">🟡 طابعة USB غير متوصلة — <a href="#" id="swal-connect-usb" style="color:#7c3aed;font-weight:bold;">وصّلها دابا</a> أو طبع عادي</div>`)
+      : '';
+
     const { value: printOptions } = await Swal.fire({
       title: 'طباعة لصقة السلعة (Étiquette) 🏷️',
       html: `
         <div style="text-align: right; font-family: inherit; font-size: 14px;">
+          ${usbStatus}
           <p style="margin-bottom: 12px;"><strong>المنتج:</strong> ${p.nom}</p>
           <div style="margin-bottom: 14px;">
             <label style="display: block; font-weight: bold; margin-bottom: 6px;">شكل الكود في اللصقة:</label>
@@ -252,9 +271,26 @@ export class ProduitsComponent implements OnInit {
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: '🖨️ طباعة',
+      confirmButtonText: this.thermalPrint.isConnected ? '🖨️ طباعة مباشرة (USB)' : '🖨️ طباعة',
       cancelButtonText: 'إلغاء',
       confirmButtonColor: '#7c3aed',
+      didOpen: () => {
+        // Allow connecting USB printer from within the dialog
+        const connectLink = document.getElementById('swal-connect-usb');
+        if (connectLink) {
+          connectLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+              await this.thermalPrint.connect();
+              connectLink.closest('div')!.innerHTML = `<div style="background:#d1fae5;padding:8px 12px;border-radius:8px;font-size:13px;">🟢 طابعة USB متوصلة: <b>${this.thermalPrint.printerName}</b></div>`;
+              const confirmBtn = Swal.getConfirmButton();
+              if (confirmBtn) confirmBtn.textContent = '🖨️ طباعة مباشرة (USB)';
+            } catch (err: any) {
+              this.showToast(err.message || 'فشل الاتصال', 'error');
+            }
+          });
+        }
+      },
       preConfirm: () => {
         const isQr = (document.getElementById('swal-type-qrcode') as HTMLInputElement)?.checked;
         const qty = parseInt((document.getElementById('swal-qty') as HTMLInputElement)?.value || '1', 10);
@@ -283,12 +319,19 @@ export class ProduitsComponent implements OnInit {
     } else {
       const canvas = document.createElement('canvas');
       try {
-        JsBarcode(canvas, p.code_barre, {
+        const cleanCode = p.code_barre.trim();
+        JsBarcode(canvas, cleanCode, {
           format: "CODE128",
-          width: 3,
-          height: 80,
-          displayValue: false,
-          margin: 0
+          width: 2,
+          height: 52,
+          displayValue: true,
+          font: "monospace",
+          fontSize: 16,
+          fontOptions: "bold",
+          textMargin: 4,
+          margin: 4,
+          background: "#ffffff",
+          lineColor: "#000000"
         });
         dataUrl = canvas.toDataURL('image/png');
       } catch (err) {
@@ -297,7 +340,20 @@ export class ProduitsComponent implements OnInit {
       }
     }
 
-    // Generate HTML for label printer (standard 35mm x 20mm)
+    // ─── USB Direct Print (like OpenLabel+) ───
+    if (this.thermalPrint.isConnected) {
+      try {
+        this.showToast('⏳ كايطبع...', 'info');
+        await this.thermalPrint.printLabel(dataUrl, copies);
+        this.showToast(`✅ تطبعو ${copies} لصقة بنجاح!`, 'success');
+        return;
+      } catch (err: any) {
+        this.showToast('⚠️ فشلت الطباعة USB، كانجرب الطريقة العادية...', 'error');
+        // Fall through to browser print as fallback
+      }
+    }
+
+    // ─── Fallback: Browser Print Dialog ───
     const imgClass = type === 'qrcode' ? 'qr-img' : 'barcode-img';
     let html = `
       <!DOCTYPE html>
@@ -332,7 +388,6 @@ export class ProduitsComponent implements OnInit {
     
     html += `</body></html>`;
 
-    // Create an invisible iframe for printing to avoid opening full blank tabs
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '-1000px';
