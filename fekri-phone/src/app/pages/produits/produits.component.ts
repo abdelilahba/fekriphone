@@ -272,8 +272,8 @@ export class ProduitsComponent implements OnInit {
     if (type === 'qrcode') {
       try {
         dataUrl = await QRCode.toDataURL(p.code_barre, {
-          width: 140,
-          margin: 1,
+          width: 200,
+          margin: 0,
           color: { dark: '#000000', light: '#ffffff' }
         });
       } catch (err) {
@@ -285,11 +285,10 @@ export class ProduitsComponent implements OnInit {
       try {
         JsBarcode(canvas, p.code_barre, {
           format: "CODE128",
-          width: 1.5,
-          height: 40,
-          displayValue: true,
-          fontSize: 14,
-          margin: 5
+          width: 3,
+          height: 80,
+          displayValue: false,
+          margin: 0
         });
         dataUrl = canvas.toDataURL('image/png');
       } catch (err) {
@@ -302,23 +301,23 @@ export class ProduitsComponent implements OnInit {
     const imgClass = type === 'qrcode' ? 'qr-img' : 'barcode-img';
     let html = `
       <!DOCTYPE html>
-      <html dir="rtl">
+      <html>
       <head>
         <title>طباعة لصقات</title>
         <style>
-          body { 
-            margin: 0; padding: 0; box-sizing: border-box;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-          }
-          @page { margin: 0; size: 35mm 20mm; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { margin: 0; padding: 0; }
+          @page { margin: 0; padding: 0; size: 35mm 20mm; }
+          @media print { body { margin: 0; padding: 0; } }
           .label {
             width: 35mm; height: 20mm;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden; text-align: center; font-family: sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
             page-break-after: always;
+            padding: 1mm;
           }
-          .barcode-img { max-width: 95%; max-height: 18mm; object-fit: contain; }
-          .qr-img { width: 16mm; height: 16mm; object-fit: contain; }
+          .barcode-img { width: 100%; height: 100%; object-fit: fill; }
+          .qr-img { width: 18mm; height: 18mm; object-fit: contain; }
         </style>
       </head>
       <body>
