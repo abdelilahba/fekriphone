@@ -298,7 +298,7 @@ export class ProduitsComponent implements OnInit {
       }
     }
 
-    // Generate HTML for label printer (standard 40mm x 30mm)
+    // Generate HTML for label printer (standard 35mm x 20mm)
     const imgClass = type === 'qrcode' ? 'qr-img' : 'barcode-img';
     let html = `
       <!DOCTYPE html>
@@ -310,18 +310,15 @@ export class ProduitsComponent implements OnInit {
             margin: 0; padding: 0; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
           }
-          @page { margin: 0; }
+          @page { margin: 0; size: 35mm 20mm; }
           .label {
-            width: 40mm; height: 30mm;
+            width: 35mm; height: 20mm;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden; text-align: center; font-family: sans-serif;
             page-break-after: always;
           }
-          .store-name { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
-          .prod-name { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; max-width: 95%; text-overflow: ellipsis; margin-bottom: 2px;}
-          .barcode-img { max-width: 95%; max-height: 17mm; object-fit: contain; }
-          .qr-img { width: 18mm; height: 18mm; object-fit: contain; }
-          .price { font-size: 12px; font-weight: 900; margin-top: 2px;}
+          .barcode-img { max-width: 95%; max-height: 18mm; object-fit: contain; }
+          .qr-img { width: 16mm; height: 16mm; object-fit: contain; }
         </style>
       </head>
       <body>
@@ -330,10 +327,7 @@ export class ProduitsComponent implements OnInit {
     for (let i = 0; i < copies; i++) {
         html += `
         <div class="label">
-          <div class="store-name">FEKRI PHONE</div>
-          <div class="prod-name">${p.nom}</div>
           <img class="${imgClass}" src="${dataUrl}" />
-          <div class="price">${p.prix_vente} DHS</div>
         </div>`;
     }
     
@@ -344,8 +338,8 @@ export class ProduitsComponent implements OnInit {
     iframe.style.position = 'fixed';
     iframe.style.right = '-1000px';
     iframe.style.bottom = '-1000px';
-    iframe.style.width = '40mm';
-    iframe.style.height = '30mm';
+    iframe.style.width = '35mm';
+    iframe.style.height = '20mm';
     document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
