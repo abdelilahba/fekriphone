@@ -143,6 +143,8 @@ export class AppComponent implements OnInit, OnDestroy {
   dailySalesValue = 0;
   dailyRib7 = 0;
   private statsInterval: any;
+  private midnightCheckInterval: any;
+  private lastKnownMoroccoDate: string = '';
 
   constructor(
     public auth: AuthService,
@@ -186,8 +188,16 @@ export class AppComponent implements OnInit, OnDestroy {
         this.statsInterval = setInterval(() => {
           this.loadQuickStats();
         }, 30000); // refresh every 30 seconds
+
+        // --- Auto midnight cloture check (Morocco timezone always) ---
+        this.lastKnownMoroccoDate = DateUtils.getTodayStr();
+        if (this.midnightCheckInterval) clearInterval(this.midnightCheckInterval);
+        this.midnightCheckInterval = setInterval(() => {
+          this.checkMidnightCloture();
+        }, 60 * 1000); // check every minute
       } else {
         if (this.statsInterval) clearInterval(this.statsInterval);
+        if (this.midnightCheckInterval) clearInterval(this.midnightCheckInterval);
       }
     });
 
@@ -410,11 +420,127 @@ export class AppComponent implements OnInit, OnDestroy {
         });
         localStorage.setItem('update_msg_v3_missed_cloture_catchup', 'true');
       }, 2000);
+      return;
+    }
+
+    // v4: Auto midnight cloture + ventes search by product barcode
+    const seenV4 = localStorage.getItem('update_msg_v4_midnight_vente_search');
+    if (!seenV4) {
+      setTimeout(async () => {
+        await Swal.fire({
+          title: '🆕 تحديثات جديدة في فيكري فون!',
+          html: `
+            <div style="text-align: right; line-height: 2.2; font-size: 14px; direction: rtl;">
+              <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+                <b style="font-size: 16px; color: #fff;">🚀 تحديث أكتوبر 2026</b><br>
+                <span style="color: #c7d2fe; font-size: 13px;">تزاد للسيسطيم جوج ميزات ممتازة!</span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #ef4444; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                🌙 <b>سدان أوتوماتيكي عند منتصف الليل!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  دابا السيسطيم <b>كيراقب الوقت بالمغرب مباشرةً</b> (بتوقيت كازابلانكا).<br>
+                  فاش تعدّى منتصف الليل وما سديتيش الصندوق،
+                  <b>السيسطيم غيعلمك أوتوماتيكيا</b> ويعرض عليك تسد دابا
+                  — بلا ما يتأثر بالساعة ديال التيليفون (GMT أو GMT+1)! ⏰
+                </span>
+              </div>
+
+              <div style="background: #fff; border-right: 4px solid #8b5cf6; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                🔍 <b>بحث البيعات بالمنتج أو الكودبار!</b><br>
+                <span style="color: #555; font-size: 13px;">
+                  دابا فصفحة <b>المبيعات</b>، كاين <b>بار ديال البحث</b> فوق اللايستة.<br>
+                  تقدر تكتب <b>إسم منتج</b> أو تضغط على
+                  <b>📷 سكان بالكودبار</b> وإمسح أي منتج —
+                  السيسطيم غيبين ليك <b>غير البيعات لي فيها داك المنتج</b>! 🎯
+                </span>
+              </div>
+
+              <div style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 8px; padding: 10px; font-size: 13px; color: #16a34a; font-weight: 600;">
+                ✅ كولشي أوتوماتيكي — ما خصك تدير والو!
+              </div>
+            </div>
+          `,
+          icon: 'success',
+          confirmButtonText: 'رائع، فهمت! 🎉',
+          confirmButtonColor: '#8b5cf6',
+          showCloseButton: true,
+          width: 520
+        });
+        localStorage.setItem('update_msg_v4_midnight_vente_search', 'true');
+      }, 2000);
     }
   }
 
   ngOnDestroy() {
     if (this.statsInterval) clearInterval(this.statsInterval);
+    if (this.midnightCheckInterval) clearInterval(this.midnightCheckInterval);
+  }
+
+  /**
+   * Called every minute — detects when the Morocco date changes (midnight)
+   * and prompts the user to close the cash register if not already done.
+   * Uses Africa/Casablanca timezone regardless of system locale (GMT vs GMT+1).
+   */
+  private async checkMidnightCloture() {
+    const currentMoroccoDate = DateUtils.getTodayStr();
+    if (!this.lastKnownMoroccoDate || currentMoroccoDate === this.lastKnownMoroccoDate) return;
+
+    // Date changed — it's after midnight in Morocco!
+    const previousDate = this.lastKnownMoroccoDate;
+    this.lastKnownMoroccoDate = currentMoroccoDate;
+
+    // Check if the previous day was already closed
+    const alreadyClosed = localStorage.getItem(`cloture_${previousDate}`) === 'true';
+    if (alreadyClosed) {
+      // Already closed, just clear the choice for the new day
+      DateUtils.clearPreviousDayMode();
+      return;
+    }
+
+    // Check in Supabase if cloture exists for previous date
+    try {
+      const { data } = await this.supabase.client
+        .from('clotures_caisse')
+        .select('id')
+        .eq('date', previousDate)
+        .limit(1);
+      if (data && data.length > 0) {
+        // Already closed in DB, sync localStorage
+        localStorage.setItem(`cloture_${previousDate}`, 'true');
+        DateUtils.clearPreviousDayMode();
+        return;
+      }
+    } catch (_) {}
+
+    // Day changed and not closed yet — show alert
+    this.ngZone.run(async () => {
+      const result = await Swal.fire({
+        title: '🌙 منتصف الليل — الصندوق مازال مفتوح!',
+        html: `
+          <div style="text-align: right; line-height: 2; font-size: 14px; direction: rtl;">
+            <p>🗓️ <b>اليوم الجديد بدا بالمغرب</b> — تاريخ اليوم دابا: <b>${currentMoroccoDate}</b></p>
+            <p style="color:#6b7280; font-size:13px;">الصندوق ديال <b>${previousDate}</b> مازال ما تسداش.<br>واش تبغي تمشي تسد الصندوق دابا؟</p>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '🔒 نمشي نسد الصندوق',
+        cancelButtonText: '⏭️ متى آخر',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        allowOutsideClick: false
+      });
+
+      if (result.isConfirmed) {
+        // Set previous day as "not closed" and navigate to cloture page for that date
+        this.router.navigate(['/cloture'], { queryParams: { date: previousDate } });
+      } else {
+        // User chose to do it later — mark new day as active
+        DateUtils.clearPreviousDayMode();
+      }
+      this.cdr.detectChanges();
+    });
   }
 
   /**

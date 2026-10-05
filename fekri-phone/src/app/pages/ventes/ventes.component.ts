@@ -58,6 +58,10 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   allVentesData: Vente[] = [];
   saleDate: string = DateUtils.getWorkingDate();
 
+  // --- Recherche ventes par produit ---
+  venteSearchTerm: string = '';
+  showVenteScanModal = false;
+
   private cart: CartItem[] = [];
   editingVenteId: string | null = null;
   readonly resolveImg = resolveCategoryImage;
@@ -136,14 +140,24 @@ export class VentesComponent implements OnInit, AfterViewChecked {
   }
 
   filterByDate() {
-
-
     let filtered = this.allVentesData;
-
 
     if (this.selectedDate) {
       filtered = filtered.filter(v => (v.date.split(' ')[0] || v.date) === this.selectedDate);
     }
+
+    // --- Filter by product search (name or barcode) ---
+    if (this.venteSearchTerm && this.venteSearchTerm.trim()) {
+      const term = this.venteSearchTerm.trim().toLowerCase();
+      filtered = filtered.filter(v =>
+        v.vente_items && v.vente_items.some((item: any) => {
+          const nom = (item.produits?.nom || '').toLowerCase();
+          const codeBarre = (item.produits?.code_barre || '').toLowerCase();
+          return nom.includes(term) || codeBarre.includes(term);
+        })
+      );
+    }
+
     console.log(filtered);
 
     this.ventes$.next(filtered);
@@ -154,6 +168,27 @@ export class VentesComponent implements OnInit, AfterViewChecked {
 
     this.currentPage = 1;
     this.paginateVentes();
+  }
+
+  clearVenteSearch() {
+    this.venteSearchTerm = '';
+    this.filterByDate();
+  }
+
+  onVenteBarcodeScanned(code: string) {
+    const cleanCode = (code || '').trim();
+    if (!cleanCode) return;
+    // Look up product by barcode
+    const found = this.allProduits.find(p =>
+      (p.code_barre && p.code_barre.trim() === cleanCode) || p.id === cleanCode
+    );
+    if (found) {
+      this.venteSearchTerm = found.nom;
+    } else {
+      this.venteSearchTerm = cleanCode;
+    }
+    this.showVenteScanModal = false;
+    this.filterByDate();
   }
 
   paginateVentes() {

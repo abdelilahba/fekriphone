@@ -458,7 +458,7 @@ export class SupabaseService {
   async getVentes() {
     const { data, error } = await this.supabase
       .from('ventes')
-      .select('*, profiles!user_id(name), vente_items(*, produits(nom))')
+      .select('*, profiles!user_id(name), vente_items(*, produits(nom, code_barre))')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
